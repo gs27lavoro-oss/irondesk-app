@@ -11251,9 +11251,10 @@ function iduRestore(input){
   };
   window.ndxAIProviders=PROVIDERS;
 
-  function provKey(){ return get("ndx_ai_provider","gemini"); }
+  function provKey(){ return get("ndx_ai_provider","locale"); }
   function prov(){ return PROVIDERS[provKey()]||PROVIDERS.gemini; }
-  function hasKey(){ return !!((get("ndx_ai_key_"+provKey(),"")||"").trim()); }
+  function isLocale(){ return provKey()==="locale"; }
+  function hasKey(){ if(isLocale()) return true; return !!((get("ndx_ai_key_"+provKey(),"")||"").trim()); }
   function aiOn(){ return get("ndx_ai_enabled","1")==="1"; }
 
   var SYS=[
@@ -11324,6 +11325,11 @@ function iduRestore(input){
       }
       if(/^\s*(no|annulla|lascia|niente|stop|nega)\b/i.test(text)){ pending=null; botMsg("Ok, annullato."); return; }
       pending=null;
+    }
+    if(isLocale()){
+      if(window.ndxParse){ window.ndxParse(text); botMsg("Ho preparato la procedura guidata: controlla i numeri e premi Crea e apri."); }
+      else botMsg("Non ho capito, riprova.");
+      return;
     }
     if(!navigator.onLine){ botMsg("Sei offline: l'assistente non risponde, ma la dashboard funziona lo stesso."); return; }
     if(!hasKey()){ botMsg("Manca la chiave AI: aprila dalle impostazioni."); openSettings(); return; }
@@ -11433,9 +11439,9 @@ function iduRestore(input){
     if(!bg){ bg=document.createElement("div"); bg.className="ndx-ai-setbg"; bg.id="ndx-ai-setbg"; document.body.appendChild(bg); }
     bg.innerHTML='<div class="ndx-ai-setbox">'
       + '<div class="ndx-ai-seth"><span>Assistente AI</span><span class="ndx-ai-setx" id="ndx-ai-setx">&#10005;</span></div>'
-      + '<label class="ndx-ai-f"><span>Motore AI</span><select id="ndx-ai-prov"><option value="gemini">Google Gemini (gratis)</option><option value="claude">Anthropic Claude</option></select></label>'
-      + '<label class="ndx-ai-f"><span>Chiave API</span><input id="ndx-ai-key" type="password" placeholder="incolla qui la chiave"></label>'
-      + '<label class="ndx-ai-f"><span>Modello</span><input id="ndx-ai-model" placeholder=""></label>'
+      + '<label class="ndx-ai-f"><span>Motore AI</span><select id="ndx-ai-prov"><option value="locale">Locale - gratis, senza internet</option><option value="gemini">Google Gemini (a consumo)</option><option value="claude">Anthropic Claude (a consumo)</option></select></label>'
+      + '<label class="ndx-ai-f" id="ndx-ai-frow-key"><span>Chiave API</span><input id="ndx-ai-key" type="password" placeholder="incolla qui la chiave"></label>'
+      + '<label class="ndx-ai-f" id="ndx-ai-frow-model"><span>Modello</span><input id="ndx-ai-model" placeholder=""></label>'
       + '<label class="ndx-ai-check"><input type="checkbox" id="ndx-ai-en"> Assistente attivo</label>'
       + '<label class="ndx-ai-check"><input type="checkbox" id="ndx-ai-ttsc"> Risposte a voce</label>'
       + '<div class="ndx-ai-hint" id="ndx-ai-hint"></div>'
@@ -11450,11 +11456,19 @@ function iduRestore(input){
     var hint=document.getElementById("ndx-ai-hint");
     sel.value=provKey(); enC.checked=aiOn(); ttsC.checked=(get("ndx_ai_tts","1")==="1");
     function load(){
-      var pv=sel.value, pr=PROVIDERS[pv]||PROVIDERS.gemini;
+      var pv=sel.value;
+      var kr=document.getElementById("ndx-ai-frow-key"), mr=document.getElementById("ndx-ai-frow-model");
+      if(pv==="locale"){
+        if(kr) kr.style.display="none"; if(mr) mr.style.display="none";
+        hint.textContent="Nessuna chiave, nessun costo, funziona anche offline. Capisce comandi come: preventivo cancello 300x200 per Mario, oppure lavoro Mario totale 1500 acconto 500.";
+        return;
+      }
+      if(kr) kr.style.display=""; if(mr) mr.style.display="";
+      var pr=PROVIDERS[pv]||PROVIDERS.gemini;
       keyI.value=get("ndx_ai_key_"+pv,"");
       modI.value=get("ndx_ai_model_"+pv,"");
       modI.placeholder=pr.defModel;
-      hint.textContent="Chiave da "+pr.keyUrl+". Lascia vuoto il modello per usare "+pr.defModel+".";
+      hint.textContent="Chiave da "+pr.keyUrl+" (a consumo). Lascia vuoto il modello per usare "+pr.defModel+".";
     }
     load();
     sel.onchange=load;
@@ -11464,8 +11478,7 @@ function iduRestore(input){
     document.getElementById("ndx-ai-ssave").onclick=function(){
       var pv=sel.value;
       set("ndx_ai_provider",pv);
-      set("ndx_ai_key_"+pv, keyI.value.trim());
-      set("ndx_ai_model_"+pv, modI.value.trim());
+      if(pv!=="locale"){ set("ndx_ai_key_"+pv, keyI.value.trim()); set("ndx_ai_model_"+pv, modI.value.trim()); }
       set("ndx_ai_enabled", enC.checked?"1":"0");
       set("ndx_ai_tts", ttsC.checked?"1":"0");
       close(); refresh();
@@ -11474,8 +11487,8 @@ function iduRestore(input){
 
   function refresh(){
     if(!fab) return;
-    fab.style.display = navigator.onLine ? "flex" : "none";
-    if(!navigator.onLine && panel) panel.classList.remove("open");
+    fab.style.display = (isLocale()||navigator.onLine) ? "flex" : "none";
+    if(fab.style.display==="none" && panel) panel.classList.remove("open");
   }
 
   function boot(){
