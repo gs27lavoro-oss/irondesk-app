@@ -11212,91 +11212,23 @@ function iduRestore(input){
   function get(k,d){ try{ var v=LS.getItem(k); return v==null?d:v; }catch(e){ return d; } }
   function set(k,v){ try{ LS.setItem(k,v); }catch(e){} }
 
-  // --- Motori AI intercambiabili. Aggiungere qui per usarne un altro. ---
-  var PROVIDERS={
-    gemini:{ label:"Google Gemini", defModel:"gemini-2.0-flash", keyUrl:"aistudio.google.com/app/apikey",
-      send:function(sys,msgs){
-        var key=(get("ndx_ai_key_gemini","")||"").trim();
-        var model=((get("ndx_ai_model_gemini","")||"").trim())||"gemini-2.0-flash";
-        var url="https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+":generateContent?key="+encodeURIComponent(key);
-        var contents=msgs.map(function(m){ return { role:(m.role==="assistant"?"model":"user"), parts:[{text:m.text}] }; });
-        var body={ systemInstruction:{parts:[{text:sys}]}, contents:contents, generationConfig:{temperature:0.2, responseMimeType:"application/json"} };
-        return fetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}).then(function(r){
-          if(r.status===429){ return r.text().then(function(t){ var m=t; try{ var jj=JSON.parse(t); if(jj&&jj.error&&jj.error.message) m=jj.error.message; }catch(ee){} var er=new Error("Limite Gemini (429): "+String(m).slice(0,220)); er.code=429; throw er; }); }
-          if(!r.ok){ return r.text().then(function(t){ var m=t; try{ var jj=JSON.parse(t); if(jj&&jj.error&&jj.error.message) m=jj.error.message; }catch(ee){} throw new Error("Gemini "+r.status+": "+String(m).slice(0,300)); }); }
-          return r.json();
-        }).then(function(j){
-          var c=j&&j.candidates&&j.candidates[0];
-          var parts=c&&c.content&&c.content.parts;
-          return parts?parts.map(function(p){return p.text||"";}).join(""):"";
-        });
-      }
-    },
-    claude:{ label:"Anthropic Claude", defModel:"claude-opus-5", keyUrl:"console.anthropic.com",
-      send:function(sys,msgs){
-        var key=(get("ndx_ai_key_claude","")||"").trim();
-        var model=((get("ndx_ai_model_claude","")||"").trim())||"claude-opus-5";
-        var messages=msgs.map(function(m){ return { role:(m.role==="assistant"?"assistant":"user"), content:m.text }; });
-        var body={ model:model, max_tokens:1024, system:sys, messages:messages };
-        return fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify(body)}).then(function(r){
-          if(r.status===429){ return r.text().then(function(t){ var m=t; try{ var jj=JSON.parse(t); if(jj&&jj.error&&jj.error.message) m=jj.error.message; }catch(ee){} var er=new Error("Limite Claude (429): "+String(m).slice(0,220)); er.code=429; throw er; }); }
-          if(!r.ok){ return r.text().then(function(t){ var m=t; try{ var jj=JSON.parse(t); if(jj&&jj.error&&jj.error.message) m=jj.error.message; }catch(ee){} throw new Error("Claude "+r.status+": "+String(m).slice(0,300)); }); }
-          return r.json();
-        }).then(function(j){
-          var c=j&&j.content;
-          return c?c.map(function(b){return b.text||"";}).join(""):"";
-        });
-      }
+  // --- Cervello locale: gratis, offline, nessuna chiave. Capisce saluti, navigazione e comandi. ---
+  function handleLocal(raw){
+    var t=" "+raw.toLowerCase()+" ";
+    if(/^\s*(ciao|salve|ehi|hey|buongiorno|buonasera|buondi|aiuto|help|cosa sai fare|che sai fare|come funzioni)\b/i.test(raw)){
+      botMsg("Ciao! Dimmi cosa vuoi fare, a voce o scrivendo. Esempi: preventivo cancello 300x200 per Mario; lavoro Mario totale 1500 acconto 500; apri il resoconto.");
+      return;
     }
-  };
-  window.ndxAIProviders=PROVIDERS;
-
-  function provKey(){ return get("ndx_ai_provider","locale"); }
-  function prov(){ return PROVIDERS[provKey()]||PROVIDERS.gemini; }
-  function isLocale(){ return provKey()==="locale"; }
-  function hasKey(){ if(isLocale()) return true; return !!((get("ndx_ai_key_"+provKey(),"")||"").trim()); }
-  function aiOn(){ return get("ndx_ai_enabled","1")==="1"; }
-
-  var SYS=[
-    "Sei l'assistente di IronDesk, un gestionale da officina di carpenteria metallica. Parli e capisci l'italiano.",
-    "Rispondi SEMPRE e SOLO con un oggetto JSON valido (virgolette doppie), senza testo prima o dopo, senza markdown.",
-    "Campi: azione, parametri, conferma, messaggio.",
-    "Azioni possibili:",
-    "- apri_modulo, parametri.modulo tra: dashboard, ferrocalc, preventivi, resoconto.",
-    "- nuovo_preventivo, parametri: cliente, tel, oggetto, importo (euro).",
-    "- nuovo_lavoro, parametri: cliente, totale, acconto, materiale, pagato (true/false).",
-    "- nuovo_calcolo, parametri: tipo, larg, alt, ante, passo. Misure in cm. tipo tra: cancello, scorrevole, porta, ringhiera, grata, recinzione, gazebo, scala, corrimano, alluminio.",
-    "- apri_dati, senza parametri.",
-    "- rispondi, senza parametri: per saluti o domande generiche, metti la risposta in messaggio.",
-    "Regole: per nuovo_preventivo, nuovo_lavoro e nuovo_calcolo metti conferma=true e nel messaggio RIPETI i numeri chiedendo conferma. Non inventare valori mancanti, lasciali vuoti. Per apri_modulo, apri_dati e rispondi metti conferma=false. Il messaggio e' sempre una frase breve in italiano."
-  ].join("\n");
-
-  function parseJSON(t){
-    if(!t) return null;
-    var s=t.indexOf("{"), e=t.lastIndexOf("}");
-    if(s<0||e<0||e<s) return null;
-    try{ return JSON.parse(t.slice(s,e+1)); }catch(err){ return null; }
-  }
-  function callAI(msgs,tries){
-    tries=tries||0;
-    return prov().send(SYS,msgs).catch(function(err){
-      if(err&&err.code===429&&tries<1){
-        return new Promise(function(res){ setTimeout(res, 1500); }).then(function(){ return callAI(msgs,tries+1); });
-      }
-      throw err;
-    });
-  }
-
-  var WRITE={nuovo_preventivo:1,nuovo_lavoro:1,nuovo_calcolo:1};
-  var pending=null;
-
-  function doAction(a,p){
-    p=p||{};
-    if(a==="apri_modulo"){ if(window.ndxShow) window.ndxShow(p.modulo||"dashboard"); }
-    else if(a==="apri_dati"){ if(window.iduDatiApri) window.iduDatiApri(); }
-    else if(a==="nuovo_preventivo"){ if(window.ndxWizardOpen) window.ndxWizardOpen("preventivo",{cliente:p.cliente,tel:p.tel,ind:p.ind,oggetto:p.oggetto,importo:p.importo}); }
-    else if(a==="nuovo_lavoro"){ if(window.ndxWizardOpen) window.ndxWizardOpen("lavoro",{cliente:p.cliente,totale:p.totale,acconto:p.acconto,materiale:p.materiale,pagato:p.pagato}); }
-    else if(a==="nuovo_calcolo"){ if(window.ndxWizardOpen) window.ndxWizardOpen("calcolo",{tipo:p.tipo,larg:p.larg,alt:p.alt,ante:p.ante,passo:p.passo}); }
+    if(/^(apri|apre|vai|va|mostra|mostrami|portami|fammi vedere|torna|voglio vedere)\b/i.test(raw) && !/\d/.test(raw)){
+      if(/resocont|guadagn|incass|\blavori\b/.test(t)){ if(window.ndxShow) window.ndxShow("resoconto"); botMsg("Apro il resoconto."); return; }
+      if(/preventiv|offert|client|rubric/.test(t)){ if(window.ndxShow) window.ndxShow("preventivi"); botMsg("Apro i preventivi."); return; }
+      if(/ferrocalc|calcol|material|misur|taglio|peso|listino|disegn|sezion|allumini/.test(t)){ if(window.ndxShow) window.ndxShow("ferrocalc"); botMsg("Apro FerroCalc."); return; }
+      if(/dashboard|home|inizio|principale/.test(t)){ if(window.ndxShow) window.ndxShow("dashboard"); botMsg("Torno alla dashboard."); return; }
+      if(/\bdati\b|backup|salvatagg|ripristin|esporta|importa/.test(t)){ if(window.iduDatiApri) window.iduDatiApri(); botMsg("Apro Dati e backup."); return; }
+    }
+    if(/\bbackup\b|salva i dati|esporta i dati|ripristina/.test(t)){ if(window.iduDatiApri) window.iduDatiApri(); botMsg("Apro Dati e backup."); return; }
+    if(window.ndxParse){ window.ndxParse(raw); botMsg("Fatto, ti ho aperto la scheda: controlla i numeri e premi Crea e apri."); }
+    else botMsg("Non ho capito, riprova con qualcosa come: preventivo cancello 300x200 per Mario.");
   }
 
   function speak(txt){
@@ -11309,46 +11241,11 @@ function iduRestore(input){
     log.appendChild(d); log.scrollTop=log.scrollHeight;
   }
   function botMsg(txt){ addMsg("bot",txt); speak(txt); }
-  function thinking(on){
-    var log=document.getElementById("ndx-ai-log"); if(!log) return;
-    var ex=document.getElementById("ndx-ai-think");
-    if(on){ if(!ex){ var d=document.createElement("div"); d.id="ndx-ai-think"; d.className="ndx-ai-msg bot ndx-ai-dots"; d.textContent="..."; log.appendChild(d); log.scrollTop=log.scrollHeight; } }
-    else if(ex){ ex.parentNode.removeChild(ex); }
-  }
 
   function sendUser(text){
     text=(text||"").trim(); if(!text) return;
     addMsg("me",text);
-    if(pending){
-      if(/^\s*(s[iì]|ok|okay|va bene|conferma|procedi|certo|esatto|giusto|perfetto)\b/i.test(text)){
-        var pa=pending; pending=null; doAction(pa.a,pa.p); botMsg("Fatto. Controlla i dati e premi Crea e apri."); return;
-      }
-      if(/^\s*(no|annulla|lascia|niente|stop|nega)\b/i.test(text)){ pending=null; botMsg("Ok, annullato."); return; }
-      pending=null;
-    }
-    if(isLocale()){
-      if(window.ndxParse){ window.ndxParse(text); botMsg("Ho preparato la procedura guidata: controlla i numeri e premi Crea e apri."); }
-      else botMsg("Non ho capito, riprova.");
-      return;
-    }
-    if(!navigator.onLine){ botMsg("Sei offline: l'assistente non risponde, ma la dashboard funziona lo stesso."); return; }
-    if(!hasKey()){ botMsg("Manca la chiave AI: aprila dalle impostazioni."); openSettings(); return; }
-    thinking(true);
-    callAI([{role:"user",text:text}]).then(function(raw){
-      thinking(false);
-      var j=parseJSON(raw);
-      if(!j||!j.azione){
-        if(window.ndxParse){ window.ndxParse(text); botMsg("Ho aperto la procedura guidata."); }
-        else botMsg("Non ho capito, riprova.");
-        return;
-      }
-      var a=j.azione, p=j.parametri||{}, msg=j.messaggio||"";
-      if(WRITE[a]&&j.conferma!==false){ pending={a:a,p:p}; botMsg(msg||"Confermi?"); }
-      else { doAction(a,p); botMsg(msg||"Fatto."); }
-    }).catch(function(err){
-      thinking(false);
-      botMsg("Errore assistente: "+((err&&err.message)||"riprova")+".");
-    });
+    handleLocal(text);
   }
 
   // --- Voce (Web Speech API, it-IT) ---
@@ -11428,8 +11325,7 @@ function iduRestore(input){
       if(panel.classList.contains("open")){ panel.classList.remove("open"); return; }
       panel.classList.add("open");
       var log=document.getElementById("ndx-ai-log");
-      if(!aiOn()||!hasKey()){ openSettings(); if(log&&!log.childNodes.length){ addMsg("bot","Ciao! Configura la chiave AI dalle impostazioni per attivare voce e chat."); } }
-      else if(log&&!log.childNodes.length){ addMsg("bot","Ciao! Dimmi cosa vuoi fare: un preventivo, un lavoro o un calcolo."); }
+      if(log&&!log.childNodes.length){ addMsg("bot","Ciao! Dimmi cosa vuoi fare, a voce o scrivendo. Esempi: preventivo cancello 300x200 per Mario; lavoro Mario totale 1500 acconto 500; apri il resoconto."); }
       input.focus();
     };
   }
@@ -11438,63 +11334,21 @@ function iduRestore(input){
     var bg=document.getElementById("ndx-ai-setbg");
     if(!bg){ bg=document.createElement("div"); bg.className="ndx-ai-setbg"; bg.id="ndx-ai-setbg"; document.body.appendChild(bg); }
     bg.innerHTML='<div class="ndx-ai-setbox">'
-      + '<div class="ndx-ai-seth"><span>Assistente AI</span><span class="ndx-ai-setx" id="ndx-ai-setx">&#10005;</span></div>'
-      + '<label class="ndx-ai-f"><span>Motore AI</span><select id="ndx-ai-prov"><option value="locale">Locale - gratis, senza internet</option><option value="gemini">Google Gemini (a consumo)</option><option value="claude">Anthropic Claude (a consumo)</option></select></label>'
-      + '<label class="ndx-ai-f" id="ndx-ai-frow-key"><span>Chiave API</span><input id="ndx-ai-key" type="password" placeholder="incolla qui la chiave"></label>'
-      + '<label class="ndx-ai-f" id="ndx-ai-frow-model"><span>Modello</span><input id="ndx-ai-model" placeholder=""></label>'
-      + '<label class="ndx-ai-check"><input type="checkbox" id="ndx-ai-en"> Assistente attivo</label>'
+      + '<div class="ndx-ai-seth"><span>Assistente</span><span class="ndx-ai-setx" id="ndx-ai-setx">&#10005;</span></div>'
+      + '<div class="ndx-ai-hint">Gratuito, funziona anche senza internet. Parla o scrivi comandi come:<br>&bull; preventivo cancello 300x200 per Mario<br>&bull; lavoro Mario totale 1500 acconto 500<br>&bull; fai un calcolo per una ringhiera<br>&bull; apri il resoconto</div>'
       + '<label class="ndx-ai-check"><input type="checkbox" id="ndx-ai-ttsc"> Risposte a voce</label>'
-      + '<div class="ndx-ai-hint" id="ndx-ai-hint"></div>'
-      + '<div class="ndx-ai-foot"><button class="ndx-ai-cancel" id="ndx-ai-scancel">Chiudi</button><button class="ndx-ai-ok" id="ndx-ai-ssave">Salva</button></div>'
+      + '<div class="ndx-ai-foot"><button class="ndx-ai-ok" id="ndx-ai-ssave">Chiudi</button></div>'
       + '</div>';
     bg.classList.add("open");
-    var sel=document.getElementById("ndx-ai-prov");
-    var keyI=document.getElementById("ndx-ai-key");
-    var modI=document.getElementById("ndx-ai-model");
-    var enC=document.getElementById("ndx-ai-en");
     var ttsC=document.getElementById("ndx-ai-ttsc");
-    var hint=document.getElementById("ndx-ai-hint");
-    sel.value=provKey(); enC.checked=aiOn(); ttsC.checked=(get("ndx_ai_tts","1")==="1");
-    function load(){
-      var pv=sel.value;
-      var kr=document.getElementById("ndx-ai-frow-key"), mr=document.getElementById("ndx-ai-frow-model");
-      if(pv==="locale"){
-        if(kr) kr.style.display="none"; if(mr) mr.style.display="none";
-        hint.textContent="Nessuna chiave, nessun costo, funziona anche offline. Capisce comandi come: preventivo cancello 300x200 per Mario, oppure lavoro Mario totale 1500 acconto 500.";
-        return;
-      }
-      if(kr) kr.style.display=""; if(mr) mr.style.display="";
-      var pr=PROVIDERS[pv]||PROVIDERS.gemini;
-      keyI.value=get("ndx_ai_key_"+pv,"");
-      modI.value=get("ndx_ai_model_"+pv,"");
-      modI.placeholder=pr.defModel;
-      hint.textContent="Chiave da "+pr.keyUrl+" (a consumo). Lascia vuoto il modello per usare "+pr.defModel+".";
-    }
-    load();
-    sel.onchange=load;
-    function close(){ bg.classList.remove("open"); }
+    ttsC.checked=(get("ndx_ai_tts","1")==="1");
+    function close(){ set("ndx_ai_tts", ttsC.checked?"1":"0"); bg.classList.remove("open"); }
     document.getElementById("ndx-ai-setx").onclick=close;
-    document.getElementById("ndx-ai-scancel").onclick=close;
-    document.getElementById("ndx-ai-ssave").onclick=function(){
-      var pv=sel.value;
-      set("ndx_ai_provider",pv);
-      if(pv!=="locale"){ set("ndx_ai_key_"+pv, keyI.value.trim()); set("ndx_ai_model_"+pv, modI.value.trim()); }
-      set("ndx_ai_enabled", enC.checked?"1":"0");
-      set("ndx_ai_tts", ttsC.checked?"1":"0");
-      close(); refresh();
-    };
-  }
-
-  function refresh(){
-    if(!fab) return;
-    fab.style.display = (isLocale()||navigator.onLine) ? "flex" : "none";
-    if(fab.style.display==="none" && panel) panel.classList.remove("open");
+    document.getElementById("ndx-ai-ssave").onclick=close;
   }
 
   function boot(){
-    buildUI(); refresh();
-    window.addEventListener("online",refresh);
-    window.addEventListener("offline",refresh);
+    buildUI();
     window.ndxOpenAISettings=openSettings;
   }
   if(document.readyState==="loading"){ document.addEventListener("DOMContentLoaded",boot); } else { boot(); }
