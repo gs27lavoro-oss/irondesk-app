@@ -11223,7 +11223,7 @@ function iduRestore(input){
         var body={ systemInstruction:{parts:[{text:sys}]}, contents:contents, generationConfig:{temperature:0.2, responseMimeType:"application/json"} };
         return fetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}).then(function(r){
           if(r.status===429){ var e=new Error("Troppe richieste"); e.code=429; throw e; }
-          if(!r.ok){ return r.text().then(function(t){ throw new Error("Gemini "+r.status); }); }
+          if(!r.ok){ return r.text().then(function(t){ var m=t; try{ var jj=JSON.parse(t); if(jj&&jj.error&&jj.error.message) m=jj.error.message; }catch(ee){} throw new Error("Gemini "+r.status+": "+String(m).slice(0,300)); }); }
           return r.json();
         }).then(function(j){
           var c=j&&j.candidates&&j.candidates[0];
@@ -11240,7 +11240,7 @@ function iduRestore(input){
         var body={ model:model, max_tokens:1024, system:sys, messages:messages };
         return fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify(body)}).then(function(r){
           if(r.status===429){ var e=new Error("Troppe richieste"); e.code=429; throw e; }
-          if(!r.ok){ return r.text().then(function(t){ throw new Error("Claude "+r.status); }); }
+          if(!r.ok){ return r.text().then(function(t){ var m=t; try{ var jj=JSON.parse(t); if(jj&&jj.error&&jj.error.message) m=jj.error.message; }catch(ee){} throw new Error("Claude "+r.status+": "+String(m).slice(0,300)); }); }
           return r.json();
         }).then(function(j){
           var c=j&&j.content;
