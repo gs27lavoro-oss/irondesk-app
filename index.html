@@ -11169,6 +11169,7 @@ function iduRestore(input){
     wizOpen(intent,data);
   }
   window.ndxParse=ndxParse;
+  window.ndxWizardOpen=function(t,d){wizOpen(t,d);};
   window.ndxShow=function(view){
     var dash=document.getElementById("ndx-dashboard"),frames=document.getElementById("idu-frames");
     var map={ferrocalc:"frame-ferrocalc",preventivi:"frame-prev",resoconto:"frame-resoconto"};
@@ -11201,6 +11202,291 @@ function iduRestore(input){
   }
   if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",boot);}else{boot();}
 })();
+</script>
+<script>
+/*IRONDESK-AI-BEGIN*/
+(function(){
+  "use strict";
+  if(window.__ndxAI) return; window.__ndxAI=1;
+  var LS=window.localStorage;
+  function get(k,d){ try{ var v=LS.getItem(k); return v==null?d:v; }catch(e){ return d; } }
+  function set(k,v){ try{ LS.setItem(k,v); }catch(e){} }
+
+  // --- Motori AI intercambiabili. Aggiungere qui per usarne un altro. ---
+  var PROVIDERS={
+    gemini:{ label:"Google Gemini", defModel:"gemini-2.0-flash", keyUrl:"aistudio.google.com/app/apikey",
+      send:function(sys,msgs){
+        var key=(get("ndx_ai_key_gemini","")||"").trim();
+        var model=((get("ndx_ai_model_gemini","")||"").trim())||"gemini-2.0-flash";
+        var url="https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+":generateContent?key="+encodeURIComponent(key);
+        var contents=msgs.map(function(m){ return { role:(m.role==="assistant"?"model":"user"), parts:[{text:m.text}] }; });
+        var body={ systemInstruction:{parts:[{text:sys}]}, contents:contents, generationConfig:{temperature:0.2, responseMimeType:"application/json"} };
+        return fetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}).then(function(r){
+          if(r.status===429){ var e=new Error("Troppe richieste"); e.code=429; throw e; }
+          if(!r.ok){ return r.text().then(function(t){ throw new Error("Gemini "+r.status); }); }
+          return r.json();
+        }).then(function(j){
+          var c=j&&j.candidates&&j.candidates[0];
+          var parts=c&&c.content&&c.content.parts;
+          return parts?parts.map(function(p){return p.text||"";}).join(""):"";
+        });
+      }
+    },
+    claude:{ label:"Anthropic Claude", defModel:"claude-opus-5", keyUrl:"console.anthropic.com",
+      send:function(sys,msgs){
+        var key=(get("ndx_ai_key_claude","")||"").trim();
+        var model=((get("ndx_ai_model_claude","")||"").trim())||"claude-opus-5";
+        var messages=msgs.map(function(m){ return { role:(m.role==="assistant"?"assistant":"user"), content:m.text }; });
+        var body={ model:model, max_tokens:1024, system:sys, messages:messages };
+        return fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify(body)}).then(function(r){
+          if(r.status===429){ var e=new Error("Troppe richieste"); e.code=429; throw e; }
+          if(!r.ok){ return r.text().then(function(t){ throw new Error("Claude "+r.status); }); }
+          return r.json();
+        }).then(function(j){
+          var c=j&&j.content;
+          return c?c.map(function(b){return b.text||"";}).join(""):"";
+        });
+      }
+    }
+  };
+  window.ndxAIProviders=PROVIDERS;
+
+  function provKey(){ return get("ndx_ai_provider","gemini"); }
+  function prov(){ return PROVIDERS[provKey()]||PROVIDERS.gemini; }
+  function hasKey(){ return !!((get("ndx_ai_key_"+provKey(),"")||"").trim()); }
+  function aiOn(){ return get("ndx_ai_enabled","1")==="1"; }
+
+  var SYS=[
+    "Sei l'assistente di IronDesk, un gestionale da officina di carpenteria metallica. Parli e capisci l'italiano.",
+    "Rispondi SEMPRE e SOLO con un oggetto JSON valido (virgolette doppie), senza testo prima o dopo, senza markdown.",
+    "Campi: azione, parametri, conferma, messaggio.",
+    "Azioni possibili:",
+    "- apri_modulo, parametri.modulo tra: dashboard, ferrocalc, preventivi, resoconto.",
+    "- nuovo_preventivo, parametri: cliente, tel, oggetto, importo (euro).",
+    "- nuovo_lavoro, parametri: cliente, totale, acconto, materiale, pagato (true/false).",
+    "- nuovo_calcolo, parametri: tipo, larg, alt, ante, passo. Misure in cm. tipo tra: cancello, scorrevole, porta, ringhiera, grata, recinzione, gazebo, scala, corrimano, alluminio.",
+    "- apri_dati, senza parametri.",
+    "- rispondi, senza parametri: per saluti o domande generiche, metti la risposta in messaggio.",
+    "Regole: per nuovo_preventivo, nuovo_lavoro e nuovo_calcolo metti conferma=true e nel messaggio RIPETI i numeri chiedendo conferma. Non inventare valori mancanti, lasciali vuoti. Per apri_modulo, apri_dati e rispondi metti conferma=false. Il messaggio e' sempre una frase breve in italiano."
+  ].join("\n");
+
+  function parseJSON(t){
+    if(!t) return null;
+    var s=t.indexOf("{"), e=t.lastIndexOf("}");
+    if(s<0||e<0||e<s) return null;
+    try{ return JSON.parse(t.slice(s,e+1)); }catch(err){ return null; }
+  }
+  function callAI(msgs,tries){
+    tries=tries||0;
+    return prov().send(SYS,msgs).catch(function(err){
+      if(err&&err.code===429&&tries<2){
+        return new Promise(function(res){ setTimeout(res, 800*Math.pow(2,tries)); }).then(function(){ return callAI(msgs,tries+1); });
+      }
+      throw err;
+    });
+  }
+
+  var WRITE={nuovo_preventivo:1,nuovo_lavoro:1,nuovo_calcolo:1};
+  var pending=null;
+
+  function doAction(a,p){
+    p=p||{};
+    if(a==="apri_modulo"){ if(window.ndxShow) window.ndxShow(p.modulo||"dashboard"); }
+    else if(a==="apri_dati"){ if(window.iduDatiApri) window.iduDatiApri(); }
+    else if(a==="nuovo_preventivo"){ if(window.ndxWizardOpen) window.ndxWizardOpen("preventivo",{cliente:p.cliente,tel:p.tel,ind:p.ind,oggetto:p.oggetto,importo:p.importo}); }
+    else if(a==="nuovo_lavoro"){ if(window.ndxWizardOpen) window.ndxWizardOpen("lavoro",{cliente:p.cliente,totale:p.totale,acconto:p.acconto,materiale:p.materiale,pagato:p.pagato}); }
+    else if(a==="nuovo_calcolo"){ if(window.ndxWizardOpen) window.ndxWizardOpen("calcolo",{tipo:p.tipo,larg:p.larg,alt:p.alt,ante:p.ante,passo:p.passo}); }
+  }
+
+  function speak(txt){
+    if(get("ndx_ai_tts","1")!=="1") return;
+    try{ var u=new SpeechSynthesisUtterance(txt); u.lang="it-IT"; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); }catch(e){}
+  }
+  function addMsg(who,txt){
+    var log=document.getElementById("ndx-ai-log"); if(!log) return;
+    var d=document.createElement("div"); d.className="ndx-ai-msg "+(who==="me"?"me":"bot"); d.textContent=txt;
+    log.appendChild(d); log.scrollTop=log.scrollHeight;
+  }
+  function botMsg(txt){ addMsg("bot",txt); speak(txt); }
+  function thinking(on){
+    var log=document.getElementById("ndx-ai-log"); if(!log) return;
+    var ex=document.getElementById("ndx-ai-think");
+    if(on){ if(!ex){ var d=document.createElement("div"); d.id="ndx-ai-think"; d.className="ndx-ai-msg bot ndx-ai-dots"; d.textContent="..."; log.appendChild(d); log.scrollTop=log.scrollHeight; } }
+    else if(ex){ ex.parentNode.removeChild(ex); }
+  }
+
+  function sendUser(text){
+    text=(text||"").trim(); if(!text) return;
+    addMsg("me",text);
+    if(pending){
+      if(/^\s*(s[iì]|ok|okay|va bene|conferma|procedi|certo|esatto|giusto|perfetto)\b/i.test(text)){
+        var pa=pending; pending=null; doAction(pa.a,pa.p); botMsg("Fatto. Controlla i dati e premi Crea e apri."); return;
+      }
+      if(/^\s*(no|annulla|lascia|niente|stop|nega)\b/i.test(text)){ pending=null; botMsg("Ok, annullato."); return; }
+      pending=null;
+    }
+    if(!navigator.onLine){ botMsg("Sei offline: l'assistente non risponde, ma la dashboard funziona lo stesso."); return; }
+    if(!hasKey()){ botMsg("Manca la chiave AI: aprila dalle impostazioni."); openSettings(); return; }
+    thinking(true);
+    callAI([{role:"user",text:text}]).then(function(raw){
+      thinking(false);
+      var j=parseJSON(raw);
+      if(!j||!j.azione){
+        if(window.ndxParse){ window.ndxParse(text); botMsg("Ho aperto la procedura guidata."); }
+        else botMsg("Non ho capito, riprova.");
+        return;
+      }
+      var a=j.azione, p=j.parametri||{}, msg=j.messaggio||"";
+      if(WRITE[a]&&j.conferma!==false){ pending={a:a,p:p}; botMsg(msg||"Confermi?"); }
+      else { doAction(a,p); botMsg(msg||"Fatto."); }
+    }).catch(function(err){
+      thinking(false);
+      botMsg("Errore assistente: "+((err&&err.message)||"riprova")+".");
+    });
+  }
+
+  // --- Voce (Web Speech API, it-IT) ---
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  var rec=null, listening=false;
+  function initVoice(micBtn,input){
+    if(!SR){ if(micBtn) micBtn.style.display="none"; return; }
+    rec=new SR(); rec.lang="it-IT"; rec.interimResults=false; rec.maxAlternatives=1;
+    rec.onresult=function(ev){ var t=ev.results[0][0].transcript; sendUser(t); };
+    rec.onend=function(){ listening=false; if(micBtn) micBtn.classList.remove("on"); };
+    rec.onerror=function(){ listening=false; if(micBtn) micBtn.classList.remove("on"); };
+    micBtn.onclick=function(){ if(listening){ try{rec.stop();}catch(e){} return; } try{ rec.start(); listening=true; micBtn.classList.add("on"); }catch(e){} };
+  }
+
+  // --- Interfaccia ---
+  var fab, panel;
+  function buildUI(){
+    var css=document.createElement("style");
+    css.textContent=""
+      + ".ndx-ai-fab{position:fixed;right:20px;bottom:20px;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#f08a3c,#ffca68);color:#1c120b;font-size:24px;box-shadow:0 10px 26px #0007;z-index:2600;display:flex;align-items:center;justify-content:center;}"
+      + ".ndx-ai-panel{position:fixed;right:20px;bottom:86px;width:340px;max-width:calc(100vw - 32px);height:460px;max-height:calc(100vh - 130px);background:#0e1827;border:1px solid #273851;border-radius:16px;box-shadow:0 24px 60px #000a;z-index:2600;display:none;flex-direction:column;overflow:hidden;font-family:Inter,Segoe UI,Arial,sans-serif;}"
+      + ".ndx-ai-panel.open{display:flex;}"
+      + ".ndx-ai-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #273851;color:#e8eef7;font-weight:800;}"
+      + ".ndx-ai-head .sp{flex:1;}"
+      + ".ndx-ai-ic{cursor:pointer;color:#91a2bb;font-size:16px;padding:2px 6px;border-radius:8px;}"
+      + ".ndx-ai-ic:hover{color:#fff;background:#172438;}"
+      + ".ndx-ai-log{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;}"
+      + ".ndx-ai-msg{max-width:82%;padding:9px 12px;border-radius:12px;font-size:14px;line-height:1.4;white-space:pre-wrap;word-wrap:break-word;}"
+      + ".ndx-ai-msg.me{align-self:flex-end;background:#f08a3c;color:#1c120b;border-bottom-right-radius:4px;}"
+      + ".ndx-ai-msg.bot{align-self:flex-start;background:#172438;color:#e8eef7;border:1px solid #273851;border-bottom-left-radius:4px;}"
+      + ".ndx-ai-dots{opacity:.6;}"
+      + ".ndx-ai-row{display:flex;gap:8px;padding:10px;border-top:1px solid #273851;align-items:center;}"
+      + ".ndx-ai-mic{flex:0 0 auto;width:40px;height:40px;border-radius:10px;border:1px solid #273851;background:#0b1626;color:#e8eef7;font-size:18px;cursor:pointer;}"
+      + ".ndx-ai-mic.on{background:#f06b6b;border-color:#f06b6b;color:#fff;}"
+      + ".ndx-ai-txt{flex:1;min-width:0;background:#0b1626;border:1.5px solid #273851;border-radius:10px;color:#e8eef7;padding:10px 12px;font:inherit;font-size:14px;}"
+      + ".ndx-ai-txt:focus{border-color:#f08a3c;outline:none;}"
+      + ".ndx-ai-snd{flex:0 0 auto;background:#f08a3c;border:none;color:#1c120b;border-radius:10px;padding:0 14px;height:40px;font-weight:800;cursor:pointer;}"
+      + ".ndx-ai-setbg{position:fixed;inset:0;background:rgba(4,8,15,.8);backdrop-filter:blur(4px);z-index:3200;display:none;align-items:center;justify-content:center;padding:16px;}"
+      + ".ndx-ai-setbg.open{display:flex;}"
+      + ".ndx-ai-setbox{background:linear-gradient(150deg,#17293f,#101a2b);border:1px solid #f08a3c;border-radius:18px;box-shadow:0 24px 60px #000a;width:min(420px,100%);padding:22px;font-family:Inter,Segoe UI,Arial,sans-serif;color:#e8eef7;box-sizing:border-box;}"
+      + ".ndx-ai-seth{display:flex;justify-content:space-between;align-items:center;font-size:18px;font-weight:800;margin-bottom:14px;}"
+      + ".ndx-ai-setx{cursor:pointer;color:#91a2bb;}"
+      + ".ndx-ai-f{display:grid;gap:5px;margin-bottom:11px;}"
+      + ".ndx-ai-f span{font-size:11px;color:#91a2bb;text-transform:uppercase;letter-spacing:.3px;}"
+      + ".ndx-ai-f input,.ndx-ai-f select{background:#0b1626;border:1.5px solid #273851;border-radius:10px;color:#e8eef7;padding:11px 12px;font:inherit;font-size:15px;width:100%;box-sizing:border-box;}"
+      + ".ndx-ai-f input:focus,.ndx-ai-f select:focus{border-color:#f08a3c;outline:none;}"
+      + ".ndx-ai-check{display:flex;align-items:center;gap:9px;font-size:14px;margin:6px 0;cursor:pointer;}"
+      + ".ndx-ai-check input{width:18px;height:18px;}"
+      + ".ndx-ai-hint{font-size:12px;color:#91a2bb;margin:8px 0;line-height:1.5;}"
+      + ".ndx-ai-foot{display:flex;justify-content:flex-end;gap:9px;margin-top:14px;}"
+      + ".ndx-ai-cancel{background:transparent;border:1px solid #273851;color:#91a2bb;padding:11px 16px;border-radius:11px;font:inherit;font-weight:700;cursor:pointer;}"
+      + ".ndx-ai-ok{background:#f08a3c;border:none;color:#1c120b;padding:11px 18px;border-radius:11px;font:inherit;font-weight:800;cursor:pointer;}"
+      + "@media(max-width:820px){ .ndx-ai-fab{bottom:74px;right:14px;} .ndx-ai-panel{bottom:140px;right:14px;left:14px;width:auto;height:60vh;} }";
+    document.head.appendChild(css);
+
+    fab=document.createElement("button");
+    fab.className="ndx-ai-fab"; fab.title="Assistente vocale"; fab.textContent="\uD83C\uDF99\uFE0F";
+    document.body.appendChild(fab);
+
+    panel=document.createElement("div");
+    panel.className="ndx-ai-panel";
+    panel.innerHTML=''
+      + '<div class="ndx-ai-head"><span>Assistente</span><span class="sp"></span><span class="ndx-ai-ic" id="ndx-ai-gear">&#9881;</span><span class="ndx-ai-ic" id="ndx-ai-close">&#10005;</span></div>'
+      + '<div class="ndx-ai-log" id="ndx-ai-log"></div>'
+      + '<div class="ndx-ai-row"><button class="ndx-ai-mic" id="ndx-ai-mic" title="Parla">&#127897;</button><input class="ndx-ai-txt" id="ndx-ai-txt" placeholder="Scrivi o parla..."><button class="ndx-ai-snd" id="ndx-ai-snd">Invia</button></div>';
+    document.body.appendChild(panel);
+
+    document.getElementById("ndx-ai-close").onclick=function(){ panel.classList.remove("open"); };
+    document.getElementById("ndx-ai-gear").onclick=openSettings;
+    var input=document.getElementById("ndx-ai-txt");
+    var snd=document.getElementById("ndx-ai-snd");
+    snd.onclick=function(){ var v=input.value; input.value=""; sendUser(v); };
+    input.addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); var v=input.value; input.value=""; sendUser(v); } });
+    initVoice(document.getElementById("ndx-ai-mic"), input);
+
+    fab.onclick=function(){
+      if(panel.classList.contains("open")){ panel.classList.remove("open"); return; }
+      panel.classList.add("open");
+      var log=document.getElementById("ndx-ai-log");
+      if(!aiOn()||!hasKey()){ openSettings(); if(log&&!log.childNodes.length){ addMsg("bot","Ciao! Configura la chiave AI dalle impostazioni per attivare voce e chat."); } }
+      else if(log&&!log.childNodes.length){ addMsg("bot","Ciao! Dimmi cosa vuoi fare: un preventivo, un lavoro o un calcolo."); }
+      input.focus();
+    };
+  }
+
+  function openSettings(){
+    var bg=document.getElementById("ndx-ai-setbg");
+    if(!bg){ bg=document.createElement("div"); bg.className="ndx-ai-setbg"; bg.id="ndx-ai-setbg"; document.body.appendChild(bg); }
+    bg.innerHTML='<div class="ndx-ai-setbox">'
+      + '<div class="ndx-ai-seth"><span>Assistente AI</span><span class="ndx-ai-setx" id="ndx-ai-setx">&#10005;</span></div>'
+      + '<label class="ndx-ai-f"><span>Motore AI</span><select id="ndx-ai-prov"><option value="gemini">Google Gemini (gratis)</option><option value="claude">Anthropic Claude</option></select></label>'
+      + '<label class="ndx-ai-f"><span>Chiave API</span><input id="ndx-ai-key" type="password" placeholder="incolla qui la chiave"></label>'
+      + '<label class="ndx-ai-f"><span>Modello</span><input id="ndx-ai-model" placeholder=""></label>'
+      + '<label class="ndx-ai-check"><input type="checkbox" id="ndx-ai-en"> Assistente attivo</label>'
+      + '<label class="ndx-ai-check"><input type="checkbox" id="ndx-ai-ttsc"> Risposte a voce</label>'
+      + '<div class="ndx-ai-hint" id="ndx-ai-hint"></div>'
+      + '<div class="ndx-ai-foot"><button class="ndx-ai-cancel" id="ndx-ai-scancel">Chiudi</button><button class="ndx-ai-ok" id="ndx-ai-ssave">Salva</button></div>'
+      + '</div>';
+    bg.classList.add("open");
+    var sel=document.getElementById("ndx-ai-prov");
+    var keyI=document.getElementById("ndx-ai-key");
+    var modI=document.getElementById("ndx-ai-model");
+    var enC=document.getElementById("ndx-ai-en");
+    var ttsC=document.getElementById("ndx-ai-ttsc");
+    var hint=document.getElementById("ndx-ai-hint");
+    sel.value=provKey(); enC.checked=aiOn(); ttsC.checked=(get("ndx_ai_tts","1")==="1");
+    function load(){
+      var pv=sel.value, pr=PROVIDERS[pv]||PROVIDERS.gemini;
+      keyI.value=get("ndx_ai_key_"+pv,"");
+      modI.value=get("ndx_ai_model_"+pv,"");
+      modI.placeholder=pr.defModel;
+      hint.textContent="Chiave da "+pr.keyUrl+". Lascia vuoto il modello per usare "+pr.defModel+".";
+    }
+    load();
+    sel.onchange=load;
+    function close(){ bg.classList.remove("open"); }
+    document.getElementById("ndx-ai-setx").onclick=close;
+    document.getElementById("ndx-ai-scancel").onclick=close;
+    document.getElementById("ndx-ai-ssave").onclick=function(){
+      var pv=sel.value;
+      set("ndx_ai_provider",pv);
+      set("ndx_ai_key_"+pv, keyI.value.trim());
+      set("ndx_ai_model_"+pv, modI.value.trim());
+      set("ndx_ai_enabled", enC.checked?"1":"0");
+      set("ndx_ai_tts", ttsC.checked?"1":"0");
+      close(); refresh();
+    };
+  }
+
+  function refresh(){
+    if(!fab) return;
+    fab.style.display = navigator.onLine ? "flex" : "none";
+    if(!navigator.onLine && panel) panel.classList.remove("open");
+  }
+
+  function boot(){
+    buildUI(); refresh();
+    window.addEventListener("online",refresh);
+    window.addEventListener("offline",refresh);
+    window.ndxOpenAISettings=openSettings;
+  }
+  if(document.readyState==="loading"){ document.addEventListener("DOMContentLoaded",boot); } else { boot(); }
+})();
+/*IRONDESK-AI-END*/
 </script>
 
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
