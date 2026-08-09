@@ -11212,23 +11212,52 @@ function iduRestore(input){
   function get(k,d){ try{ var v=LS.getItem(k); return v==null?d:v; }catch(e){ return d; } }
   function set(k,v){ try{ LS.setItem(k,v); }catch(e){} }
 
-  // --- Cervello locale: gratis, offline, nessuna chiave. Capisce saluti, navigazione e comandi. ---
+  // --- Cervello locale: gratis, offline, nessuna chiave. Saluti, navigazione, comandi e domande sui dati. ---
+  function aiRows(k){ try{ var x=JSON.parse(localStorage.getItem(k)||"[]"); return Array.isArray(x)?x:[]; }catch(e){ return []; } }
+  function aiEur(n){ return "€ "+(Number(n)||0).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function aiStats(){
+    var lav=aiRows("rl_lavori"), prev=aiRows("prevArch"), cli=aiRows("idu_clienti"), fer=aiRows("ferroCalcArchivio");
+    var fatt=0,daInc=0,mat=0,acc=0,i,x,tot,ac,s;
+    for(i=0;i<lav.length;i++){ x=lav[i]; tot=Number(x.totale)||0; ac=Number(x.acconto)||0; fatt+=tot; mat+=Number(x.materiale)||0; acc+=ac; if(!x.pagato){ s=tot-ac; if(s>0) daInc+=s; } }
+    return { lav:lav.length, prev:prev.length, cli:cli.length, fer:fer.length, fatt:fatt, daInc:daInc, mat:mat, acc:acc, guad:fatt-mat };
+  }
+  function aiHelp(){ return "Posso aprire le schede, creare preventivi/lavori/calcoli e risponderti sui tuoi numeri. Prova: quanto ho fatturato; quanto devo incassare; quanti preventivi ho; preventivo cancello 300x200 per Mario; apri il resoconto."; }
   function handleLocal(raw){
     var t=" "+raw.toLowerCase()+" ";
-    if(/^\s*(ciao|salve|ehi|hey|buongiorno|buonasera|buondi|aiuto|help|cosa sai fare|che sai fare|come funzioni)\b/i.test(raw)){
-      botMsg("Ciao! Dimmi cosa vuoi fare, a voce o scrivendo. Esempi: preventivo cancello 300x200 per Mario; lavoro Mario totale 1500 acconto 500; apri il resoconto.");
-      return;
+    // saluti e smalltalk
+    if(/^\s*(ciao|salve|ehi|ehil[aà]|hey|buongiorno|buonasera|buon[dg]i|buon pomeriggio)\b/i.test(raw)){ botMsg("Ciao! Sono il tuo assistente. Dimmi pure: un preventivo, un lavoro, un calcolo, oppure chiedimi i tuoi numeri (es. quanto devo incassare)."); return; }
+    if(/\bgrazie\b|\bok grazie\b/.test(t)){ botMsg("Di niente! Se ti serve altro dimmelo."); return; }
+    if(/\bcome stai\b|\bcome va\b|tutto bene/.test(t)){ botMsg("Tutto pronto e al lavoro. Dimmi cosa ti serve."); return; }
+    if(/chi sei|cosa sei|come ti chiami/.test(t)){ botMsg("Sono l'assistente di IronDesk: ti aiuto con preventivi, lavori, calcoli e i tuoi numeri, anche senza internet."); return; }
+    if(/cosa sai fare|che sai fare|cosa puoi fare|\baiuto\b|\bhelp\b|\bcomandi\b|come funzioni|cosa posso (dire|chiedere|fare)/.test(t)){ botMsg(aiHelp()); return; }
+    // domande sui dati
+    if(/\b(quanto|quanti|quante|qual\S*)\b|fatturato|incass|guadagn|margine|da riscuotere|crediti|mi devono|saldi/.test(t)){
+      var st=aiStats();
+      if(/da incass|devo incass|riscuot|crediti|mi devono|da avere|saldi aperti|saldi/.test(t)){ botMsg(st.daInc>0.005?("Devi ancora incassare "+aiEur(st.daInc)+"."):("Sei in pari: non c'è nulla da incassare.")); return; }
+      if(/fatturato|incass(ato|o)\b|venduto|entrate/.test(t)){ botMsg("Fatturato registrato: "+aiEur(st.fatt)+" su "+st.lav+" lavori."); return; }
+      if(/guadagn|margine/.test(t)){ botMsg("Guadagno lordo (fatturato meno materiale): "+aiEur(st.guad)+"."); return; }
+      if(/material/.test(t)){ botMsg("Costo materiale nei lavori: "+aiEur(st.mat)+"."); return; }
+      if(/acconti/.test(t)){ botMsg("Acconti ricevuti: "+aiEur(st.acc)+"."); return; }
+      if(/prevent|offert/.test(t)){ botMsg("Hai "+st.prev+" preventivi in archivio."); return; }
+      if(/client/.test(t)){ botMsg("Hai "+st.cli+" clienti in rubrica."); return; }
+      if(/cantier|ferrocalc/.test(t)){ botMsg("Hai "+st.fer+" cantieri archiviati in FerroCalc."); return; }
+      if(/\blavori\b|\blavoro\b/.test(t)){ botMsg("Hai "+st.lav+" lavori registrati, fatturato "+aiEur(st.fatt)+", da incassare "+aiEur(st.daInc)+"."); return; }
+      botMsg("Riepilogo: "+st.lav+" lavori, fatturato "+aiEur(st.fatt)+", da incassare "+aiEur(st.daInc)+", "+st.prev+" preventivi, "+st.cli+" clienti."); return;
     }
-    if(/^(apri|apre|vai|va|mostra|mostrami|portami|fammi vedere|torna|voglio vedere)\b/i.test(raw) && !/\d/.test(raw)){
-      if(/resocont|guadagn|incass|\blavori\b/.test(t)){ if(window.ndxShow) window.ndxShow("resoconto"); botMsg("Apro il resoconto."); return; }
+    // navigazione
+    if(/^(apri|apre|apr[oi]|vai|va|andiamo|mostra|mostrami|portami|fammi vedere|torna|voglio vedere|fammi|passa)\b/i.test(raw) && !/\d/.test(raw)){
+      if(/resocont|guadagn|incass|\blavori\b|saldi/.test(t)){ if(window.ndxShow) window.ndxShow("resoconto"); botMsg("Apro il resoconto."); return; }
       if(/preventiv|offert|client|rubric/.test(t)){ if(window.ndxShow) window.ndxShow("preventivi"); botMsg("Apro i preventivi."); return; }
       if(/ferrocalc|calcol|material|misur|taglio|peso|listino|disegn|sezion|allumini/.test(t)){ if(window.ndxShow) window.ndxShow("ferrocalc"); botMsg("Apro FerroCalc."); return; }
-      if(/dashboard|home|inizio|principale/.test(t)){ if(window.ndxShow) window.ndxShow("dashboard"); botMsg("Torno alla dashboard."); return; }
+      if(/dashboard|home|inizio|principale|panoramic/.test(t)){ if(window.ndxShow) window.ndxShow("dashboard"); botMsg("Torno alla dashboard."); return; }
       if(/\bdati\b|backup|salvatagg|ripristin|esporta|importa/.test(t)){ if(window.iduDatiApri) window.iduDatiApri(); botMsg("Apro Dati e backup."); return; }
+      if(window.ndxShow){ window.ndxShow("dashboard"); botMsg("Ecco la dashboard."); return; }
     }
-    if(/\bbackup\b|salva i dati|esporta i dati|ripristina/.test(t)){ if(window.iduDatiApri) window.iduDatiApri(); botMsg("Apro Dati e backup."); return; }
+    // backup
+    if(/\bbackup\b|salva i dati|esporta i dati|scarica i dati|ripristina|importa i dati/.test(t)){ if(window.iduDatiApri) window.iduDatiApri(); botMsg("Apro Dati e backup."); return; }
+    // creazione (parser esistente)
     if(window.ndxParse){ window.ndxParse(raw); botMsg("Fatto, ti ho aperto la scheda: controlla i numeri e premi Crea e apri."); }
-    else botMsg("Non ho capito, riprova con qualcosa come: preventivo cancello 300x200 per Mario.");
+    else botMsg("Non ho capito. Prova: preventivo cancello 300x200 per Mario, oppure chiedimi quanto devi incassare.");
   }
 
   function speak(txt){
@@ -11325,7 +11354,7 @@ function iduRestore(input){
       if(panel.classList.contains("open")){ panel.classList.remove("open"); return; }
       panel.classList.add("open");
       var log=document.getElementById("ndx-ai-log");
-      if(log&&!log.childNodes.length){ addMsg("bot","Ciao! Dimmi cosa vuoi fare, a voce o scrivendo. Esempi: preventivo cancello 300x200 per Mario; lavoro Mario totale 1500 acconto 500; apri il resoconto."); }
+      if(log&&!log.childNodes.length){ addMsg("bot","Ciao! Dimmi cosa vuoi fare, a voce o scrivendo. Esempi: preventivo cancello 300x200 per Mario; quanto devo incassare; quanti preventivi ho; apri il resoconto."); }
       input.focus();
     };
   }
@@ -11335,7 +11364,7 @@ function iduRestore(input){
     if(!bg){ bg=document.createElement("div"); bg.className="ndx-ai-setbg"; bg.id="ndx-ai-setbg"; document.body.appendChild(bg); }
     bg.innerHTML='<div class="ndx-ai-setbox">'
       + '<div class="ndx-ai-seth"><span>Assistente</span><span class="ndx-ai-setx" id="ndx-ai-setx">&#10005;</span></div>'
-      + '<div class="ndx-ai-hint">Gratuito, funziona anche senza internet. Parla o scrivi comandi come:<br>&bull; preventivo cancello 300x200 per Mario<br>&bull; lavoro Mario totale 1500 acconto 500<br>&bull; fai un calcolo per una ringhiera<br>&bull; apri il resoconto</div>'
+      + '<div class="ndx-ai-hint">Gratuito, funziona anche senza internet. Parla o scrivi, per esempio:<br>&bull; preventivo cancello 300x200 per Mario<br>&bull; lavoro Mario totale 1500 acconto 500<br>&bull; fai un calcolo per una ringhiera<br>&bull; quanto devo incassare<br>&bull; quanti preventivi ho<br>&bull; apri il resoconto</div>'
       + '<label class="ndx-ai-check"><input type="checkbox" id="ndx-ai-ttsc"> Risposte a voce</label>'
       + '<div class="ndx-ai-foot"><button class="ndx-ai-ok" id="ndx-ai-ssave">Chiudi</button></div>'
       + '</div>';
