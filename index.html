@@ -11222,7 +11222,7 @@ function iduRestore(input){
         var contents=msgs.map(function(m){ return { role:(m.role==="assistant"?"model":"user"), parts:[{text:m.text}] }; });
         var body={ systemInstruction:{parts:[{text:sys}]}, contents:contents, generationConfig:{temperature:0.2, responseMimeType:"application/json"} };
         return fetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}).then(function(r){
-          if(r.status===429){ var e=new Error("Troppe richieste"); e.code=429; throw e; }
+          if(r.status===429){ return r.text().then(function(t){ var m=t; try{ var jj=JSON.parse(t); if(jj&&jj.error&&jj.error.message) m=jj.error.message; }catch(ee){} var er=new Error("Limite Gemini (429): "+String(m).slice(0,220)); er.code=429; throw er; }); }
           if(!r.ok){ return r.text().then(function(t){ var m=t; try{ var jj=JSON.parse(t); if(jj&&jj.error&&jj.error.message) m=jj.error.message; }catch(ee){} throw new Error("Gemini "+r.status+": "+String(m).slice(0,300)); }); }
           return r.json();
         }).then(function(j){
@@ -11239,7 +11239,7 @@ function iduRestore(input){
         var messages=msgs.map(function(m){ return { role:(m.role==="assistant"?"assistant":"user"), content:m.text }; });
         var body={ model:model, max_tokens:1024, system:sys, messages:messages };
         return fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify(body)}).then(function(r){
-          if(r.status===429){ var e=new Error("Troppe richieste"); e.code=429; throw e; }
+          if(r.status===429){ return r.text().then(function(t){ var m=t; try{ var jj=JSON.parse(t); if(jj&&jj.error&&jj.error.message) m=jj.error.message; }catch(ee){} var er=new Error("Limite Claude (429): "+String(m).slice(0,220)); er.code=429; throw er; }); }
           if(!r.ok){ return r.text().then(function(t){ var m=t; try{ var jj=JSON.parse(t); if(jj&&jj.error&&jj.error.message) m=jj.error.message; }catch(ee){} throw new Error("Claude "+r.status+": "+String(m).slice(0,300)); }); }
           return r.json();
         }).then(function(j){
@@ -11279,8 +11279,8 @@ function iduRestore(input){
   function callAI(msgs,tries){
     tries=tries||0;
     return prov().send(SYS,msgs).catch(function(err){
-      if(err&&err.code===429&&tries<2){
-        return new Promise(function(res){ setTimeout(res, 800*Math.pow(2,tries)); }).then(function(){ return callAI(msgs,tries+1); });
+      if(err&&err.code===429&&tries<1){
+        return new Promise(function(res){ setTimeout(res, 1500); }).then(function(){ return callAI(msgs,tries+1); });
       }
       throw err;
     });
