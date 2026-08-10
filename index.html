@@ -198,7 +198,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.6.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.7.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -208,7 +208,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.6.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.7.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -11221,7 +11221,13 @@ function iduRestore(input){
     for(i=0;i<lav.length;i++){ x=lav[i]; tot=Number(x.totale)||0; ac=Number(x.acconto)||0; fatt+=tot; mat+=Number(x.materiale)||0; acc+=ac; if(!x.pagato){ s=tot-ac; if(s>0) daInc+=s; } }
     return { lav:lav.length, prev:prev.length, cli:cli.length, fer:fer.length, fatt:fatt, daInc:daInc, mat:mat, acc:acc, guad:fatt-mat };
   }
-  function aiHelp(){ return "Posso aprire le schede, creare preventivi/lavori/calcoli e risponderti sui tuoi numeri. Prova: quanto ho fatturato; quanto devo incassare; quanti preventivi ho; preventivo cancello 300x200 per Mario; apri il resoconto."; }
+  function aiHelp(){ return "Ecco cosa so fare (parla o scrivi):\n• Numeri: quanto ho fatturato, quanto mi deve Mario, chi mi deve di più, chi non ha pagato.\n• Crea: preventivo cancello 300x200 per Mario; lavoro Mario totale 1500 acconto 500.\n• Promemoria: ricordami di chiamare Rossi; cosa devo fare.\n• Invia: manda il preventivo di Mario su WhatsApp.\n• Riepiloghi: riepilogo; apri i lavori/preventivi/FerroCalc."; }
+  var STOPN=/^(quant\w*|qual\w*|chi|cosa|come|apri|apr\w*|vai|mostra\w*|fai|crea|nuovo|registra|salva|dimmi|trova|manda|invia|il|lo|la|un|una|per|mio|mia|questo|lavoro|preventivo)$/i;
+  function aiClientName(raw){ var m=raw.match(/\b(?:per|di|del|con|cliente|deve|paga\w*|salda\w*|versat\w*)\s+([A-Za-zÀ-ÿ'][A-Za-zà-ÿ'.]+(?:\s+[A-Za-zÀ-ÿ'][A-Za-zà-ÿ'.]+)?)/i); if(m){ var n=m[1].replace(/\b(ha|il|lo|la|un|una)\b[\s\S]*$/i,"").replace(/\s+/g," ").trim(); if(n&&!STOPN.test(n.split(" ")[0])) return n; } m=raw.match(/^\s*([A-Za-zÀ-ÿ'][A-Za-zà-ÿ'.]+)\s+(?:ha\b|deve\b)/i); if(m&&!STOPN.test(m[1])) return m[1].trim(); return ""; }
+  function aiClientJobs(name){ var q=name.toLowerCase(); return aiRows("rl_lavori").filter(function(x){ return (""+(x.cliente||"")).toLowerCase().indexOf(q)>=0; }); }
+  function aiRem(){ try{ var x=JSON.parse(localStorage.getItem("ndx_reminders")||"[]"); return Array.isArray(x)?x:[]; }catch(e){ return []; } }
+  function aiRemSave(a){ try{ localStorage.setItem("ndx_reminders",JSON.stringify(a)); }catch(e){} }
+  function aiPhone(name){ var cl=aiRows("idu_clienti"); for(var i=0;i<cl.length;i++){ var c=cl[i], nm=(c.nome||c.cliente||c.name||""); if(name&&(""+nm).toLowerCase().indexOf(name.toLowerCase())>=0) return {c:c,ph:(c.tel||c.telefono||c.phone||c.cell||c.cellulare||"")}; } return {c:null,ph:""}; }
   function handleLocal(raw){
     var t=" "+raw.toLowerCase()+" ";
     // saluti e smalltalk
@@ -11230,6 +11236,19 @@ function iduRestore(input){
     if(/\bcome stai\b|\bcome va\b|tutto bene/.test(t)){ botMsg("Tutto pronto e al lavoro. Dimmi cosa ti serve."); return; }
     if(/chi sei|cosa sei|come ti chiami/.test(t)){ botMsg("Sono l'assistente di IronDesk: ti aiuto con preventivi, lavori, calcoli e i tuoi numeri, anche senza internet."); return; }
     if(/cosa sai fare|che sai fare|cosa puoi fare|\baiuto\b|\bhelp\b|\bcomandi\b|come funzioni|cosa posso (dire|chiedere|fare)/.test(t)){ botMsg(aiHelp()); return; }
+    // promemoria
+    if(/ricordami|promemoria|\bricorda\b|segna(ti)? (di|che)/.test(t)){ var rt=raw.replace(/^[\s\S]*?(ricordami di|ricordami|promemoria|ricorda(?:re)?|segnati (?:di|che)|segna che)\s*/i,"").trim(); if(!rt){ botMsg("Cosa ti ricordo?"); return; } var rr=aiRem(); rr.push({text:rt,done:false}); aiRemSave(rr); botMsg("Promemoria salvato: "+rt+"."); return; }
+    if(/cosa devo fare|che devo fare|cose da fare|impegni|\bagenda\b/.test(t)){ var rlm=aiRem().filter(function(x){return !x.done;}); botMsg(rlm.length?("Cose da fare: "+rlm.slice(0,6).map(function(x){return x.text;}).join("; ")+"."):"Non hai promemoria in sospeso."); return; }
+    // classifiche / crediti
+    if(/chi mi deve di pi[ùu]|maggior debitor/.test(t)){ var lv=aiRows("rl_lavori"),by={},i; for(i=0;i<lv.length;i++){ var x=lv[i]; if(!x.pagato){ var s=(Number(x.totale)||0)-(Number(x.acconto)||0); if(s>0) by[x.cliente||"?"]=(by[x.cliente||"?"]||0)+s; } } var bn="",bv=0,k; for(k in by){ if(by[k]>bv){ bv=by[k]; bn=k; } } botMsg(bv>0?(bn+" è quello che ti deve di più: "+aiEur(bv)+"."):"Nessuno ti deve niente."); return; }
+    if(/lavoro pi[ùu] (grosso|grande)/.test(t)){ var l3=aiRows("rl_lavori"),bj=null,i3; for(i3=0;i3<l3.length;i3++){ if(!bj||(Number(l3[i3].totale)||0)>(Number(bj.totale)||0)) bj=l3[i3]; } botMsg(bj?("Il lavoro più grosso: "+aiEur(bj.totale)+(bj.cliente?(" per "+bj.cliente):"")+"."):"Nessun lavoro registrato."); return; }
+    if((/chi non ha (ancora )?pagato|crediti aperti|lavori da incassare|elenco (dei )?crediti/.test(t))&&!/quanto|quanti/.test(t)){ var l4=aiRows("rl_lavori"),mp={},i4; for(i4=0;i4<l4.length;i4++){ var x4=l4[i4]; if(!x4.pagato){ var s4=(Number(x4.totale)||0)-(Number(x4.acconto)||0); if(s4>0) mp[x4.cliente||"?"]=(mp[x4.cliente||"?"]||0)+s4; } } var arr=Object.keys(mp).map(function(kk){return [kk,mp[kk]];}).sort(function(a,b){return b[1]-a[1];}); botMsg(arr.length?("Crediti aperti: "+arr.slice(0,6).map(function(e){return e[0]+" "+aiEur(e[1]);}).join("; ")+"."):"Nessun credito aperto, sei in pari."); return; }
+    // whatsapp
+    if(/whatsapp|manda\w*[\s\S]*preventivo|invia[\s\S]*preventivo|manda\w*[\s\S]*whats/.test(t)){ var wn=aiClientName(raw),pr=aiPhone(wn); if(!pr.ph){ botMsg("Mi serve il numero del cliente in rubrica."); return; } var wnm=(pr.c&&(pr.c.nome||pr.c.cliente))||wn; window.open("https://wa.me/"+(""+pr.ph).replace(/[^\d]/g,"")+"?text="+encodeURIComponent("Ciao "+wnm+", ti mando il preventivo."),"_blank"); botMsg("Ho aperto WhatsApp per "+wnm+"."); return; }
+    // riepilogo
+    if(/riepilogo|riassunto|come va l'officina|come va l’officina|\bsituazione\b/.test(t)){ var sg=aiStats(),np=aiRem().filter(function(x){return !x.done;}).length; botMsg("Riepilogo: "+sg.lav+" lavori, fatturato "+aiEur(sg.fatt)+", da incassare "+aiEur(sg.daInc)+", "+sg.prev+" preventivi, "+sg.cli+" clienti."+(np?(" Hai "+np+" promemoria in sospeso."):"")); return; }
+    // per cliente
+    if(aiClientName(raw)&&/(mi deve|deve\b|quanto[\s\S]*deve|fatturato con|lavori (di|per|con)|\bcon\s+[a-zà-ÿ])/i.test(raw)){ var cn=aiClientName(raw), cj=aiClientJobs(cn); if(cj.length){ var ct=0,co=0,ci; for(ci=0;ci<cj.length;ci++){ var xx=cj[ci],tt=Number(xx.totale)||0,aa=Number(xx.acconto)||0; ct+=tt; if(!xx.pagato){ var ssx=tt-aa; if(ssx>0) co+=ssx; } } if(/mi deve|deve|riscuot/.test(t)){ botMsg(cn+(co>0.005?(" ti deve ancora "+aiEur(co)+"."):" è in pari, non ti deve niente.")); return; } botMsg("Con "+cn+": "+cj.length+" lavori, totale "+aiEur(ct)+", da incassare "+aiEur(co)+"."); return; } botMsg("Non trovo lavori per "+cn+"."); return; }
     // domande sui dati
     if(/\b(quanto|quanti|quante|qual\S*)\b|fatturato|incass|guadagn|margine|da riscuotere|crediti|mi devono|saldi/.test(t)){
       var st=aiStats();
