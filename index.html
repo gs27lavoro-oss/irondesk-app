@@ -167,6 +167,43 @@ html,body{background:var(--ndx-bg);}
  .ndx-mnav-btn .ml{font-size:9px;letter-spacing:.2px;}
 }
 </style>
+<style id="ndx-agenda-css">
+#ndx-agenda{display:none;margin-left:240px;margin-top:64px;padding:26px;box-sizing:border-box;min-height:calc(100vh - 64px);color:var(--ndx-text);font-family:Inter,Segoe UI,Arial,sans-serif;}
+.ag-bar{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-bottom:14px;}
+.ag-new{background:var(--ndx-accent);border:1px solid var(--ndx-accent);color:#1c120b;padding:11px 16px;border-radius:11px;font:inherit;font-weight:800;cursor:pointer;}
+.ag-chip{border:1px solid var(--ndx-line);background:var(--ndx-panel2);color:var(--ndx-muted);padding:9px 14px;border-radius:999px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;}
+.ag-chip.on{background:var(--ndx-accent);border-color:var(--ndx-accent);color:#1c120b;}
+.ag-find{flex:1;min-width:150px;background:#0b1626;border:1.5px solid var(--ndx-line);border-radius:11px;color:var(--ndx-text);padding:10px 12px;font:inherit;font-size:13px;box-sizing:border-box;}
+.ag-find:focus{border-color:var(--ndx-accent);outline:none;}
+.ag-count{color:var(--ndx-muted);font-size:12px;margin-bottom:6px;}
+.ag-day{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ndx-muted);margin:18px 0 9px;padding-bottom:6px;border-bottom:1px solid var(--ndx-line);}
+.ag-day.oggi{color:var(--ndx-accent);}
+.ag-row{display:flex;gap:12px;align-items:flex-start;background:linear-gradient(145deg,#142238,#101a29);border:1px solid var(--ndx-line);border-left:3px solid var(--ndx-accent);border-radius:12px;padding:12px 14px;margin-bottom:8px;}
+.ag-row.fatto{opacity:.55;border-left-color:var(--ndx-green);}
+.ag-row.scaduto{border-left-color:var(--ndx-red);}
+.ag-ora{flex:0 0 52px;font-weight:800;font-size:15px;color:var(--ndx-text);padding-top:1px;}
+.ag-mid{flex:1;min-width:0;}
+.ag-mid b{font-size:14px;color:var(--ndx-text);}
+.ag-tipo{display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.4px;background:rgba(240,138,60,.14);border:1px solid rgba(240,138,60,.4);color:var(--ndx-accent);border-radius:999px;padding:2px 8px;margin-left:7px;}
+.ag-mid p{margin:5px 0 0;color:var(--ndx-muted);font-size:12px;line-height:1.55;word-break:break-word;}
+.ag-act{display:flex;gap:6px;flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end;}
+.ag-b{border:1px solid var(--ndx-line);background:#0b1626;color:var(--ndx-muted);width:34px;height:34px;border-radius:9px;font-size:14px;cursor:pointer;display:grid;place-items:center;text-decoration:none;box-sizing:border-box;}
+.ag-b:hover{border-color:var(--ndx-accent);color:#fff;}
+.ag-empty{color:var(--ndx-muted);font-size:13px;padding:14px 2px;}
+.ag-badge{display:none;min-width:17px;text-align:center;background:var(--ndx-accent);color:#1c120b;font-size:10px;font-weight:800;border-radius:999px;padding:1px 6px;margin-left:6px;}
+.ag-badge.on{display:inline-block;}
+.ag-2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.ndx-wiz-f textarea{background:#0b1626;border:1.5px solid var(--ndx-line);border-radius:10px;color:var(--ndx-text);padding:11px 12px;font:inherit;font-size:15px;width:100%;box-sizing:border-box;resize:vertical;min-height:62px;}
+.ndx-wiz-f textarea:focus{border-color:var(--ndx-accent);outline:none;}
+@media(max-width:820px){
+ #ndx-agenda{margin-left:0;margin-top:52px;padding:14px 12px 84px;min-height:calc(100vh - 52px);}
+ .ag-row{flex-wrap:wrap;}
+ .ag-act{width:100%;justify-content:flex-start;}
+ .ag-2{grid-template-columns:1fr;}
+ .ndx-mnav-btn{position:relative;}
+ .ndx-mnav-btn .ag-badge{position:absolute;top:5px;left:calc(50% + 4px);margin-left:0;min-width:15px;height:15px;line-height:15px;padding:0 4px;font-size:9px;}
+}
+</style>
 
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0b0e16">
@@ -204,6 +241,7 @@ html,body{background:var(--ndx-bg);}
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
     <button class="ndx-nav-btn" data-view="preventivi">📋 Preventivi</button>
     <button class="ndx-nav-btn" data-view="resoconto">📊 Resoconto</button>
+    <button class="ndx-nav-btn" data-view="agenda">📅 Agenda<span class="ag-badge" data-agenda-badge></span></button>
     <button class="ndx-nav-btn" data-view="dati">💾 Dati / Backup</button>
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
@@ -216,6 +254,7 @@ html,body{background:var(--ndx-bg);}
       <button class="ndx-ask-btn" data-wiz="preventivo">📋 Fai un preventivo</button>
       <button class="ndx-ask-btn" data-wiz="lavoro">📊 Aggiungi un lavoro</button>
       <button class="ndx-ask-btn" data-wiz="calcolo">🔧 Fai un calcolo</button>
+      <button class="ndx-ask-btn" id="ndx-ask-agenda">📅 Fissa un appuntamento</button>
     </div>
     <div class="ndx-ask-cmd"><input id="ndx-cmd" placeholder="…oppure scrivi qui: preventivo cancello 300x200 per Mario"><button class="ndx-ask-go" id="ndx-cmd-go">Vai</button></div>
   </div>
@@ -230,11 +269,14 @@ html,body{background:var(--ndx-bg);}
     <div class="ndx-mini">Ultimi preventivi</div>
     <div id="ndx-recent-prev"></div>
   </div>
+  <div class="ndx-sec">Prossimi appuntamenti</div>
+  <div id="ndx-agenda-next"></div>
   <div class="ndx-sec">Strumenti</div>
   <div class="ndx-tools">
     <div class="ndx-tool" data-view="ferrocalc"><div class="ic">🔧</div><h3>FerroCalc</h3><p>Materiali, sezioni, pesi, tagli, alluminio, listino e disegni tecnici.</p></div>
     <div class="ndx-tool" data-view="preventivi"><div class="ic">📋</div><h3>Preventivi</h3><p>Offerte, clienti, voci, finiture, posa, stampa e archivio.</p></div>
     <div class="ndx-tool" data-view="resoconto"><div class="ic">📊</div><h3>Resoconto lavori</h3><p>Lavori, guadagni, acconti, saldi e riepiloghi annuali.</p></div>
+    <div class="ndx-tool" data-view="agenda"><div class="ic">📅</div><h3>Agenda</h3><p>Appuntamenti di lavoro: sopralluoghi, montaggi, consegne e ritiri.</p></div>
   </div>
 </section>
 <div class="ndx-wiz-bg" id="ndx-wiz-bg"><div class="ndx-wiz-box" id="ndx-wiz"></div></div>
@@ -243,8 +285,23 @@ html,body{background:var(--ndx-bg);}
   <button class="ndx-nav-btn ndx-mnav-btn" data-view="ferrocalc"><span class="mi">🔧</span><span class="ml">FerroCalc</span></button>
   <button class="ndx-nav-btn ndx-mnav-btn" data-view="preventivi"><span class="mi">📋</span><span class="ml">Preventivi</span></button>
   <button class="ndx-nav-btn ndx-mnav-btn" data-view="resoconto"><span class="mi">📊</span><span class="ml">Resoconto</span></button>
+  <button class="ndx-nav-btn ndx-mnav-btn" data-view="agenda"><span class="mi">📅</span><span class="ml">Agenda</span><span class="ag-badge" data-agenda-badge></span></button>
   <button class="ndx-nav-btn ndx-mnav-btn" data-view="dati"><span class="mi">💾</span><span class="ml">Dati</span></button>
 </nav>
+<section id="ndx-agenda">
+  <div class="ag-bar">
+    <button class="ag-new" id="ag-new">+ Nuovo appuntamento</button>
+    <button class="ag-chip on" data-agf="prossimi">Prossimi</button>
+    <button class="ag-chip" data-agf="oggi">Oggi</button>
+    <button class="ag-chip" data-agf="settimana">7 giorni</button>
+    <button class="ag-chip" data-agf="tutti">Tutti</button>
+    <button class="ag-chip" data-agf="fatti">Fatti</button>
+    <input class="ag-find" id="ag-find" placeholder="cerca cliente, luogo o nota…">
+  </div>
+  <div class="ag-count" id="ag-count"></div>
+  <div id="ag-list"></div>
+</section>
+<div class="ndx-wiz-bg" id="ag-bg"><div class="ndx-wiz-box" id="ag-box"></div></div>
 <div id="idu-frames">
   <div class="idu-frame-wrap active" id="frame-ferrocalc">
     <iframe id="if-ferrocalc" srcdoc="<!DOCTYPE html>
@@ -11204,6 +11261,326 @@ function iduRestore(input){
 })();
 </script>
 <script>
+/*IRONDESK-AGENDA-BEGIN*/
+(function(){
+  "use strict";
+  if(window.__ndxAgenda) return; window.__ndxAgenda=1;
+  var KEY="idu_agenda";
+  var TIPI=["Sopralluogo","Preventivo","Montaggio","Riparazione","Consegna","Ritiro materiale","Saldo / incasso","Altro"];
+  var filtro="prossimi", editId=null;
+
+  function rows(){ try{ var x=JSON.parse(localStorage.getItem(KEY)||"[]"); return Array.isArray(x)?x:[]; }catch(e){ return []; } }
+  function save(a){ try{ localStorage.setItem(KEY,JSON.stringify(a)); }catch(e){} }
+  function clienti(){ try{ var x=JSON.parse(localStorage.getItem("idu_clienti")||"[]"); return Array.isArray(x)?x:[]; }catch(e){ return []; } }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function el(id){ return document.getElementById(id); }
+  function val(id){ var e=el(id); return e?e.value:""; }
+  function pad(n){ return (n<10?"0":"")+n; }
+  function isoDi(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+  function oggi(){ return isoDi(new Date()); }
+  function fraGiorni(n){ var d=new Date(); d.setDate(d.getDate()+n); return isoDi(d); }
+  function dataObj(s){ var p=String(s||"").split("-"); return new Date(+p[0]||2000,(+p[1]||1)-1,+p[2]||1); }
+  function fmtData(s){ try{ return dataObj(s).toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"}); }catch(e){ return s; } }
+  function titoloGiorno(s){
+    if(s===oggi()) return "Oggi · "+fmtData(s);
+    if(s===fraGiorni(1)) return "Domani · "+fmtData(s);
+    if(s===fraGiorni(-1)) return "Ieri · "+fmtData(s);
+    return fmtData(s);
+  }
+  function waNum(tel){ var n=String(tel||"").replace(/[^0-9]/g,""); if(n.length===10 && n.charAt(0)==="3") n="39"+n; return n; }
+  function msgWA(x){
+    return "Buongiorno"+(x.cliente?" "+x.cliente:"")+", le confermo l'appuntamento di "+fmtData(x.data)+(x.ora?" alle "+x.ora:"")+(x.tipo?" per "+x.tipo.toLowerCase():"")+".";
+  }
+
+  function elenco(){
+    var a=rows(), q=(val("ag-find")||"").toLowerCase().trim(), t=oggi(), sette=fraGiorni(7), out=[], i, x;
+    for(i=0;i<a.length;i++){
+      x=a[i];
+      if(filtro==="prossimi" && (x.fatto || (x.data||"")<t)) continue;
+      if(filtro==="oggi" && x.data!==t) continue;
+      if(filtro==="settimana" && (x.fatto || (x.data||"")<t || (x.data||"")>sette)) continue;
+      if(filtro==="fatti" && !x.fatto) continue;
+      if(q){
+        var blob=((x.cliente||"")+" "+(x.luogo||"")+" "+(x.note||"")+" "+(x.tipo||"")+" "+(x.tel||"")).toLowerCase();
+        if(blob.indexOf(q)<0) continue;
+      }
+      out.push(x);
+    }
+    out.sort(function(p,g){ var k1=(p.data||"")+" "+(p.ora||""), k2=(g.data||"")+" "+(g.ora||""); return k1<k2?-1:(k1>k2?1:0); });
+    if(filtro==="tutti" || filtro==="fatti") out.reverse();
+    return out;
+  }
+
+  function riga(x){
+    var scaduto = !x.fatto && (x.data||"")<oggi();
+    var tel=waNum(x.tel);
+    var h='<div class="ag-row'+(x.fatto?" fatto":"")+(scaduto?" scaduto":"")+'" data-id="'+esc(x.id)+'">';
+    h+='<div class="ag-ora">'+esc(x.ora||"--:--")+'</div>';
+    h+='<div class="ag-mid"><b>'+esc(x.cliente||"Appuntamento")+'</b>'+(x.tipo?'<span class="ag-tipo">'+esc(x.tipo)+'</span>':"");
+    var det=[];
+    if(x.luogo) det.push("📍 "+esc(x.luogo));
+    if(x.tel) det.push("📞 "+esc(x.tel));
+    if(x.note) det.push(esc(x.note));
+    h+= det.length ? '<p>'+det.join("<br>")+'</p>' : "";
+    h+='</div><div class="ag-act">';
+    h+='<button class="ag-b" data-act="fatto" title="'+(x.fatto?"Rimetti da fare":"Segna fatto")+'">'+(x.fatto?"↺":"✓")+'</button>';
+    if(tel){
+      h+='<a class="ag-b" href="tel:'+esc(x.tel)+'" title="Chiama">📞</a>';
+      h+='<a class="ag-b" target="_blank" rel="noopener" href="https://wa.me/'+tel+'?text='+encodeURIComponent(msgWA(x))+'" title="Avvisa su WhatsApp">💬</a>';
+    }
+    if(x.luogo) h+='<a class="ag-b" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(x.luogo)+'" title="Apri la mappa">🗺</a>';
+    h+='<button class="ag-b" data-act="mod" title="Modifica">✎</button>';
+    h+='<button class="ag-b" data-act="del" title="Elimina">🗑</button>';
+    h+='</div></div>';
+    return h;
+  }
+
+  function render(){
+    var lista=el("ag-list"); if(!lista) return;
+    var a=elenco(), h="", giorno="", i;
+    for(i=0;i<a.length;i++){
+      if(a[i].data!==giorno){
+        giorno=a[i].data;
+        h+='<div class="ag-day'+(giorno===oggi()?" oggi":"")+'">'+esc(titoloGiorno(giorno))+'</div>';
+      }
+      h+=riga(a[i]);
+    }
+    lista.innerHTML = h || '<div class="ag-empty">Nessun appuntamento in questa vista. Premi "+ Nuovo appuntamento" per aggiungerne uno.</div>';
+    var c=el("ag-count");
+    if(c){
+      var tot=rows(), oggiN=0, apertiN=0, j;
+      for(j=0;j<tot.length;j++){ if(tot[j].fatto) continue; apertiN++; if(tot[j].data===oggi()) oggiN++; }
+      c.textContent="Oggi: "+oggiN+" · Da fare: "+apertiN+" · In archivio: "+tot.length;
+    }
+    badge();
+  }
+
+  function badge(){
+    var a=rows(), n=0, i;
+    for(i=0;i<a.length;i++){ if(!a[i].fatto && a[i].data===oggi()) n++; }
+    var b=document.querySelectorAll("[data-agenda-badge]");
+    for(i=0;i<b.length;i++){ b[i].textContent=n?String(n):""; b[i].className="ag-badge"+(n?" on":""); }
+  }
+
+  function prossimiDash(){
+    var box=el("ndx-agenda-next"); if(!box) return;
+    var a=rows(), t=oggi(), out=[], i;
+    for(i=0;i<a.length;i++){ if(!a[i].fatto && (a[i].data||"")>=t) out.push(a[i]); }
+    out.sort(function(p,g){ var k1=(p.data||"")+" "+(p.ora||""), k2=(g.data||"")+" "+(g.ora||""); return k1<k2?-1:(k1>k2?1:0); });
+    if(!out.length){ box.innerHTML='<div class="ndx-recent-empty">Nessun appuntamento in programma.</div>'; return; }
+    var h="";
+    for(i=0;i<out.length && i<5;i++){
+      var x=out[i];
+      h+='<div class="ndx-recent-row" data-go="agenda"><div><b>'+esc(x.cliente||"Appuntamento")+'</b><br><span>'+esc(titoloGiorno(x.data))+(x.tipo?" · "+esc(x.tipo):"")+(x.luogo?" · "+esc(x.luogo):"")+'</span></div><div class="amt">'+esc(x.ora||"")+'</div></div>';
+    }
+    box.innerHTML=h;
+  }
+
+  function chiudi(){ var bg=el("ag-bg"); if(bg) bg.classList.remove("open"); editId=null; }
+
+  function apri(id,pre){
+    var bg=el("ag-bg"), box=el("ag-box"); if(!bg||!box) return;
+    var a=rows(), x=null, i;
+    for(i=0;i<a.length;i++){ if(String(a[i].id)===String(id)) x=a[i]; }
+    var nuovo=!x;
+    x = x || { data:(pre&&pre.data)||oggi(), ora:(pre&&pre.ora)||"09:00", tipo:(pre&&pre.tipo)||"Sopralluogo",
+               cliente:(pre&&pre.cliente)||"", tel:(pre&&pre.tel)||"", luogo:(pre&&pre.luogo)||"", note:(pre&&pre.note)||"" };
+    editId = nuovo ? null : x.id;
+    var cl=clienti(), dl="";
+    for(i=0;i<cl.length;i++){ var nm=cl[i].nome||cl[i].cliente||""; if(nm) dl+='<option value="'+esc(nm)+'">'; }
+    var opz="", k;
+    for(k=0;k<TIPI.length;k++) opz+='<option'+(TIPI[k]===x.tipo?" selected":"")+'>'+TIPI[k]+'</option>';
+    var h='<div class="ndx-wiz-h">📅 '+(nuovo?"Nuovo appuntamento":"Modifica appuntamento")+'</div>';
+    h+='<div class="ndx-wiz-i">Data, ora e cliente. Il resto è facoltativo.</div>';
+    h+='<div class="ndx-wiz-body">';
+    h+='<div class="ag-2"><label class="ndx-wiz-f"><span>Data</span><input type="date" id="ag-f-data" value="'+esc(x.data)+'"></label>';
+    h+='<label class="ndx-wiz-f"><span>Ora</span><input type="time" id="ag-f-ora" value="'+esc(x.ora)+'"></label></div>';
+    h+='<label class="ndx-wiz-f"><span>Cliente</span><input id="ag-f-cliente" list="ag-dl-cli" autocomplete="off" placeholder="Nome" value="'+esc(x.cliente)+'"><datalist id="ag-dl-cli">'+dl+'</datalist></label>';
+    h+='<label class="ndx-wiz-f"><span>Tipo di appuntamento</span><select id="ag-f-tipo">'+opz+'</select></label>';
+    h+='<div class="ag-2"><label class="ndx-wiz-f"><span>Telefono</span><input id="ag-f-tel" placeholder="Cellulare" value="'+esc(x.tel)+'"></label>';
+    h+='<label class="ndx-wiz-f"><span>Luogo</span><input id="ag-f-luogo" placeholder="Indirizzo o cantiere" value="'+esc(x.luogo)+'"></label></div>';
+    h+='<label class="ndx-wiz-f"><span>Note</span><textarea id="ag-f-note" placeholder="Misure da prendere, materiale da portare…">'+esc(x.note)+'</textarea></label>';
+    h+='</div><div class="ndx-wiz-foot"><button class="ndx-wiz-cancel" id="ag-f-x">Annulla</button><button class="ndx-wiz-ok" id="ag-f-ok">Salva</button></div>';
+    box.innerHTML=h;
+    bg.classList.add("open");
+    var cli=el("ag-f-cliente");
+    if(cli) cli.addEventListener("change",function(){
+      var q=(cli.value||"").toLowerCase().trim(), c=clienti(), j;
+      for(j=0;j<c.length;j++){
+        var nome=(c[j].nome||c[j].cliente||"");
+        if(nome && nome.toLowerCase()===q){
+          if(c[j].tel && !val("ag-f-tel")) el("ag-f-tel").value=c[j].tel;
+          if(c[j].ind && !val("ag-f-luogo")) el("ag-f-luogo").value=c[j].ind;
+        }
+      }
+    });
+    var ok=el("ag-f-ok"), ann=el("ag-f-x");
+    if(ok) ok.addEventListener("click",salva);
+    if(ann) ann.addEventListener("click",chiudi);
+    setTimeout(function(){ var f=el(nuovo?"ag-f-cliente":"ag-f-data"); if(f) f.focus(); },40);
+  }
+
+  function salva(){
+    var v={
+      data:val("ag-f-data")||oggi(), ora:val("ag-f-ora")||"",
+      tipo:val("ag-f-tipo")||"Altro", cliente:(val("ag-f-cliente")||"").trim(),
+      tel:(val("ag-f-tel")||"").trim(), luogo:(val("ag-f-luogo")||"").trim(),
+      note:(val("ag-f-note")||"").trim()
+    };
+    if(!v.cliente && !v.note){ alert("Scrivi almeno il cliente o una nota."); return; }
+    var a=rows(), i, trovato=false;
+    if(editId!==null){
+      for(i=0;i<a.length;i++){
+        if(String(a[i].id)===String(editId)){
+          a[i].data=v.data; a[i].ora=v.ora; a[i].tipo=v.tipo; a[i].cliente=v.cliente;
+          a[i].tel=v.tel; a[i].luogo=v.luogo; a[i].note=v.note; trovato=true;
+        }
+      }
+    }
+    if(!trovato){
+      v.id="ap"+Date.now()+Math.floor(Math.random()*1000);
+      v.fatto=false; v.creato=new Date().toISOString();
+      a.push(v);
+    }
+    save(a); chiudi(); render(); prossimiDash();
+  }
+
+  function azione(id,act){
+    var a=rows(), i;
+    for(i=0;i<a.length;i++){
+      if(String(a[i].id)!==String(id)) continue;
+      if(act==="fatto"){ a[i].fatto=!a[i].fatto; save(a); render(); prossimiDash(); return; }
+      if(act==="del"){
+        if(!confirm("Eliminare l'appuntamento"+(a[i].cliente?" con "+a[i].cliente:"")+" del "+fmtData(a[i].data)+"?")) return;
+        a.splice(i,1); save(a); render(); prossimiDash(); return;
+      }
+      if(act==="mod"){ apri(id); return; }
+    }
+  }
+
+  // "appuntamento con Mario domani alle 15 per montaggio" -> scheda precompilata
+  function parse(txt){
+    var t=" "+String(txt||"").toLowerCase()+" ", pre={}, i;
+    if(/\bdopodomani\b/.test(t)) pre.data=fraGiorni(2);
+    else if(/\bdomani\b/.test(t)) pre.data=fraGiorni(1);
+    else if(/\boggi\b|stamattina|stasera|nel pomeriggio/.test(t)) pre.data=oggi();
+    if(!pre.data){
+      var gg=["domenica","luned","marted","mercoled","gioved","venerd","sabato"];
+      for(i=0;i<gg.length;i++){
+        if(t.indexOf(gg[i])>=0){
+          var d=new Date(), delta=(i-d.getDay()+7)%7; if(delta===0) delta=7;
+          d.setDate(d.getDate()+delta); pre.data=isoDi(d); break;
+        }
+      }
+    }
+    var md=t.match(/\b(\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.](\d{2,4}))?\b/);
+    if(md){
+      var an=md[3]?(md[3].length===2?2000+(+md[3]):+md[3]):(new Date()).getFullYear();
+      pre.data=an+"-"+pad(+md[2])+"-"+pad(+md[1]);
+    }
+    var mo=t.match(/\b(?:alle|ore|h)\s*(\d{1,2})(?:[:.](\d{2}))?/);
+    if(mo) pre.ora=pad(+mo[1])+":"+(mo[2]||"00");
+    if(/montagg|installa|posa\b/.test(t)) pre.tipo="Montaggio";
+    else if(/ripara|aggiust|sistemare/.test(t)) pre.tipo="Riparazione";
+    else if(/consegn/.test(t)) pre.tipo="Consegna";
+    else if(/ritir/.test(t)) pre.tipo="Ritiro materiale";
+    else if(/preventiv|offert/.test(t)) pre.tipo="Preventivo";
+    else if(/saldo|incass|pagament/.test(t)) pre.tipo="Saldo / incasso";
+    else if(/sopralluog|misur/.test(t)) pre.tipo="Sopralluogo";
+    var mc=String(txt||"").match(/(?:\bcon\b|\bper\b|\bda\b|cliente|sig\.?|signor[ea]?|ditta)\s+([A-Za-zÀ-ÿ'][A-Za-zà-ÿ'.]+(?:\s+[A-Za-zÀ-ÿ'][A-Za-zà-ÿ'.]+)?)/);
+    if(mc){
+      var nome=mc[1].replace(/\b(domani|oggi|dopodomani|alle|ore|luned\w*|marted\w*|mercoled\w*|gioved\w*|venerd\w*|sabato|domenica|montaggio|montare|sopralluogo|riparazione|consegna|preventivo|appuntamento|misure)\b/gi,"").replace(/\s+/g," ").trim();
+      if(nome) pre.cliente=nome;
+    }
+    if(pre.cliente){
+      var c=clienti(), j;
+      for(j=0;j<c.length;j++){
+        var nm=(c[j].nome||c[j].cliente||"");
+        if(nm && nm.toLowerCase().indexOf(pre.cliente.toLowerCase())===0){
+          pre.cliente=nm; if(c[j].tel) pre.tel=c[j].tel; if(c[j].ind) pre.luogo=c[j].ind; break;
+        }
+      }
+    }
+    vaiAgenda(); apri(null,pre);
+    return pre;
+  }
+
+  function vaiAgenda(){ if(window.ndxShow) window.ndxShow("agenda"); }
+
+  function mostra(){
+    var dash=el("ndx-dashboard"), frames=el("idu-frames"), ag=el("ndx-agenda"), i;
+    if(dash) dash.style.display="none";
+    if(frames) frames.style.display="none";
+    if(ag) ag.style.display="block";
+    var b=document.querySelectorAll(".ndx-nav-btn");
+    for(i=0;i<b.length;i++) b[i].classList.toggle("active", b[i].getAttribute("data-view")==="agenda");
+    var T=el("ndx-title"), S=el("ndx-sub");
+    if(T) T.textContent="Agenda";
+    if(S) S.textContent="Appuntamenti, sopralluoghi, montaggi e consegne.";
+    render();
+  }
+
+  function aggancia(){
+    var orig=window.ndxShow;
+    if(typeof orig!=="function"){ setTimeout(aggancia,150); return; }
+    if(orig.__agenda) return;
+    var wrap=function(view){
+      if(view==="agenda"){ mostra(); return; }
+      var ag=el("ndx-agenda"); if(ag) ag.style.display="none";
+      orig(view);
+      if(view==="dashboard") prossimiDash();
+      badge();
+    };
+    wrap.__agenda=1;
+    window.ndxShow=wrap;
+  }
+
+  function avvia(){
+    aggancia();
+    var i;
+    var nuovo=el("ag-new"); if(nuovo) nuovo.addEventListener("click",function(){ apri(null); });
+    var ask=el("ndx-ask-agenda"); if(ask) ask.addEventListener("click",function(){ vaiAgenda(); apri(null); });
+    var chips=document.querySelectorAll("[data-agf]");
+    for(i=0;i<chips.length;i++){
+      (function(c){
+        c.addEventListener("click",function(){
+          filtro=c.getAttribute("data-agf");
+          var all=document.querySelectorAll("[data-agf]"), j;
+          for(j=0;j<all.length;j++) all[j].classList.toggle("on", all[j]===c);
+          render();
+        });
+      })(chips[i]);
+    }
+    var find=el("ag-find"); if(find) find.addEventListener("input",render);
+    var lista=el("ag-list");
+    if(lista) lista.addEventListener("click",function(e){
+      var b=e.target.closest?e.target.closest("[data-act]"):null; if(!b) return;
+      var r=b.closest(".ag-row"); if(!r) return;
+      azione(r.getAttribute("data-id"), b.getAttribute("data-act"));
+    });
+    var bg=el("ag-bg");
+    if(bg) bg.addEventListener("click",function(e){ if(e.target===bg) chiudi(); });
+    document.addEventListener("keydown",function(e){ if(e.key==="Escape") chiudi(); });
+    var next=el("ndx-agenda-next");
+    if(next) next.addEventListener("click",function(){ vaiAgenda(); });
+    prossimiDash(); badge();
+  }
+
+  window.ndxAgendaApri=function(pre){ vaiAgenda(); apri(null,pre||null); };
+  window.ndxAgendaParse=parse;
+  window.ndxAgendaProssimi=function(giorni){
+    var a=rows(), t=oggi(), fine=fraGiorni(giorni==null?7:giorni), out=[], i;
+    for(i=0;i<a.length;i++){ if(!a[i].fatto && (a[i].data||"")>=t && (a[i].data||"")<=fine) out.push(a[i]); }
+    out.sort(function(p,g){ var k1=(p.data||"")+" "+(p.ora||""), k2=(g.data||"")+" "+(g.ora||""); return k1<k2?-1:(k1>k2?1:0); });
+    return out;
+  };
+  window.ndxAgendaOggi=function(){ return window.ndxAgendaProssimi(0); };
+
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",avvia); else avvia();
+})();
+/*IRONDESK-AGENDA-END*/
+</script>
+<script>
 /*IRONDESK-AI-BEGIN*/
 (function(){
   "use strict";
@@ -11221,7 +11598,7 @@ function iduRestore(input){
     for(i=0;i<lav.length;i++){ x=lav[i]; tot=Number(x.totale)||0; ac=Number(x.acconto)||0; fatt+=tot; mat+=Number(x.materiale)||0; acc+=ac; if(!x.pagato){ s=tot-ac; if(s>0) daInc+=s; } }
     return { lav:lav.length, prev:prev.length, cli:cli.length, fer:fer.length, fatt:fatt, daInc:daInc, mat:mat, acc:acc, guad:fatt-mat };
   }
-  function aiHelp(){ return "Ecco cosa so fare (parla o scrivi):\n• Numeri: quanto ho fatturato, quanto mi deve Mario, chi mi deve di più, chi non ha pagato.\n• Crea: preventivo cancello 300x200 per Mario; lavoro Mario totale 1500 acconto 500.\n• Promemoria: ricordami di chiamare Rossi; cosa devo fare.\n• Invia: manda il preventivo di Mario su WhatsApp.\n• Riepiloghi: riepilogo; apri i lavori/preventivi/FerroCalc."; }
+  function aiHelp(){ return "Ecco cosa so fare (parla o scrivi):\n• Numeri: quanto ho fatturato, quanto mi deve Mario, chi mi deve di più, chi non ha pagato.\n• Crea: preventivo cancello 300x200 per Mario; lavoro Mario totale 1500 acconto 500.\n• Promemoria: ricordami di chiamare Rossi; cosa devo fare.\n• Invia: manda il preventivo di Mario su WhatsApp.\n• Agenda: che appuntamenti ho oggi; fissa un sopralluogo con Mario domani alle 15.\n• Riepiloghi: riepilogo; apri i lavori/preventivi/FerroCalc."; }
   var STOPN=/^(quant\w*|qual\w*|chi|cosa|come|apri|apr\w*|vai|mostra\w*|fai|crea|nuovo|registra|salva|dimmi|trova|manda|invia|il|lo|la|un|una|per|mio|mia|questo|lavoro|preventivo)$/i;
   function aiClientName(raw){ var m=raw.match(/\b(?:per|di|del|con|cliente|deve|paga\w*|salda\w*|versat\w*)\s+([A-Za-zÀ-ÿ'][A-Za-zà-ÿ'.]+(?:\s+[A-Za-zÀ-ÿ'][A-Za-zà-ÿ'.]+)?)/i); if(m){ var n=m[1].replace(/\b(ha|il|lo|la|un|una)\b[\s\S]*$/i,"").replace(/\s+/g," ").trim(); if(n&&!STOPN.test(n.split(" ")[0])) return n; } m=raw.match(/^\s*([A-Za-zÀ-ÿ'][A-Za-zà-ÿ'.]+)\s+(?:ha\b|deve\b)/i); if(m&&!STOPN.test(m[1])) return m[1].trim(); return ""; }
   function aiClientJobs(name){ var q=name.toLowerCase(); return aiRows("rl_lavori").filter(function(x){ return (""+(x.cliente||"")).toLowerCase().indexOf(q)>=0; }); }
@@ -11236,6 +11613,19 @@ function iduRestore(input){
     if(/\bcome stai\b|\bcome va\b|tutto bene/.test(t)){ botMsg("Tutto pronto e al lavoro. Dimmi cosa ti serve."); return; }
     if(/chi sei|cosa sei|come ti chiami/.test(t)){ botMsg("Sono l'assistente di IronDesk: ti aiuto con preventivi, lavori, calcoli e i tuoi numeri, anche senza internet."); return; }
     if(/cosa sai fare|che sai fare|cosa puoi fare|\baiuto\b|\bhelp\b|\bcomandi\b|come funzioni|cosa posso (dire|chiedere|fare)/.test(t)){ botMsg(aiHelp()); return; }
+    // agenda appuntamenti
+    if(/appuntament|sopralluog/.test(t) && /fissa|segna|metti|prendi|aggiungi|nuovo|crea|program|organizz/.test(t)){ if(window.ndxAgendaParse){ window.ndxAgendaParse(raw); botMsg("Ti apro la scheda dell'appuntamento: controlla i dati e premi Salva."); } else botMsg("L'agenda non e' disponibile qui."); return; }
+    if(/appuntament|agenda|sopralluogh/.test(t)){
+      var agSet=/settimana|prossim|giorni/.test(t), agDom=/domani/.test(t);
+      var agP=window.ndxAgendaProssimi?window.ndxAgendaProssimi(agDom?1:(agSet?7:0)):[];
+      var agD=new Date(), agPad=function(n){return (n<10?"0":"")+n;}, agOggi=agD.getFullYear()+"-"+agPad(agD.getMonth()+1)+"-"+agPad(agD.getDate());
+      if(agDom) agP=agP.filter(function(x){ return x.data!==agOggi; });
+      if(/^ *(apri|apre|vai|va|mostra|mostrami|portami|fammi vedere|voglio vedere)/i.test(raw) && window.ndxShow) window.ndxShow("agenda");
+      if(!agP.length){ botMsg(agDom?"Domani non hai appuntamenti.":(agSet?"Nei prossimi 7 giorni non hai appuntamenti.":"Oggi non hai appuntamenti.")); return; }
+      var agT=[],agI; for(agI=0;agI<agP.length&&agI<5;agI++){ var agX=agP[agI]; agT.push((agX.ora||"")+" "+(agX.cliente||"appuntamento")+(agX.tipo?" ("+agX.tipo+")":"")+(agX.data!==agOggi?" il "+agX.data.split("-").reverse().join("/"):"")); }
+      botMsg("Hai "+agP.length+" appuntament"+(agP.length===1?"o":"i")+": "+agT.join("; ")+".");
+      return;
+    }
     // promemoria
     if(/ricordami|promemoria|\bricorda\b|segna(ti)? (di|che)/.test(t)){ var rt=raw.replace(/^[\s\S]*?(ricordami di|ricordami|promemoria|ricorda(?:re)?|segnati (?:di|che)|segna che)\s*/i,"").trim(); if(!rt){ botMsg("Cosa ti ricordo?"); return; } var rr=aiRem(); rr.push({text:rt,done:false}); aiRemSave(rr); botMsg("Promemoria salvato: "+rt+"."); return; }
     if(/cosa devo fare|che devo fare|cose da fare|impegni|\bagenda\b/.test(t)){ var rlm=aiRem().filter(function(x){return !x.done;}); botMsg(rlm.length?("Cose da fare: "+rlm.slice(0,6).map(function(x){return x.text;}).join("; ")+"."):"Non hai promemoria in sospeso."); return; }
