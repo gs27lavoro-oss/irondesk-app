@@ -204,6 +204,68 @@ html,body{background:var(--ndx-bg);}
  .ndx-mnav-btn .ag-badge{position:absolute;top:5px;left:calc(50% + 4px);margin-left:0;min-width:15px;height:15px;line-height:15px;padding:0 4px;font-size:9px;}
 }
 </style>
+<style id="ndx-sopr-css">
+#ndx-sopr{display:none;margin-left:240px;margin-top:64px;padding:26px;box-sizing:border-box;min-height:calc(100vh - 64px);color:var(--ndx-text);font-family:Inter,Segoe UI,Arial,sans-serif;}
+.sp-bar{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-bottom:14px;}
+.sp-new{background:var(--ndx-accent);border:1px solid var(--ndx-accent);color:#1c120b;padding:11px 16px;border-radius:11px;font:inherit;font-weight:800;cursor:pointer;}
+.sp-back{border:1px solid var(--ndx-line);background:var(--ndx-panel2);color:var(--ndx-text);padding:10px 14px;border-radius:11px;font:inherit;font-weight:700;cursor:pointer;}
+.sp-back:hover{border-color:var(--ndx-accent);}
+.sp-card{background:linear-gradient(145deg,#142238,#101a29);border:1px solid var(--ndx-line);border-left:3px solid var(--ndx-accent);border-radius:12px;padding:13px 15px;margin-bottom:8px;cursor:pointer;display:flex;gap:12px;align-items:center;}
+.sp-card:hover{border-color:var(--ndx-accent);}
+.sp-card.chiuso{opacity:.6;border-left-color:var(--ndx-green);}
+.sp-card .in{flex:1;min-width:0;}
+.sp-card b{font-size:15px;color:var(--ndx-text);}
+.sp-card p{margin:4px 0 0;color:var(--ndx-muted);font-size:12px;line-height:1.5;}
+.sp-card .n{flex:0 0 auto;background:#0b1626;border:1px solid var(--ndx-line);border-radius:999px;padding:5px 11px;font-size:12px;font-weight:800;color:var(--ndx-accent);}
+.sp-head{display:grid;grid-template-columns:2fr 1fr 2fr 1fr;gap:11px;margin-bottom:14px;}
+.sp-f{display:grid;gap:5px;}
+.sp-f span{font-size:11px;color:var(--ndx-muted);text-transform:uppercase;letter-spacing:.3px;}
+.sp-f input{background:#0b1626;border:1.5px solid var(--ndx-line);border-radius:10px;color:var(--ndx-text);padding:11px 12px;font:inherit;font-size:15px;width:100%;box-sizing:border-box;}
+.sp-f input:focus{border-color:var(--ndx-accent);outline:none;}
+.sp-add{display:flex;gap:8px;align-items:stretch;background:linear-gradient(135deg,#1b2c49,#122033);border:1px solid var(--ndx-line);border-radius:14px;padding:11px;margin-bottom:14px;flex-wrap:wrap;}
+.sp-add select{flex:0 0 auto;background:#0b1626;border:1.5px solid var(--ndx-line);border-radius:10px;color:var(--ndx-text);padding:0 10px;font:inherit;font-size:14px;font-weight:700;height:46px;}
+.sp-add input{flex:1;min-width:160px;background:#0b1626;border:1.5px solid var(--ndx-line);border-radius:10px;color:var(--ndx-text);padding:0 13px;font:inherit;font-size:15px;height:46px;box-sizing:border-box;}
+.sp-add input:focus,.sp-add select:focus{border-color:var(--ndx-accent);outline:none;}
+.sp-mic{flex:0 0 auto;width:46px;height:46px;border-radius:10px;border:1.5px solid var(--ndx-line);background:#0b1626;color:var(--ndx-text);font-size:18px;cursor:pointer;}
+.sp-mic.on{background:#f06b6b;border-color:#f06b6b;color:#fff;}
+.sp-go{flex:0 0 auto;background:var(--ndx-accent);border:1px solid var(--ndx-accent);color:#1c120b;padding:0 20px;height:46px;border-radius:10px;font:inherit;font-weight:800;font-size:16px;cursor:pointer;}
+.sp-hint{color:var(--ndx-muted);font-size:11px;margin:-8px 2px 14px;}
+.sp-riga{display:flex;gap:11px;align-items:flex-start;background:linear-gradient(145deg,#142238,#101a29);border:1px solid var(--ndx-line);border-left:3px solid var(--ndx-line);border-radius:12px;padding:11px 13px;margin-bottom:7px;}
+.sp-num{flex:0 0 24px;color:var(--ndx-muted);font-size:12px;font-weight:800;padding-top:2px;}
+.sp-in{flex:1;min-width:0;}
+.sp-in b{font-size:14px;color:var(--ndx-text);word-break:break-word;}
+.sp-tag{display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.4px;border-radius:999px;padding:2px 8px;margin-right:7px;font-weight:800;}
+.sp-in p{margin:5px 0 0;color:var(--ndx-muted);font-size:12px;line-height:1.5;}
+.sp-mis{display:inline-block;background:#0b1626;border:1px solid var(--ndx-line);border-radius:8px;padding:2px 8px;font-weight:700;color:var(--ndx-text);margin-right:7px;}
+.sp-act{display:flex;gap:6px;flex:0 0 auto;}
+.sp-b{border:1px solid var(--ndx-line);background:#0b1626;color:var(--ndx-muted);width:32px;height:32px;border-radius:9px;font-size:13px;cursor:pointer;display:grid;place-items:center;box-sizing:border-box;}
+.sp-b:hover{border-color:var(--ndx-accent);color:#fff;}
+.sp-empty{color:var(--ndx-muted);font-size:13px;padding:14px 2px;line-height:1.6;}
+.sp-foot{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--ndx-line);}
+.sp-fb{border:1px solid var(--ndx-line);background:var(--ndx-panel2);color:var(--ndx-text);padding:11px 15px;border-radius:11px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+.sp-fb:hover{border-color:var(--ndx-accent);}
+.sp-fb.del{color:var(--ndx-red);}
+.sp-tot{color:var(--ndx-muted);font-size:12px;margin-bottom:8px;}
+#sp-print{display:none;}
+@media(max-width:820px){
+ #ndx-sopr{margin-left:0;margin-top:52px;padding:14px 12px 84px;min-height:calc(100vh - 52px);}
+ .sp-head{grid-template-columns:1fr 1fr;}
+ .sp-head .sp-f:first-child,.sp-head .sp-f:nth-child(3){grid-column:1 / -1;}
+ .sp-add input{min-width:100%;order:-1;}
+ .ndx-mnav-btn .ml{font-size:8px;}
+ .ndx-mnav-btn{padding:0 1px;}
+}
+@media print{
+ body > *{display:none!important;}
+ body > #sp-print{display:block!important;background:#fff!important;color:#000!important;padding:0!important;margin:0!important;font-family:Arial,sans-serif;}
+ #sp-print *{color:#000!important;background:#fff!important;}
+ #sp-print h1{font-size:18px;margin:0 0 4px;}
+ #sp-print .sub{font-size:12px;margin-bottom:14px;}
+ #sp-print table{width:100%;border-collapse:collapse;font-size:12px;}
+ #sp-print th,#sp-print td{border:1px solid #999;padding:6px 8px;text-align:left;vertical-align:top;}
+ #sp-print th{font-size:10px;text-transform:uppercase;}
+}
+</style>
 
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0b0e16">
@@ -242,6 +304,7 @@ html,body{background:var(--ndx-bg);}
     <button class="ndx-nav-btn" data-view="preventivi">📋 Preventivi</button>
     <button class="ndx-nav-btn" data-view="resoconto">📊 Resoconto</button>
     <button class="ndx-nav-btn" data-view="agenda">📅 Agenda<span class="ag-badge" data-agenda-badge></span></button>
+    <button class="ndx-nav-btn" data-view="sopralluoghi">📝 Sopralluoghi<span class="ag-badge" data-sopr-badge></span></button>
     <button class="ndx-nav-btn" data-view="dati">💾 Dati / Backup</button>
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
@@ -255,6 +318,7 @@ html,body{background:var(--ndx-bg);}
       <button class="ndx-ask-btn" data-wiz="lavoro">📊 Aggiungi un lavoro</button>
       <button class="ndx-ask-btn" data-wiz="calcolo">🔧 Fai un calcolo</button>
       <button class="ndx-ask-btn" id="ndx-ask-agenda">📅 Fissa un appuntamento</button>
+      <button class="ndx-ask-btn" id="ndx-ask-sopr">📝 Nuovo sopralluogo</button>
     </div>
     <div class="ndx-ask-cmd"><input id="ndx-cmd" placeholder="…oppure scrivi qui: preventivo cancello 300x200 per Mario"><button class="ndx-ask-go" id="ndx-cmd-go">Vai</button></div>
   </div>
@@ -277,6 +341,7 @@ html,body{background:var(--ndx-bg);}
     <div class="ndx-tool" data-view="preventivi"><div class="ic">📋</div><h3>Preventivi</h3><p>Offerte, clienti, voci, finiture, posa, stampa e archivio.</p></div>
     <div class="ndx-tool" data-view="resoconto"><div class="ic">📊</div><h3>Resoconto lavori</h3><p>Lavori, guadagni, acconti, saldi e riepiloghi annuali.</p></div>
     <div class="ndx-tool" data-view="agenda"><div class="ic">📅</div><h3>Agenda</h3><p>Appuntamenti di lavoro: sopralluoghi, montaggi, consegne e ritiri.</p></div>
+    <div class="ndx-tool" data-view="sopralluoghi"><div class="ic">📝</div><h3>Sopralluoghi</h3><p>Il quaderno del cantiere: misure, cose da sostituire, riparazioni e serrature.</p></div>
   </div>
 </section>
 <div class="ndx-wiz-bg" id="ndx-wiz-bg"><div class="ndx-wiz-box" id="ndx-wiz"></div></div>
@@ -286,6 +351,7 @@ html,body{background:var(--ndx-bg);}
   <button class="ndx-nav-btn ndx-mnav-btn" data-view="preventivi"><span class="mi">📋</span><span class="ml">Preventivi</span></button>
   <button class="ndx-nav-btn ndx-mnav-btn" data-view="resoconto"><span class="mi">📊</span><span class="ml">Resoconto</span></button>
   <button class="ndx-nav-btn ndx-mnav-btn" data-view="agenda"><span class="mi">📅</span><span class="ml">Agenda</span><span class="ag-badge" data-agenda-badge></span></button>
+  <button class="ndx-nav-btn ndx-mnav-btn" data-view="sopralluoghi"><span class="mi">📝</span><span class="ml">Sopralluoghi</span><span class="ag-badge" data-sopr-badge></span></button>
   <button class="ndx-nav-btn ndx-mnav-btn" data-view="dati"><span class="mi">💾</span><span class="ml">Dati</span></button>
 </nav>
 <section id="ndx-agenda">
@@ -302,6 +368,47 @@ html,body{background:var(--ndx-bg);}
   <div id="ag-list"></div>
 </section>
 <div class="ndx-wiz-bg" id="ag-bg"><div class="ndx-wiz-box" id="ag-box"></div></div>
+<section id="ndx-sopr">
+  <div id="sp-elenco">
+    <div class="sp-bar">
+      <button class="sp-new" id="sp-new">+ Nuovo sopralluogo</button>
+      <button class="ag-chip on" data-spf="aperti">Aperti</button>
+      <button class="ag-chip" data-spf="chiusi">Chiusi</button>
+      <button class="ag-chip" data-spf="tutti">Tutti</button>
+      <input class="ag-find" id="sp-find" placeholder="cerca cliente, luogo o voce…">
+    </div>
+    <div class="ag-count" id="sp-count"></div>
+    <div id="sp-list"></div>
+  </div>
+  <div id="sp-scheda" style="display:none">
+    <div class="sp-bar"><button class="sp-back" id="sp-back">‹ Elenco</button><span class="ag-count" id="sp-stato"></span></div>
+    <div class="sp-head">
+      <label class="sp-f"><span>Cliente</span><input id="sp-cliente" list="sp-dl-cli" autocomplete="off" placeholder="Nome o ditta"><datalist id="sp-dl-cli"></datalist></label>
+      <label class="sp-f"><span>Telefono</span><input id="sp-tel" placeholder="Cellulare"></label>
+      <label class="sp-f"><span>Luogo</span><input id="sp-luogo" placeholder="Indirizzo o cantiere"></label>
+      <label class="sp-f"><span>Data</span><input id="sp-data" type="date"></label>
+    </div>
+    <div class="sp-add">
+      <select id="sp-tipo"></select>
+      <input id="sp-testo" placeholder="es. cancello 2 ante 300x200 x1  →  invio">
+      <button class="sp-mic" id="sp-mic" title="Detta con la voce">🎤</button>
+      <button class="sp-go" id="sp-go" title="Aggiungi la voce">+</button>
+    </div>
+    <div class="sp-hint">Scrivi come sul quaderno: le misure tipo 300x200 e la quantità (x2, q3, 2 pz) le riconosce da sole. Si salva da solo.</div>
+    <div class="sp-tot" id="sp-tot"></div>
+    <div id="sp-righe"></div>
+    <div class="sp-foot">
+      <button class="sp-fb" id="sp-wa">💬 Manda su WhatsApp</button>
+      <button class="sp-fb" id="sp-copy">📋 Copia il riepilogo</button>
+      <button class="sp-fb" id="sp-print-btn">🖨 Stampa</button>
+      <button class="sp-fb" id="sp-prev">📋 Fai il preventivo</button>
+      <button class="sp-fb" id="sp-app">📅 Fissa appuntamento</button>
+      <button class="sp-fb" id="sp-chiudi">✓ Chiudi sopralluogo</button>
+      <button class="sp-fb del" id="sp-del">🗑 Elimina</button>
+    </div>
+  </div>
+</section>
+<div class="ndx-wiz-bg" id="sp-bg"><div class="ndx-wiz-box" id="sp-box"></div></div>
 <div id="idu-frames">
   <div class="idu-frame-wrap active" id="frame-ferrocalc">
     <iframe id="if-ferrocalc" srcdoc="<!DOCTYPE html>
@@ -11581,6 +11688,462 @@ function iduRestore(input){
 /*IRONDESK-AGENDA-END*/
 </script>
 <script>
+/*IRONDESK-SOPRALLUOGHI-BEGIN*/
+(function(){
+  "use strict";
+  if(window.__ndxSopr) return; window.__ndxSopr=1;
+  var KEY="idu_sopralluoghi";
+  var TIPI=[["Nuovo","#f08a3c"],["Sostituire","#64a8ff"],["Riparare","#f06b6b"],["Serratura","#c792ea"],["Misura","#55d39b"],["Nota","#91a2bb"]];
+  var filtro="aperti", apertoId=null, ultimoTipo="Nuovo", editRiga=null, tSave=null;
+
+  function rows(){ try{ var x=JSON.parse(localStorage.getItem(KEY)||"[]"); return Array.isArray(x)?x:[]; }catch(e){ return []; } }
+  function save(a){ try{ localStorage.setItem(KEY,JSON.stringify(a)); }catch(e){ alert("Memoria piena: non riesco a salvare il sopralluogo."); } }
+  function clienti(){ try{ var x=JSON.parse(localStorage.getItem("idu_clienti")||"[]"); return Array.isArray(x)?x:[]; }catch(e){ return []; } }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function el(id){ return document.getElementById(id); }
+  function val(id){ var e=el(id); return e?e.value:""; }
+  function pad(n){ return (n<10?"0":"")+n; }
+  function isoDi(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+  function oggi(){ return isoDi(new Date()); }
+  function dataObj(s){ var p=String(s||"").split("-"); return new Date(+p[0]||2000,(+p[1]||1)-1,+p[2]||1); }
+  function fmtData(s){ try{ return dataObj(s).toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"}); }catch(e){ return s; } }
+  function fmtBreve(s){ try{ return dataObj(s).toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric"}); }catch(e){ return s; } }
+  function colore(tipo){ for(var i=0;i<TIPI.length;i++){ if(TIPI[i][0]===tipo) return TIPI[i][1]; } return "#91a2bb"; }
+  function trova(id){ var a=rows(), i; for(i=0;i<a.length;i++){ if(String(a[i].id)===String(id)) return a[i]; } return null; }
+  function scrivi(sop){ var a=rows(), i; for(i=0;i<a.length;i++){ if(String(a[i].id)===String(sop.id)){ a[i]=sop; save(a); return; } } a.push(sop); save(a); }
+
+  // "cancello 2 ante 300x200 x2" -> testo, misure, quantita' (nessuna conversione: resta come scritto)
+  function leggiRiga(txt){
+    var t=String(txt||"").trim(), misure="", qta=1, m, q;
+    q=t.match(/(?:^|\s)(?:q|qt[aà]|quantit[aà]|pz|pezzi|nr?)[.:]?\s*(\d{1,3})(?=\s|$)/i);
+    if(!q) q=t.match(/(?:^|\s)(\d{1,3})\s*(?:pz|pezzi|pezzo)(?=\s|$)/i);
+    if(!q) q=t.match(/\s(?:x|\u00d7)\s*(\d{1,3})\s*$/i);
+    if(q){ qta=parseInt(q[1],10)||1; t=(t.slice(0,q.index)+" "+t.slice(q.index+q[0].length)).trim(); }
+    m=t.match(/(\d+(?:[.,]\d+)?)\s*(?:x|\u00d7|per)\s*(\d+(?:[.,]\d+)?)(?:(?:x|\u00d7)(\d+(?:[.,]\d+)?))?/i);
+    if(m){ misure=m[0].replace(/\s+/g,"").replace(/per/i,"x").replace(/\u00d7/g,"x"); t=(t.slice(0,m.index)+" "+t.slice(m.index+m[0].length)).trim(); }
+    t=t.replace(/\s{2,}/g," ").replace(/^[-,;:]+/,"").replace(/[-,;:]+$/,"").trim();
+    return { testo:t, misure:misure, qta:qta };
+  }
+
+  function elencoFiltrato(){
+    var a=rows(), q=(val("sp-find")||"").toLowerCase().trim(), out=[], i;
+    for(i=0;i<a.length;i++){
+      var s=a[i];
+      if(filtro==="aperti" && s.chiuso) continue;
+      if(filtro==="chiusi" && !s.chiuso) continue;
+      if(q){
+        var blob=((s.cliente||"")+" "+(s.luogo||"")+" "+(s.note||"")+" "+(s.righe||[]).map(function(r){ return (r.testo||"")+" "+(r.misure||"")+" "+(r.tipo||""); }).join(" ")).toLowerCase();
+        if(blob.indexOf(q)<0) continue;
+      }
+      out.push(s);
+    }
+    out.sort(function(p,g){ var k1=(p.data||"")+(p.creato||""), k2=(g.data||"")+(g.creato||""); return k1<k2?1:(k1>k2?-1:0); });
+    return out;
+  }
+
+  function renderElenco(){
+    var box=el("sp-list"); if(!box) return;
+    var a=elencoFiltrato(), h="", i;
+    for(i=0;i<a.length;i++){
+      var s=a[i], n=(s.righe||[]).length;
+      var det=[];
+      if(s.luogo) det.push("📍 "+esc(s.luogo));
+      if(s.tel) det.push("📞 "+esc(s.tel));
+      det.push(fmtBreve(s.data));
+      h+='<div class="sp-card'+(s.chiuso?" chiuso":"")+'" data-id="'+esc(s.id)+'"><div class="in"><b>'+esc(s.cliente||"Senza nome")+'</b><p>'+det.join(" · ")+(s.chiuso?" · chiuso":"")+'</p></div><div class="n">'+n+(n===1?" voce":" voci")+'</div></div>';
+    }
+    box.innerHTML = h || '<div class="sp-empty">Nessun sopralluogo qui. Premi "+ Nuovo sopralluogo" e comincia a scrivere: cliente, poi le voci una alla volta.</div>';
+    var c=el("sp-count");
+    if(c){
+      var tot=rows(), ap=0, j;
+      for(j=0;j<tot.length;j++){ if(!tot[j].chiuso) ap++; }
+      c.textContent="Aperti: "+ap+" · In archivio: "+tot.length;
+    }
+    badge();
+  }
+
+  function badge(){
+    var a=rows(), n=0, i;
+    for(i=0;i<a.length;i++){ if(!a[i].chiuso) n++; }
+    var b=document.querySelectorAll("[data-sopr-badge]");
+    for(i=0;i<b.length;i++){ b[i].textContent=n?String(n):""; b[i].className="ag-badge"+(n?" on":""); }
+  }
+
+  function renderRighe(){
+    var box=el("sp-righe"), s=trova(apertoId); if(!box||!s) return;
+    var r=s.righe||[], h="", i;
+    for(i=0;i<r.length;i++){
+      var x=r[i], col=colore(x.tipo);
+      h+='<div class="sp-riga" data-rid="'+esc(x.id)+'" style="border-left-color:'+col+'">';
+      h+='<div class="sp-num">'+(i+1)+'</div><div class="sp-in">';
+      h+='<span class="sp-tag" style="color:'+col+';background:'+col+'22;border:1px solid '+col+'55">'+esc(x.tipo||"Nota")+'</span>';
+      h+='<b>'+esc(x.testo||"")+'</b>';
+      var det="";
+      if(x.misure) det+='<span class="sp-mis">'+esc(x.misure)+'</span>';
+      if(x.qta&&+x.qta>1) det+='<span class="sp-mis">x'+esc(x.qta)+'</span>';
+      if(x.note) det+=esc(x.note);
+      if(det) h+='<p>'+det+'</p>';
+      h+='</div><div class="sp-act"><button class="sp-b" data-ract="su" title="Sposta su">↑</button><button class="sp-b" data-ract="mod" title="Modifica">✎</button><button class="sp-b" data-ract="del" title="Elimina">🗑</button></div></div>';
+    }
+    box.innerHTML = h || '<div class="sp-empty">Ancora niente scritto. Scegli il tipo, scrivi la voce e premi invio.</div>';
+    var t=el("sp-tot");
+    if(t){
+      var conta={}, tot=0;
+      for(i=0;i<r.length;i++){ var k=r[i].tipo||"Nota"; conta[k]=(conta[k]||0)+1; tot++; }
+      var parti=[]; for(var k2 in conta){ if(conta.hasOwnProperty(k2)) parti.push(conta[k2]+" "+k2.toLowerCase()); }
+      t.textContent = tot ? (tot+(tot===1?" voce":" voci")+": "+parti.join(", ")) : "";
+    }
+    var st=el("sp-stato");
+    if(st) st.textContent = s.chiuso ? "Sopralluogo chiuso" : "";
+    var cb=el("sp-chiudi");
+    if(cb) cb.textContent = s.chiuso ? "↺ Riapri sopralluogo" : "✓ Chiudi sopralluogo";
+  }
+
+  function apriScheda(id){
+    var s=trova(id); if(!s) return;
+    apertoId=s.id;
+    el("sp-elenco").style.display="none";
+    el("sp-scheda").style.display="block";
+    el("sp-cliente").value=s.cliente||"";
+    el("sp-tel").value=s.tel||"";
+    el("sp-luogo").value=s.luogo||"";
+    el("sp-data").value=s.data||oggi();
+    var dl=el("sp-dl-cli"), cl=clienti(), h="", i;
+    for(i=0;i<cl.length;i++){ var nm=cl[i].nome||cl[i].cliente||""; if(nm) h+='<option value="'+esc(nm)+'">'; }
+    if(dl) dl.innerHTML=h;
+    renderRighe();
+    var tst=el("sp-testo"); if(tst){ tst.value=""; setTimeout(function(){ try{ tst.focus(); }catch(e){} },60); }
+  }
+
+  function tornaElenco(){
+    salvaTesta(true);
+    apertoId=null;
+    el("sp-scheda").style.display="none";
+    el("sp-elenco").style.display="block";
+    renderElenco();
+  }
+
+  function salvaTesta(subito){
+    if(!apertoId) return;
+    if(tSave){ clearTimeout(tSave); tSave=null; }
+    var fai=function(){
+      var s=trova(apertoId); if(!s) return;
+      s.cliente=(val("sp-cliente")||"").trim();
+      s.tel=(val("sp-tel")||"").trim();
+      s.luogo=(val("sp-luogo")||"").trim();
+      s.data=val("sp-data")||oggi();
+      scrivi(s); badge();
+    };
+    if(subito) fai(); else tSave=setTimeout(fai,400);
+  }
+
+  function nuovo(pre){
+    var s={ id:"sp"+Date.now()+Math.floor(Math.random()*1000), data:oggi(),
+            cliente:(pre&&pre.cliente)||"", tel:(pre&&pre.tel)||"", luogo:(pre&&pre.luogo)||"",
+            note:"", chiuso:false, creato:new Date().toISOString(), righe:[] };
+    if(s.cliente){
+      var c=clienti(), i;
+      for(i=0;i<c.length;i++){
+        var nm=(c[i].nome||c[i].cliente||"");
+        if(nm && nm.toLowerCase().indexOf(s.cliente.toLowerCase())===0){
+          s.cliente=nm; if(!s.tel&&c[i].tel) s.tel=c[i].tel; if(!s.luogo&&c[i].ind) s.luogo=c[i].ind; break;
+        }
+      }
+    }
+    var a=rows(); a.push(s); save(a);
+    vai(); apriScheda(s.id);
+    return s;
+  }
+
+  function aggiungiRiga(){
+    var s=trova(apertoId); if(!s) return;
+    var testo=(val("sp-testo")||"").trim(); if(!testo) return;
+    var d=leggiRiga(testo);
+    if(!d.testo && !d.misure) return;
+    s.righe=s.righe||[];
+    s.righe.push({ id:"r"+Date.now()+Math.floor(Math.random()*1000), tipo:val("sp-tipo")||ultimoTipo,
+                   testo:d.testo, misure:d.misure, qta:d.qta, note:"" });
+    scrivi(s);
+    el("sp-testo").value="";
+    renderRighe();
+    try{ el("sp-testo").focus(); }catch(e){}
+  }
+
+  function azioneRiga(rid,act){
+    var s=trova(apertoId); if(!s||!s.righe) return;
+    var i, idx=-1;
+    for(i=0;i<s.righe.length;i++){ if(String(s.righe[i].id)===String(rid)) idx=i; }
+    if(idx<0) return;
+    if(act==="del"){
+      if(!confirm("Cancellare la voce \""+(s.righe[idx].testo||"")+"\"?")) return;
+      s.righe.splice(idx,1); scrivi(s); renderRighe(); return;
+    }
+    if(act==="su"){
+      if(idx===0) return;
+      var t=s.righe[idx-1]; s.righe[idx-1]=s.righe[idx]; s.righe[idx]=t;
+      scrivi(s); renderRighe(); return;
+    }
+    if(act==="mod") modificaRiga(s.righe[idx]);
+  }
+
+  function modificaRiga(r){
+    var bg=el("sp-bg"), box=el("sp-box"); if(!bg||!box) return;
+    editRiga=r.id;
+    var opz="", i;
+    for(i=0;i<TIPI.length;i++) opz+='<option'+(TIPI[i][0]===r.tipo?" selected":"")+'>'+TIPI[i][0]+'</option>';
+    var h='<div class="ndx-wiz-h">✎ Modifica voce</div><div class="ndx-wiz-i">Correggi quello che serve.</div><div class="ndx-wiz-body">';
+    h+='<label class="ndx-wiz-f"><span>Tipo</span><select id="sp-e-tipo">'+opz+'</select></label>';
+    h+='<label class="ndx-wiz-f"><span>Voce</span><input id="sp-e-testo" value="'+esc(r.testo)+'"></label>';
+    h+='<div class="ag-2"><label class="ndx-wiz-f"><span>Misure (come le scrivi)</span><input id="sp-e-mis" value="'+esc(r.misure)+'" placeholder="es. 300x200"></label>';
+    h+='<label class="ndx-wiz-f"><span>Quantità</span><input id="sp-e-qta" type="number" min="1" value="'+esc(r.qta||1)+'"></label></div>';
+    h+='<label class="ndx-wiz-f"><span>Note</span><textarea id="sp-e-note" placeholder="materiale, finitura, dettagli…">'+esc(r.note)+'</textarea></label>';
+    h+='</div><div class="ndx-wiz-foot"><button class="ndx-wiz-cancel" id="sp-e-x">Annulla</button><button class="ndx-wiz-ok" id="sp-e-ok">Salva</button></div>';
+    box.innerHTML=h; bg.classList.add("open");
+    el("sp-e-ok").addEventListener("click",function(){
+      var s=trova(apertoId); if(!s) return;
+      var j;
+      for(j=0;j<s.righe.length;j++){
+        if(String(s.righe[j].id)===String(editRiga)){
+          s.righe[j].tipo=val("sp-e-tipo"); s.righe[j].testo=(val("sp-e-testo")||"").trim();
+          s.righe[j].misure=(val("sp-e-mis")||"").trim(); s.righe[j].qta=parseInt(val("sp-e-qta"),10)||1;
+          s.righe[j].note=(val("sp-e-note")||"").trim();
+        }
+      }
+      scrivi(s); chiudiModale(); renderRighe();
+    });
+    el("sp-e-x").addEventListener("click",chiudiModale);
+    setTimeout(function(){ try{ el("sp-e-testo").focus(); }catch(e){} },40);
+  }
+
+  function chiudiModale(){ var bg=el("sp-bg"); if(bg) bg.classList.remove("open"); editRiga=null; }
+
+  function testoRiepilogo(s){
+    var t="SOPRALLUOGO "+fmtBreve(s.data)+(s.cliente?" - "+s.cliente:"")+"\n";
+    if(s.luogo) t+=s.luogo+"\n";
+    t+="\n";
+    var r=s.righe||[], i;
+    for(i=0;i<r.length;i++){
+      t+=(i+1)+") "+(r[i].tipo||"Nota").toUpperCase()+" - "+(r[i].testo||"");
+      if(r[i].misure) t+=" - "+r[i].misure;
+      if(r[i].qta&&+r[i].qta>1) t+=" - q."+r[i].qta;
+      if(r[i].note) t+=" ("+r[i].note+")";
+      t+="\n";
+    }
+    if(!r.length) t+="(nessuna voce)\n";
+    return t;
+  }
+
+  function stampa(){
+    var s=trova(apertoId); if(!s) return;
+    var d=el("sp-print");
+    if(!d){ d=document.createElement("div"); d.id="sp-print"; document.body.appendChild(d); }
+    var r=s.righe||[], h='<h1>Sopralluogo'+(s.cliente?" - "+esc(s.cliente):"")+'</h1>';
+    h+='<div class="sub">'+fmtData(s.data)+(s.luogo?" · "+esc(s.luogo):"")+(s.tel?" · "+esc(s.tel):"")+'</div>';
+    h+='<table><tr><th>#</th><th>Tipo</th><th>Voce</th><th>Misure</th><th>Q.tà</th><th>Note</th></tr>';
+    for(var i=0;i<r.length;i++){
+      h+='<tr><td>'+(i+1)+'</td><td>'+esc(r[i].tipo||"")+'</td><td>'+esc(r[i].testo||"")+'</td><td>'+esc(r[i].misure||"")+'</td><td>'+esc(r[i].qta||1)+'</td><td>'+esc(r[i].note||"")+'</td></tr>';
+    }
+    if(!r.length) h+='<tr><td colspan="6">(nessuna voce)</td></tr>';
+    h+='</table>';
+    d.innerHTML=h;
+    try{ window.print(); }catch(e){}
+  }
+
+  function copia(txt,msgOk){
+    var fatto=function(){ alert(msgOk||"Riepilogo copiato."); };
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(fatto,function(){ manuale(txt,fatto); }); return; }
+    }catch(e){}
+    manuale(txt,fatto);
+  }
+  function manuale(txt,fatto){
+    try{
+      var ta=document.createElement("textarea");
+      ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); fatto();
+    }catch(e){ alert(txt); }
+  }
+  function waNum(tel){ var n=String(tel||"").replace(/[^0-9]/g,""); if(n.length===10 && n.charAt(0)==="3") n="39"+n; return n; }
+
+  // --- voce (dettatura) ---
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition, rec=null, inAscolto=false;
+  function voce(){
+    var b=el("sp-mic"), inp=el("sp-testo");
+    if(!SR){ if(b) b.style.display="none"; return; }
+    if(!rec){
+      rec=new SR(); rec.lang="it-IT"; rec.interimResults=false; rec.maxAlternatives=1;
+      rec.onresult=function(ev){ var t=ev.results[0][0].transcript; if(inp){ inp.value=t; } aggiungiRiga(); };
+      rec.onend=function(){ inAscolto=false; if(b) b.classList.remove("on"); };
+      rec.onerror=function(){ inAscolto=false; if(b) b.classList.remove("on"); };
+    }
+    if(inAscolto){ try{ rec.stop(); }catch(e){} return; }
+    try{ rec.start(); inAscolto=true; if(b) b.classList.add("on"); }catch(e){}
+  }
+
+  function vai(){ if(window.ndxShow) window.ndxShow("sopralluoghi"); }
+
+  function mostra(){
+    var ids=["ndx-dashboard","idu-frames","ndx-agenda"], i;
+    for(i=0;i<ids.length;i++){ var e=el(ids[i]); if(e) e.style.display="none"; }
+    var sp=el("ndx-sopr"); if(sp) sp.style.display="block";
+    var b=document.querySelectorAll(".ndx-nav-btn");
+    for(i=0;i<b.length;i++) b[i].classList.toggle("active", b[i].getAttribute("data-view")==="sopralluoghi");
+    var T=el("ndx-title"), S=el("ndx-sub");
+    if(T) T.textContent="Sopralluoghi";
+    if(S) S.textContent="Il quaderno del cantiere: misure, sostituzioni e riparazioni.";
+    if(apertoId && trova(apertoId)) renderRighe(); else { apertoId=null; el("sp-scheda").style.display="none"; el("sp-elenco").style.display="block"; renderElenco(); }
+  }
+
+  function aggancia(){
+    var orig=window.ndxShow;
+    if(typeof orig!=="function"){ setTimeout(aggancia,150); return; }
+    if(orig.__sopr) return;
+    var wrap=function(view){
+      if(view==="sopralluoghi"){ mostra(); return; }
+      var sp=el("ndx-sopr"); if(sp) sp.style.display="none";
+      orig(view); badge();
+    };
+    wrap.__sopr=1;
+    window.ndxShow=wrap;
+  }
+
+  function avvia(){
+    aggancia();
+    var i, sel=el("sp-tipo");
+    if(sel){
+      var h="";
+      for(i=0;i<TIPI.length;i++) h+='<option>'+TIPI[i][0]+'</option>';
+      sel.innerHTML=h;
+      sel.addEventListener("change",function(){ ultimoTipo=sel.value; });
+    }
+    var nb=el("sp-new"); if(nb) nb.addEventListener("click",function(){ nuovo(); });
+    var ask=el("ndx-ask-sopr"); if(ask) ask.addEventListener("click",function(){ nuovo(); });
+    var chips=document.querySelectorAll("[data-spf]");
+    for(i=0;i<chips.length;i++){
+      (function(c){
+        c.addEventListener("click",function(){
+          filtro=c.getAttribute("data-spf");
+          var all=document.querySelectorAll("[data-spf]"), j;
+          for(j=0;j<all.length;j++) all[j].classList.toggle("on", all[j]===c);
+          renderElenco();
+        });
+      })(chips[i]);
+    }
+    var find=el("sp-find"); if(find) find.addEventListener("input",renderElenco);
+    var lista=el("sp-list");
+    if(lista) lista.addEventListener("click",function(e){
+      var c=e.target.closest?e.target.closest(".sp-card"):null;
+      if(c) apriScheda(c.getAttribute("data-id"));
+    });
+    var back=el("sp-back"); if(back) back.addEventListener("click",tornaElenco);
+    var campi=["sp-cliente","sp-tel","sp-luogo","sp-data"];
+    for(i=0;i<campi.length;i++){
+      (function(c){
+        if(!c) return;
+        c.addEventListener("input",function(){ salvaTesta(false); });
+        c.addEventListener("change",function(){
+          salvaTesta(true);
+          if(c.id==="sp-cliente"){
+            var q=(c.value||"").toLowerCase().trim(), cl=clienti(), j;
+            for(j=0;j<cl.length;j++){
+              var nome=(cl[j].nome||cl[j].cliente||"");
+              if(nome && nome.toLowerCase()===q){
+                if(cl[j].tel && !val("sp-tel")) el("sp-tel").value=cl[j].tel;
+                if(cl[j].ind && !val("sp-luogo")) el("sp-luogo").value=cl[j].ind;
+                salvaTesta(true);
+              }
+            }
+          }
+        });
+      })(el(campi[i]));
+    }
+    var go=el("sp-go"); if(go) go.addEventListener("click",aggiungiRiga);
+    var testo=el("sp-testo");
+    if(testo) testo.addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); aggiungiRiga(); } });
+    var mic=el("sp-mic"); if(mic) mic.addEventListener("click",voce);
+    if(!SR && mic) mic.style.display="none";
+    var righe=el("sp-righe");
+    if(righe) righe.addEventListener("click",function(e){
+      var b=e.target.closest?e.target.closest("[data-ract]"):null; if(!b) return;
+      var r=b.closest(".sp-riga"); if(!r) return;
+      azioneRiga(r.getAttribute("data-rid"), b.getAttribute("data-ract"));
+    });
+    var bg=el("sp-bg");
+    if(bg) bg.addEventListener("click",function(e){ if(e.target===bg) chiudiModale(); });
+    document.addEventListener("keydown",function(e){ if(e.key==="Escape") chiudiModale(); });
+
+    var wa=el("sp-wa");
+    if(wa) wa.addEventListener("click",function(){
+      var s=trova(apertoId); if(!s) return;
+      salvaTesta(true); s=trova(apertoId);
+      var n=waNum(s.tel), t=testoRiepilogo(s);
+      var url="https://wa.me/"+(n||"")+"?text="+encodeURIComponent(t);
+      try{ window.open(url,"_blank"); }catch(e){ copia(t,"Numero mancante: riepilogo copiato, incollalo su WhatsApp."); }
+    });
+    var cp=el("sp-copy");
+    if(cp) cp.addEventListener("click",function(){ salvaTesta(true); var s=trova(apertoId); if(s) copia(testoRiepilogo(s)); });
+    var pr=el("sp-print-btn"); if(pr) pr.addEventListener("click",function(){ salvaTesta(true); stampa(); });
+    var pv=el("sp-prev");
+    if(pv) pv.addEventListener("click",function(){
+      salvaTesta(true);
+      var s=trova(apertoId); if(!s) return;
+      var primo=null, j, r=s.righe||[];
+      for(j=0;j<r.length;j++){ if(r[j].tipo==="Nuovo"){ primo=r[j]; break; } }
+      if(!primo && r.length) primo=r[0];
+      var ogg=primo?((primo.testo||"")+(primo.misure?" "+primo.misure:"")):"";
+      if(window.ndxWizardOpen) window.ndxWizardOpen("preventivo",{cliente:s.cliente,tel:s.tel,ind:s.luogo,oggetto:ogg});
+      else alert("Preventivi non disponibili qui.");
+    });
+    var ap=el("sp-app");
+    if(ap) ap.addEventListener("click",function(){
+      salvaTesta(true);
+      var s=trova(apertoId); if(!s) return;
+      if(window.ndxAgendaApri) window.ndxAgendaApri({cliente:s.cliente,tel:s.tel,luogo:s.luogo});
+      else alert("Agenda non disponibile qui.");
+    });
+    var ch=el("sp-chiudi");
+    if(ch) ch.addEventListener("click",function(){
+      salvaTesta(true);
+      var s=trova(apertoId); if(!s) return;
+      s.chiuso=!s.chiuso; scrivi(s); renderRighe(); badge();
+    });
+    var dl=el("sp-del");
+    if(dl) dl.addEventListener("click",function(){
+      var s=trova(apertoId); if(!s) return;
+      if(!confirm("Eliminare tutto il sopralluogo"+(s.cliente?" di "+s.cliente:"")+" con "+((s.righe||[]).length)+" voci?")) return;
+      var a=rows(), out=[], j;
+      for(j=0;j<a.length;j++){ if(String(a[j].id)!==String(s.id)) out.push(a[j]); }
+      save(out); tornaElenco();
+    });
+    renderElenco(); badge();
+  }
+
+  window.ndxSoprNuovo=function(pre){ return nuovo(pre||null); };
+  window.ndxSoprApri=function(id){ vai(); if(id) apriScheda(id); };
+  window.ndxSoprElenco=function(soloAperti){
+    var a=rows(), out=[], i;
+    for(i=0;i<a.length;i++){ if(soloAperti && a[i].chiuso) continue; out.push(a[i]); }
+    return out;
+  };
+  window.ndxSoprParse=function(raw){
+    var t=" "+String(raw||"").toLowerCase()+" ";
+    var creare=/nuovo|nuova|crea|inizia|comincia|aggiungi|segna|apri un/.test(t);
+    var mc=String(raw||"").match(/(?:\bda\b|\bper\b|\bcon\b|\bdi\b|cliente|sig\.?|signor[ea]?|ditta)\s+([A-Za-zÀ-ÿ'][A-Za-zà-ÿ'.]+(?:\s+[A-Za-zÀ-ÿ'][A-Za-zà-ÿ'.]+)?)/);
+    var nome=mc?mc[1].replace(/\b(sopralluogo|sopralluoghi|quaderno|blocco|note|nuovo|nuova)\b/gi,"").replace(/\s+/g," ").trim():"";
+    if(creare){
+      var s=nuovo(nome?{cliente:nome}:null);
+      return { id:s.id, cliente:s.cliente, msg:"Nuovo sopralluogo"+(s.cliente?" per "+s.cliente:"")+": scrivi le voci una alla volta, si salva da solo." };
+    }
+    vai();
+    var ap=window.ndxSoprElenco(true).length;
+    return { msg: ap ? ("Hai "+ap+" sopralluog"+(ap===1?"o":"hi")+" aperti.") : "Non hai sopralluoghi aperti: premi Nuovo sopralluogo." };
+  };
+
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",avvia); else avvia();
+})();
+/*IRONDESK-SOPRALLUOGHI-END*/
+</script>
+<script>
 /*IRONDESK-AI-BEGIN*/
 (function(){
   "use strict";
@@ -11598,7 +12161,7 @@ function iduRestore(input){
     for(i=0;i<lav.length;i++){ x=lav[i]; tot=Number(x.totale)||0; ac=Number(x.acconto)||0; fatt+=tot; mat+=Number(x.materiale)||0; acc+=ac; if(!x.pagato){ s=tot-ac; if(s>0) daInc+=s; } }
     return { lav:lav.length, prev:prev.length, cli:cli.length, fer:fer.length, fatt:fatt, daInc:daInc, mat:mat, acc:acc, guad:fatt-mat };
   }
-  function aiHelp(){ return "Ecco cosa so fare (parla o scrivi):\n• Numeri: quanto ho fatturato, quanto mi deve Mario, chi mi deve di più, chi non ha pagato.\n• Crea: preventivo cancello 300x200 per Mario; lavoro Mario totale 1500 acconto 500.\n• Promemoria: ricordami di chiamare Rossi; cosa devo fare.\n• Invia: manda il preventivo di Mario su WhatsApp.\n• Agenda: che appuntamenti ho oggi; fissa un sopralluogo con Mario domani alle 15.\n• Riepiloghi: riepilogo; apri i lavori/preventivi/FerroCalc."; }
+  function aiHelp(){ return "Ecco cosa so fare (parla o scrivi):\n• Numeri: quanto ho fatturato, quanto mi deve Mario, chi mi deve di più, chi non ha pagato.\n• Crea: preventivo cancello 300x200 per Mario; lavoro Mario totale 1500 acconto 500.\n• Promemoria: ricordami di chiamare Rossi; cosa devo fare.\n• Invia: manda il preventivo di Mario su WhatsApp.\n• Agenda: che appuntamenti ho oggi; fissa un sopralluogo con Mario domani alle 15.\n• Sopralluoghi: nuovo sopralluogo da Mario; apri i sopralluoghi.\n• Riepiloghi: riepilogo; apri i lavori/preventivi/FerroCalc."; }
   var STOPN=/^(quant\w*|qual\w*|chi|cosa|come|apri|apr\w*|vai|mostra\w*|fai|crea|nuovo|registra|salva|dimmi|trova|manda|invia|il|lo|la|un|una|per|mio|mia|questo|lavoro|preventivo)$/i;
   function aiClientName(raw){ var m=raw.match(/\b(?:per|di|del|con|cliente|deve|paga\w*|salda\w*|versat\w*)\s+([A-Za-zÀ-ÿ'][A-Za-zà-ÿ'.]+(?:\s+[A-Za-zÀ-ÿ'][A-Za-zà-ÿ'.]+)?)/i); if(m){ var n=m[1].replace(/\b(ha|il|lo|la|un|una)\b[\s\S]*$/i,"").replace(/\s+/g," ").trim(); if(n&&!STOPN.test(n.split(" ")[0])) return n; } m=raw.match(/^\s*([A-Za-zÀ-ÿ'][A-Za-zà-ÿ'.]+)\s+(?:ha\b|deve\b)/i); if(m&&!STOPN.test(m[1])) return m[1].trim(); return ""; }
   function aiClientJobs(name){ var q=name.toLowerCase(); return aiRows("rl_lavori").filter(function(x){ return (""+(x.cliente||"")).toLowerCase().indexOf(q)>=0; }); }
@@ -11613,6 +12176,12 @@ function iduRestore(input){
     if(/\bcome stai\b|\bcome va\b|tutto bene/.test(t)){ botMsg("Tutto pronto e al lavoro. Dimmi cosa ti serve."); return; }
     if(/chi sei|cosa sei|come ti chiami/.test(t)){ botMsg("Sono l'assistente di IronDesk: ti aiuto con preventivi, lavori, calcoli e i tuoi numeri, anche senza internet."); return; }
     if(/cosa sai fare|che sai fare|cosa puoi fare|\baiuto\b|\bhelp\b|\bcomandi\b|come funzioni|cosa posso (dire|chiedere|fare)/.test(t)){ botMsg(aiHelp()); return; }
+    // sopralluoghi (il quaderno del cantiere)
+    if(/sopralluog|quaderno|blocco note/.test(t) && !/appuntament|fissa|domani|dopodomani|alle |ore /.test(t)){
+      if(window.ndxSoprParse){ var spr=window.ndxSoprParse(raw); botMsg(spr&&spr.msg?spr.msg:"Apro i sopralluoghi."); }
+      else botMsg("I sopralluoghi non sono disponibili qui.");
+      return;
+    }
     // agenda appuntamenti
     if(/appuntament|sopralluog/.test(t) && /fissa|segna|metti|prendi|aggiungi|nuovo|crea|program|organizz/.test(t)){ if(window.ndxAgendaParse){ window.ndxAgendaParse(raw); botMsg("Ti apro la scheda dell'appuntamento: controlla i dati e premi Salva."); } else botMsg("L'agenda non e' disponibile qui."); return; }
     if(/appuntament|agenda|sopralluogh/.test(t)){
