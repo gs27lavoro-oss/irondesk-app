@@ -192,6 +192,7 @@ html,body{background:var(--ndx-bg);}
 .ag-empty{color:var(--ndx-muted);font-size:13px;padding:14px 2px;}
 .ag-badge{display:none;min-width:17px;text-align:center;background:var(--ndx-accent);color:#1c120b;font-size:10px;font-weight:800;border-radius:999px;padding:1px 6px;margin-left:6px;}
 .ag-badge.on{display:inline-block;}
+.ndx-cloud-btn{white-space:nowrap;font-weight:700;}
 .ag-2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
 .ndx-wiz-f textarea{background:#0b1626;border:1.5px solid var(--ndx-line);border-radius:10px;color:var(--ndx-text);padding:11px 12px;font:inherit;font-size:15px;width:100%;box-sizing:border-box;resize:vertical;min-height:62px;}
 .ndx-wiz-f textarea:focus{border-color:var(--ndx-accent);outline:none;}
@@ -363,6 +364,7 @@ html,body{background:var(--ndx-bg);}
     <button class="ag-chip" data-agf="tutti">Tutti</button>
     <button class="ag-chip" data-agf="fatti">Fatti</button>
     <input class="ag-find" id="ag-find" placeholder="cerca cliente, luogo o nota…">
+    <button class="ag-chip ndx-cloud-btn" id="ag-cloud" title="Sincronizza con il telefono">☁ Sincronizza</button>
   </div>
   <div class="ag-count" id="ag-count"></div>
   <div id="ag-list"></div>
@@ -376,6 +378,7 @@ html,body{background:var(--ndx-bg);}
       <button class="ag-chip" data-spf="chiusi">Chiusi</button>
       <button class="ag-chip" data-spf="tutti">Tutti</button>
       <input class="ag-find" id="sp-find" placeholder="cerca cliente, luogo o voce…">
+      <button class="ag-chip ndx-cloud-btn" id="sp-cloud" title="Sincronizza con il telefono">☁ Sincronizza</button>
     </div>
     <div class="ag-count" id="sp-count"></div>
     <div id="sp-list"></div>
@@ -11368,6 +11371,98 @@ function iduRestore(input){
 })();
 </script>
 <script>
+/*IRONDESK-CLOUD-BEGIN*/
+(function(){
+  "use strict";
+  if(window.ndxCloud) return;
+  var TAB="ferrocalc_sync", CFG_U="sync_supabase_url", CFG_K="sync_supabase_key";
+  var attesa={}, inCorso={}, ultimo={};
+
+  function url(){ try{ return (localStorage.getItem(CFG_U)||"").trim().replace(/\/rest\/v1\/?$/i,"").replace(/\/+$/,""); }catch(e){ return ""; } }
+  function chiave(){ try{ return (localStorage.getItem(CFG_K)||"").trim(); }catch(e){ return ""; } }
+  function configurato(){ return !!(url() && chiave()); }
+  function auto(){ try{ return localStorage.getItem("sync_auto")!=="0"; }catch(e){ return true; } }
+  function headers(){
+    var k=chiave(), h={ "apikey":k, "Content-Type":"application/json", "Prefer":"resolution=merge-duplicates" };
+    if(k.indexOf("sb_")!==0) h["Authorization"]="Bearer "+k;
+    return h;
+  }
+  function quando(x){ return String((x&&(x.mod||x.creato))||""); }
+  function leggi(ch){ try{ var x=JSON.parse(localStorage.getItem(ch)||"[]"); return Array.isArray(x)?x:[]; }catch(e){ return []; } }
+  function avvisa(ch,ok,msg,cambiato){
+    try{ document.dispatchEvent(new CustomEvent("ndx-cloud",{detail:{chiave:ch,ok:ok,msg:msg,cambiato:!!cambiato}})); }catch(e){}
+  }
+
+  // unione per id: vince chi ha la data di modifica piu' recente
+  function unisci(loc,rem){
+    var m={}, out=[], i, x, k, cambiato=false;
+    for(i=0;i<loc.length;i++){ x=loc[i]; if(x&&x.id!=null) m[String(x.id)]=x; }
+    for(i=0;i<rem.length;i++){
+      x=rem[i]; if(!x||x.id==null) continue; k=String(x.id);
+      if(!m[k]){ m[k]=x; cambiato=true; }
+      else if(quando(x)>quando(m[k])){ m[k]=x; cambiato=true; }
+    }
+    var limite=new Date(Date.now()-90*24*3600*1000).toISOString();
+    for(k in m){
+      if(!m.hasOwnProperty(k)) continue;
+      x=m[k];
+      if(x.canc && quando(x) && quando(x)<limite) continue; // segnaposto vecchi: via
+      out.push(x);
+    }
+    out.sort(function(a,b){ var p=quando(a), g=quando(b); return p<g?-1:(p>g?1:0); });
+    return { righe:out, cambiato:cambiato };
+  }
+
+  function sincronizza(ch){
+    if(!configurato()){ avvisa(ch,false,"non configurato",false); return Promise.resolve({ok:false,msg:"non configurato"}); }
+    if(inCorso[ch]) return inCorso[ch];
+    var p=fetch(url()+"/rest/v1/"+TAB+"?chiave=eq."+encodeURIComponent(ch)+"&select=dati",{headers:headers()})
+      .then(function(r){ if(!r.ok) throw new Error("errore "+r.status); return r.json(); })
+      .then(function(rr){
+        var rem=(rr&&rr.length&&Array.isArray(rr[0].dati))?rr[0].dati:[];
+        var u=unisci(leggi(ch),rem);
+        try{ localStorage.setItem(ch,JSON.stringify(u.righe)); }catch(e){}
+        var body=[{chiave:ch,dati:u.righe,aggiornato_il:new Date().toISOString()}];
+        return fetch(url()+"/rest/v1/"+TAB+"?on_conflict=chiave",{method:"POST",headers:headers(),body:JSON.stringify(body),keepalive:true})
+          .then(function(r2){
+            ultimo[ch]=new Date();
+            avvisa(ch,r2.ok,r2.ok?"sincronizzato":"errore "+r2.status,u.cambiato);
+            return {ok:r2.ok,msg:r2.ok?"sincronizzato":"errore "+r2.status,cambiato:u.cambiato};
+          });
+      })
+      .catch(function(e){ avvisa(ch,false,"niente rete",false); return {ok:false,msg:"niente rete"}; })
+      .then(function(res){ inCorso[ch]=null; return res; });
+    inCorso[ch]=p;
+    return p;
+  }
+
+  function programma(ch){
+    if(!configurato()||!auto()) return;
+    if(attesa[ch]) clearTimeout(attesa[ch]);
+    attesa[ch]=setTimeout(function(){ attesa[ch]=null; sincronizza(ch); },2500);
+  }
+
+  function apriImpostazioni(){
+    try{
+      if(window.ndxShow) window.ndxShow("preventivi");
+      setTimeout(function(){
+        var f=document.getElementById("if-prev");
+        if(f && f.contentWindow && f.contentWindow.showTab) f.contentWindow.showTab("impostazioni");
+      },400);
+    }catch(e){}
+  }
+
+  window.ndxCloud={ configurato:configurato, auto:auto, sincronizza:sincronizza, programma:programma,
+                    apriImpostazioni:apriImpostazioni, ultimo:function(ch){ return ultimo[ch]||null; } };
+  try{
+    window.addEventListener("online",function(){
+      if(configurato()&&auto()){ sincronizza("idu_agenda"); sincronizza("idu_sopralluoghi"); }
+    });
+  }catch(e){}
+})();
+/*IRONDESK-CLOUD-END*/
+</script>
+<script>
 /*IRONDESK-AGENDA-BEGIN*/
 (function(){
   "use strict";
@@ -11376,8 +11471,10 @@ function iduRestore(input){
   var TIPI=["Sopralluogo","Preventivo","Montaggio","Riparazione","Consegna","Ritiro materiale","Saldo / incasso","Altro"];
   var filtro="prossimi", editId=null;
 
-  function rows(){ try{ var x=JSON.parse(localStorage.getItem(KEY)||"[]"); return Array.isArray(x)?x:[]; }catch(e){ return []; } }
-  function save(a){ try{ localStorage.setItem(KEY,JSON.stringify(a)); }catch(e){} }
+  function rawRows(){ try{ var x=JSON.parse(localStorage.getItem(KEY)||"[]"); return Array.isArray(x)?x:[]; }catch(e){ return []; } }
+  function rows(){ var a=rawRows(), o=[], i; for(i=0;i<a.length;i++){ if(!a[i].canc) o.push(a[i]); } return o; }
+  function adesso(){ return new Date().toISOString(); }
+  function save(a){ try{ localStorage.setItem(KEY,JSON.stringify(a)); }catch(e){} if(window.ndxCloud) window.ndxCloud.programma(KEY); }
   function clienti(){ try{ var x=JSON.parse(localStorage.getItem("idu_clienti")||"[]"); return Array.isArray(x)?x:[]; }catch(e){ return []; } }
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
   function el(id){ return document.getElementById(id); }
@@ -11535,31 +11632,31 @@ function iduRestore(input){
       note:(val("ag-f-note")||"").trim()
     };
     if(!v.cliente && !v.note){ alert("Scrivi almeno il cliente o una nota."); return; }
-    var a=rows(), i, trovato=false;
+    var a=rawRows(), i, trovato=false;
     if(editId!==null){
       for(i=0;i<a.length;i++){
         if(String(a[i].id)===String(editId)){
           a[i].data=v.data; a[i].ora=v.ora; a[i].tipo=v.tipo; a[i].cliente=v.cliente;
-          a[i].tel=v.tel; a[i].luogo=v.luogo; a[i].note=v.note; trovato=true;
+          a[i].tel=v.tel; a[i].luogo=v.luogo; a[i].note=v.note; a[i].mod=adesso(); trovato=true;
         }
       }
     }
     if(!trovato){
       v.id="ap"+Date.now()+Math.floor(Math.random()*1000);
-      v.fatto=false; v.creato=new Date().toISOString();
+      v.fatto=false; v.creato=adesso(); v.mod=v.creato;
       a.push(v);
     }
     save(a); chiudi(); render(); prossimiDash();
   }
 
   function azione(id,act){
-    var a=rows(), i;
+    var a=rawRows(), i;
     for(i=0;i<a.length;i++){
       if(String(a[i].id)!==String(id)) continue;
-      if(act==="fatto"){ a[i].fatto=!a[i].fatto; save(a); render(); prossimiDash(); return; }
+      if(act==="fatto"){ a[i].fatto=!a[i].fatto; a[i].mod=adesso(); save(a); render(); prossimiDash(); return; }
       if(act==="del"){
         if(!confirm("Eliminare l'appuntamento"+(a[i].cliente?" con "+a[i].cliente:"")+" del "+fmtData(a[i].data)+"?")) return;
-        a.splice(i,1); save(a); render(); prossimiDash(); return;
+        a[i]={id:a[i].id,canc:1,mod:adesso()}; save(a); render(); prossimiDash(); return;
       }
       if(act==="mod"){ apri(id); return; }
     }
@@ -11625,6 +11722,7 @@ function iduRestore(input){
     if(T) T.textContent="Agenda";
     if(S) S.textContent="Appuntamenti, sopralluoghi, montaggi e consegne.";
     render();
+    cloudOra(false);
   }
 
   function aggancia(){
@@ -11670,7 +11768,32 @@ function iduRestore(input){
     document.addEventListener("keydown",function(e){ if(e.key==="Escape") chiudi(); });
     var next=el("ndx-agenda-next");
     if(next) next.addEventListener("click",function(){ vaiAgenda(); });
+    var cb=el("ag-cloud");
+    if(cb) cb.addEventListener("click",function(){ cloudOra(true); });
+    document.addEventListener("ndx-cloud",function(e){
+      if(!e.detail || e.detail.chiave!==KEY) return;
+      if(e.detail.cambiato){ render(); prossimiDash(); badge(); }
+      cloudStato(e.detail.ok ? "☁ Aggiornato" : (e.detail.msg==="non configurato" ? null : "☁ "+e.detail.msg));
+    });
+    cloudStato(null);
+    if(window.ndxCloud && window.ndxCloud.configurato() && window.ndxCloud.auto()) setTimeout(function(){ window.ndxCloud.sincronizza(KEY); },1200);
     prossimiDash(); badge();
+  }
+
+  function cloudStato(txt){
+    var b=el("ag-cloud"); if(!b) return;
+    if(txt){ b.textContent=txt; return; }
+    b.textContent=(window.ndxCloud && window.ndxCloud.configurato()) ? "☁ Sincronizza" : "☁ Non configurato";
+  }
+  function cloudOra(manuale){
+    if(!window.ndxCloud) return;
+    if(!window.ndxCloud.configurato()){
+      cloudStato(null);
+      if(manuale && confirm("La sincronizzazione con il telefono non è impostata su questo dispositivo. Ti porto in Preventivi, Impostazioni, per metterla?")) window.ndxCloud.apriImpostazioni();
+      return;
+    }
+    cloudStato("☁ …");
+    window.ndxCloud.sincronizza(KEY);
   }
 
   window.ndxAgendaApri=function(pre){ vaiAgenda(); apri(null,pre||null); };
@@ -11696,8 +11819,10 @@ function iduRestore(input){
   var TIPI=[["Nuovo","#f08a3c"],["Sostituire","#64a8ff"],["Riparare","#f06b6b"],["Serratura","#c792ea"],["Misura","#55d39b"],["Nota","#91a2bb"]];
   var filtro="aperti", apertoId=null, ultimoTipo="Nuovo", editRiga=null, tSave=null;
 
-  function rows(){ try{ var x=JSON.parse(localStorage.getItem(KEY)||"[]"); return Array.isArray(x)?x:[]; }catch(e){ return []; } }
-  function save(a){ try{ localStorage.setItem(KEY,JSON.stringify(a)); }catch(e){ alert("Memoria piena: non riesco a salvare il sopralluogo."); } }
+  function rawRows(){ try{ var x=JSON.parse(localStorage.getItem(KEY)||"[]"); return Array.isArray(x)?x:[]; }catch(e){ return []; } }
+  function rows(){ var a=rawRows(), o=[], i; for(i=0;i<a.length;i++){ if(!a[i].canc) o.push(a[i]); } return o; }
+  function adesso(){ return new Date().toISOString(); }
+  function save(a){ try{ localStorage.setItem(KEY,JSON.stringify(a)); }catch(e){ alert("Memoria piena: non riesco a salvare il sopralluogo."); } if(window.ndxCloud) window.ndxCloud.programma(KEY); }
   function clienti(){ try{ var x=JSON.parse(localStorage.getItem("idu_clienti")||"[]"); return Array.isArray(x)?x:[]; }catch(e){ return []; } }
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
   function el(id){ return document.getElementById(id); }
@@ -11710,7 +11835,7 @@ function iduRestore(input){
   function fmtBreve(s){ try{ return dataObj(s).toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric"}); }catch(e){ return s; } }
   function colore(tipo){ for(var i=0;i<TIPI.length;i++){ if(TIPI[i][0]===tipo) return TIPI[i][1]; } return "#91a2bb"; }
   function trova(id){ var a=rows(), i; for(i=0;i<a.length;i++){ if(String(a[i].id)===String(id)) return a[i]; } return null; }
-  function scrivi(sop){ var a=rows(), i; for(i=0;i<a.length;i++){ if(String(a[i].id)===String(sop.id)){ a[i]=sop; save(a); return; } } a.push(sop); save(a); }
+  function scrivi(sop){ sop.mod=adesso(); var a=rawRows(), i; for(i=0;i<a.length;i++){ if(String(a[i].id)===String(sop.id)){ a[i]=sop; save(a); return; } } a.push(sop); save(a); }
 
   // "cancello 2 ante 300x200 x2" -> testo, misure, quantita' (nessuna conversione: resta come scritto)
   function leggiRiga(txt){
@@ -11840,7 +11965,7 @@ function iduRestore(input){
   function nuovo(pre){
     var s={ id:"sp"+Date.now()+Math.floor(Math.random()*1000), data:oggi(),
             cliente:(pre&&pre.cliente)||"", tel:(pre&&pre.tel)||"", luogo:(pre&&pre.luogo)||"",
-            note:"", chiuso:false, creato:new Date().toISOString(), righe:[] };
+            note:"", chiuso:false, creato:adesso(), mod:adesso(), righe:[] };
     if(s.cliente){
       var c=clienti(), i;
       for(i=0;i<c.length;i++){
@@ -11850,7 +11975,7 @@ function iduRestore(input){
         }
       }
     }
-    var a=rows(); a.push(s); save(a);
+    var a=rawRows(); a.push(s); save(a);
     vai(); apriScheda(s.id);
     return s;
   }
@@ -11992,6 +12117,7 @@ function iduRestore(input){
     if(T) T.textContent="Sopralluoghi";
     if(S) S.textContent="Il quaderno del cantiere: misure, sostituzioni e riparazioni.";
     if(apertoId && trova(apertoId)) renderRighe(); else { apertoId=null; el("sp-scheda").style.display="none"; el("sp-elenco").style.display="block"; renderElenco(); }
+    cloudOra(false);
   }
 
   function aggancia(){
@@ -12111,11 +12237,36 @@ function iduRestore(input){
     if(dl) dl.addEventListener("click",function(){
       var s=trova(apertoId); if(!s) return;
       if(!confirm("Eliminare tutto il sopralluogo"+(s.cliente?" di "+s.cliente:"")+" con "+((s.righe||[]).length)+" voci?")) return;
-      var a=rows(), out=[], j;
-      for(j=0;j<a.length;j++){ if(String(a[j].id)!==String(s.id)) out.push(a[j]); }
-      save(out); tornaElenco();
+      var a=rawRows(), j;
+      for(j=0;j<a.length;j++){ if(String(a[j].id)===String(s.id)) a[j]={id:a[j].id,canc:1,mod:adesso()}; }
+      save(a); tornaElenco();
     });
+    var cb=el("sp-cloud");
+    if(cb) cb.addEventListener("click",function(){ cloudOra(true); });
+    document.addEventListener("ndx-cloud",function(e){
+      if(!e.detail || e.detail.chiave!==KEY) return;
+      if(e.detail.cambiato){ renderElenco(); if(apertoId && trova(apertoId)) renderRighe(); }
+      cloudStato(e.detail.ok ? "☁ Aggiornato" : (e.detail.msg==="non configurato" ? null : "☁ "+e.detail.msg));
+    });
+    cloudStato(null);
+    if(window.ndxCloud && window.ndxCloud.configurato() && window.ndxCloud.auto()) setTimeout(function(){ window.ndxCloud.sincronizza(KEY); },1600);
     renderElenco(); badge();
+  }
+
+  function cloudStato(txt){
+    var b=el("sp-cloud"); if(!b) return;
+    if(txt){ b.textContent=txt; return; }
+    b.textContent=(window.ndxCloud && window.ndxCloud.configurato()) ? "☁ Sincronizza" : "☁ Non configurato";
+  }
+  function cloudOra(manuale){
+    if(!window.ndxCloud) return;
+    if(!window.ndxCloud.configurato()){
+      cloudStato(null);
+      if(manuale && confirm("La sincronizzazione con il telefono non è impostata su questo dispositivo. Ti porto in Preventivi, Impostazioni, per metterla?")) window.ndxCloud.apriImpostazioni();
+      return;
+    }
+    cloudStato("☁ …");
+    window.ndxCloud.sincronizza(KEY);
   }
 
   window.ndxSoprNuovo=function(pre){ return nuovo(pre||null); };
@@ -12176,6 +12327,12 @@ function iduRestore(input){
     if(/\bcome stai\b|\bcome va\b|tutto bene/.test(t)){ botMsg("Tutto pronto e al lavoro. Dimmi cosa ti serve."); return; }
     if(/chi sei|cosa sei|come ti chiami/.test(t)){ botMsg("Sono l'assistente di IronDesk: ti aiuto con preventivi, lavori, calcoli e i tuoi numeri, anche senza internet."); return; }
     if(/cosa sai fare|che sai fare|cosa puoi fare|\baiuto\b|\bhelp\b|\bcomandi\b|come funzioni|cosa posso (dire|chiedere|fare)/.test(t)){ botMsg(aiHelp()); return; }
+    // sincronizzazione con il telefono
+    if(/sincronizz/.test(t)){
+      if(window.ndxCloud && window.ndxCloud.configurato()){ window.ndxCloud.sincronizza("idu_agenda"); window.ndxCloud.sincronizza("idu_sopralluoghi"); botMsg("Sto allineando agenda e sopralluoghi con il telefono."); }
+      else botMsg("La sincronizzazione non è impostata su questo dispositivo: si accende da Preventivi, Impostazioni.");
+      return;
+    }
     // sopralluoghi (il quaderno del cantiere)
     if(/sopralluog|quaderno|blocco note/.test(t) && !/appuntament|fissa|domani|dopodomani|alle |ore /.test(t)){
       if(window.ndxSoprParse){ var spr=window.ndxSoprParse(raw); botMsg(spr&&spr.msg?spr.msg:"Apro i sopralluoghi."); }
