@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.8.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.9.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.8.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.9.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -481,6 +481,10 @@ details.dett>.dett-body{padding:0 10px 10px}
 .costi-riga span{color:#8a96b0}.costi-riga b{color:#e8eef7;white-space:nowrap}
 .costi-tot{display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding-top:6px;border-top:2px solid #f08a3c;font-weight:700}
 .nota-info{font-size:10px;color:#91a2bb;line-height:1.5;margin-top:4px}
+.tavola-dis{border-radius:9px;overflow:hidden;border:1px solid #172438;background:#0d1422;line-height:0}
+.tavola-dis svg{max-width:100%!important;height:auto}
+.abaco{margin-top:8px}.abaco td,.abaco th{font-size:11px}
+.mini-btn{padding:2px 7px;border-radius:6px;cursor:pointer;font-size:9px;font-weight:700;border:1px solid #2a3450;background:#0b1020;color:#8a96b0;margin-top:3px}
 @media(max-width:500px){.g2{grid-template-columns:1fr}.g3{grid-template-columns:1fr 1fr}}
 </style>
 <style id=ndx-theme>body{background:linear-gradient(135deg,#0b111b,#101b2b 60%,#132137)!important}.sec,.modal,.popup,.pezzo-card,.pezzo-box,.voce-card,.anno-header{background:linear-gradient(150deg,#17293f,#101a2b)!important;border:1px solid #2c4062!important;border-radius:14px!important;box-shadow:0 10px 26px #00000047!important}.sec{padding:14px!important;margin-bottom:12px!important}.tbox,.totbox{background:linear-gradient(150deg,#20180f,#141c2b)!important;border:1.5px solid #f08a3c!important;border-radius:14px!important}.anta-card,.el-card,.lavoro-row,.stat,.lato-row{background:#0f1b2c!important;border:1px solid #2c4062!important;border-radius:12px!important}.modal-bg,.popup-bg{background:rgba(4,8,15,.78)!important;backdrop-filter:blur(4px)!important}.st{color:#f5a55a!important;font-weight:800!important;text-transform:uppercase!important;font-size:12px!important;letter-spacing:.4px!important;margin-bottom:10px!important}.fl{color:#9fb0c9!important;text-transform:uppercase!important;font-size:10px!important;letter-spacing:.3px!important}.fi,.fs,.fita{background:#0b1626!important;border:1.5px solid #2c4062!important;border-radius:10px!important;color:#eef3fa!important}.fi:focus,.fs:focus,.fita:focus{border-color:#f08a3c!important;box-shadow:0 0 0 3px rgba(240,138,60,.18)!important}.btn{border-radius:10px!important;font-weight:700!important}.btn-x{border-radius:9px!important}.chip{border-radius:999px!important;border:1.5px solid #2c4062!important;background:#0b1626!important}.chip.on{background:#f08a3c!important;border-color:#f08a3c!important;color:#1c120b!important}.badge,.chip-stato,.anno-badge{border-radius:999px!important}.tabbar{background:#0b1626!important;border-bottom:1px solid #2c4062!important}.rtable th{background:#0b1626!important}.rtable td{border-top:1px solid #2c4062!important}@media(min-width:820px){body{font-size:16px!important}.page{padding:22px 16px 110px!important;max-width:940px!important}.sec,.modal,.popup,.pezzo-card,.pezzo-box,.voce-card,.anno-header{border-radius:20px!important;box-shadow:0 20px 44px #00000063!important}.sec{padding:24px!important;margin-bottom:18px!important}.tbox,.totbox{border-radius:18px!important}.anta-card,.el-card,.lavoro-row,.stat,.lato-row{border-radius:14px!important;padding:14px!important;margin-bottom:10px!important}.st{font-size:15px!important;margin-bottom:16px!important}.fl{font-size:12px!important;margin-bottom:6px!important}.fi,.fs,.fita{border-radius:12px!important;padding:13px 14px!important;font-size:15px!important}.btn{border-radius:12px!important;padding:11px 17px!important;font-size:14px!important}.btn-add{border-radius:12px!important;padding:13px!important;font-size:14px!important}.chip{padding:9px 15px!important;font-size:13px!important}.tab{font-size:13px!important;padding:15px 4px!important;font-weight:700!important}.rtable{font-size:14px!important}.rtable th{font-size:11px!important;padding:11px!important}.rtable td{padding:11px!important}}</style></head>
@@ -683,11 +687,12 @@ details.dett>.dett-body{padding:0 10px 10px}
         onchange=&quot;salvaUPG('ottim',this.checked)&quot;>
       <label style=&quot;font-size:13px;font-weight:700;cursor:pointer&quot;>Ottimizzatore di taglio (barre da piano di taglio reale)</label>
     </div>
-    <div class=&quot;g3 mb8&quot;>
-      <div><label class=&quot;fl&quot;>Lunghezza barra reale (cm)</label>
-        <input class=&quot;fi&quot; id=&quot;upg-barra&quot; type=&quot;number&quot; min=&quot;590&quot; max=&quot;1220&quot; step=&quot;0.5&quot; onchange=&quot;salvaUPG('barraMm',Math.round((parseFloat(this.value)||601.5)*10))&quot;></div>
-      <div><label class=&quot;fl&quot;>Kerf lama (mm)</label>
-        <input class=&quot;fi&quot; id=&quot;upg-kerf&quot; type=&quot;number&quot; min=&quot;0&quot; max=&quot;10&quot; step=&quot;0.5&quot; onchange=&quot;salvaUPG('kerf',parseFloat(this.value)||3)&quot;></div>
+    <div style=&quot;background:#0b1422;border:1px solid #172438;border-radius:8px;padding:8px 10px;font-size:11px;color:#8a96b0;line-height:1.6;margin-bottom:8px&quot;>
+      🪚 <b style=&quot;color:#e8eef7&quot;>Barre commerciali fisse: 6 m o 12 m</b> — si sceglie per ogni profilo nella distinta (le travi sono sempre da 12 m).<br>
+      ✂️ <b style=&quot;color:#e8eef7&quot;>Sfrido di taglio fisso: 4 mm per ogni taglio</b> (nastro della troncatrice).<br>
+      ⛔ Un pezzo più lungo della sua barra non viene accettato.
+    </div>
+    <div class=&quot;g2 mb8&quot;>
       <div><label class=&quot;fl&quot;>Sfrido forfait (%) — se ottimizzatore OFF</label>
         <input class=&quot;fi&quot; id=&quot;upg-sfrido&quot; type=&quot;number&quot; min=&quot;0&quot; max=&quot;30&quot; step=&quot;0.5&quot; onchange=&quot;salvaUPG('sfrido',parseFloat(this.value)||0)&quot;></div>
       <div><label class=&quot;fl&quot;>Soglia spezzone riutilizzabile (cm)</label>
@@ -699,6 +704,11 @@ details.dett>.dett-body{padding:0 10px 10px}
           onchange=&quot;salvaUPG('quote',this.checked)&quot;>
         <label for=&quot;upg-quote&quot; style=&quot;font-size:13px;font-weight:700;cursor:pointer&quot;>📐 Quote (cm) sul disegno</label>
       </div>
+      <div><label class=&quot;fl&quot;>Stile dei disegni</label>
+        <select class=&quot;fs&quot; id=&quot;upg-stile&quot; onchange=&quot;salvaUPG('stileDisegni',this.value)&quot;>
+          <option value=&quot;tecnico&quot;>Tavola tecnica (linee e quote, fondo bianco)</option>
+          <option value=&quot;realistico&quot;>Realistico (effetto metallo, fondo scuro)</option>
+        </select></div>
     </div>
     <div class=&quot;g2 mb8&quot;>
       <div style=&quot;display:flex;align-items:center;gap:10px&quot;>
@@ -731,6 +741,16 @@ details.dett>.dett-body{padding:0 10px 10px}
         <input class=&quot;fi&quot; id=&quot;upg-eurokg&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.05&quot; style=&quot;border-color:#f08a3c&quot; onchange=&quot;setEuroKg(this.value);renderTutto()&quot;></div>
     </div>
     <div class=&quot;nota-info&quot;>&quot;Ferro senza listino&quot; serve solo per i profili che non hanno un prezzo Sideralba (travi, pieni, inox…): il costo si ricava da peso × €/kg.</div>
+  </div>
+
+  <!-- PESI AL METRO -->
+  <div class=&quot;sec&quot; style=&quot;border-color:#9060e0;margin-bottom:10px&quot;>
+    <div class=&quot;st&quot; style=&quot;color:#b090f0&quot;>⚖️ Pesi al metro — dizionario dei profilati</div>
+    <p style=&quot;font-size:11px;color:#91a2bb;margin-bottom:8px;line-height:1.5&quot;>
+      Pesi nominali (kg/m) usati da FerroCalc: peso teorico = metri di taglio × kg/m. Tubolari dalla sezione, pieni, piatti, angolari e travi IPE/HEA/UPN dal catalogo.
+    </p>
+    <input class=&quot;fi&quot; id=&quot;pesi-cerca&quot; type=&quot;text&quot; placeholder=&quot;Cerca… es. 40x40, IPE 120, piatto 50&quot; oninput=&quot;renderPesi()&quot; style=&quot;margin-bottom:7px&quot;>
+    <div id=&quot;pesi-tbl&quot; style=&quot;max-height:300px;overflow-y:auto&quot;></div>
   </div>
 
   <!-- FERRAMENTA E ACCESSORI [UPGRADE] -->
@@ -2542,32 +2562,38 @@ function calcLamieraTot(p){
 }
 
 // ═══════ UPGRADE: impostazioni (ottimizzatore, sfrido, verniciatura, quote) ═══════
-const UPG=Object.assign({ottim:true,kerf:3,sfrido:5,sogliaSpz:500,vernMin:30,quote:true,barraMm:6015,usaMagazzino:false,tariffaOra:25,ricarico:35,
-  zincTariffa:1.80,zincMin:25,vernTariffa:12,lamPrezzoKg:1.50},
+// Sfrido di taglio FISSO: 4 mm per ogni taglio (spessore del nastro della troncatrice).
+const KERF_MM=4;
+// Barre commerciali: 6 m (misura reale UPG.barraMm = 6015 mm) oppure 12 m, scelte per profilo.
+const BARRA12_MM=12000;
+const UPG=Object.assign({ottim:true,sfrido:5,sogliaSpz:500,vernMin:30,quote:true,barraMm:6015,usaMagazzino:false,tariffaOra:25,ricarico:35,
+  zincTariffa:0.65,zincMin:25,vernTariffa:12,lamPrezzoKg:1.50,barre12:{},stileDisegni:&quot;tecnico&quot;},
   (function(){try{return JSON.parse(localStorage.getItem(&quot;fc_upgrade&quot;)||&quot;{}&quot;)||{};}catch(e){return {};}})());
 function salvaUPG(k,v){UPG[k]=v;try{localStorage.setItem(&quot;fc_upgrade&quot;,JSON.stringify(UPG));}catch(e){}renderTutto();
   try{if(document.getElementById('tab-magazzino')?.classList.contains('on'))renderMagazzino();}catch(e){}
   try{if(document.getElementById('tab-riepilogo')?.classList.contains('on'))renderRiepilogo();}catch(e){}}
 
-// ═══════ UPGRADE [1]: ottimizzatore di taglio (First-Fit Decreasing + kerf) ═══════
+// ═══════ OTTIMIZZATORE DI TAGLIO (bar nesting First-Fit Decreasing) ═══════
+// Ogni pezzo costa la sua misura + 4 mm di taglio (KERF_MM). Il taglio non serve solo se il pezzo
+// finisce esattamente a fine barra. perPezzoMm: extra per ogni pezzo (controtaglio 45° dell'alluminio).
 function ottimizzaTagli(tagli,opz){
-  // perPezzoMm: lunghezza extra consumata da OGNI pezzo (anche il primo della barra),
-  // es. controtaglio a 45° dell'alluminio scuretto = una faccia profilo. Default 0 (ferro: invariato).
-  const O=Object.assign({barraMm:UPG.barraMm||6015,kerf:UPG.kerf,testata:0,spezzoni:null,perPezzoMm:0},opz||{});
+  const O=Object.assign({barraMm:UPG.barraMm||6015,kerf:KERF_MM,testata:0,spezzoni:null,perPezzoMm:0},opz||{});
   const flat=[];tagli.forEach(t=>{for(let i=0;i<t.qty;i++)flat.push({mm:t.mm,label:t.label});});
   flat.sort((a,b)=>b.mm-a.mm);
   const fuori=flat.filter(t=>t.mm+O.perPezzoMm>O.barraMm-O.testata);
   const validi=flat.filter(t=>t.mm+O.perPezzoMm<=O.barraMm-O.testata);
+  // quanto consuma il pezzo t in una barra con &quot;resto&quot; libero (-1 = non ci sta)
+  const consumo=(t,resto)=>{const netto=t.mm+O.perPezzoMm;if(resto>=netto+O.kerf)return netto+O.kerf;if(Math.abs(resto-netto)<0.01)return netto;return -1;};
   const barre=[];
   // [MAGAZZINO] spezzoni disponibili come contenitori già aperti (dal più corto: preserva i lunghi)
   (O.spezzoni||[]).slice().sort((a,b)=>a.mm-b.mm).forEach(s=>barre.push({resto:s.mm,tagli:[],spz:true,spzMm:s.mm,magId:s.magId}));
   validi.forEach(t=>{
     let best=-1,bestR=Infinity;
     for(let i=0;i<barre.length;i++){
-      const need=t.mm+O.perPezzoMm+(barre[i].tagli.length?O.kerf:0); // controtaglio su ogni pezzo, kerf solo TRA i pezzi
-      if(barre[i].resto>=need&amp;&amp;barre[i].resto-need<bestR){best=i;bestR=barre[i].resto-need;}}
+      const need=consumo(t,barre[i].resto);
+      if(need>=0&amp;&amp;barre[i].resto-need<bestR){best=i;bestR=barre[i].resto-need;}}
     if(best<0){barre.push({resto:O.barraMm-O.testata,tagli:[],spz:false});best=barre.length-1;}
-    const need=t.mm+O.perPezzoMm+(barre[best].tagli.length?O.kerf:0);
+    const need=consumo(t,barre[best].resto);
     barre[best].tagli.push(t);barre[best].resto-=need;
   });
   const attive=barre.filter(b=>!b.spz||b.tagli.length); // spezzoni non usati esclusi dal piano
@@ -2585,12 +2611,17 @@ function ottimizzaTagli(tagli,opz){
 function mlConSfrido(ml){return ml*(1+(parseFloat(UPG.sfrido)||0)/100);}
 // Lunghezza della barra commerciale del materiale (mm): alluminio 6,50 m, travi 12 m (da catalogo),
 // tutto il resto = UPG.barraMm (6015 mm). Serve a piano di taglio, conteggio barre e prezzo.
+function chiaveBarra(mat){return mat?(pCanonCat(mat.cat||&quot;&quot;)+&quot;|&quot;+mat.profilo+&quot;|&quot;+(mat.sp==null?&quot;&quot;:mat.sp)):&quot;&quot;;}
 function barraMmMat(mat){
   if(mat&amp;&amp;mat.fam==='alu')return ALU_BAR*10;
   const cm=mat&amp;&amp;pCatMeta(pCanonCat(mat.cat));
   if(cm&amp;&amp;cm.barra)return cm.barra*1000;
+  if(mat&amp;&amp;UPG.barre12&amp;&amp;UPG.barre12[chiaveBarra(mat)])return BARRA12_MM; // profilo comprato in barre da 12 m
   return UPG.barraMm||6015;
 }
+// La barra di questo profilo si può scegliere (6 ⇄ 12 m)? Le travi a catalogo sono sempre 12 m.
+function barraScegliibile(mat){if(!mat||mat.fam==='alu')return false;const cm=pCatMeta(pCanonCat(mat.cat));return !(cm&amp;&amp;cm.barra);}
+function nomeBarra(mm){return mm>=BARRA12_MM-1?&quot;12 m&quot;:(Math.abs(mm-6500)<1?&quot;6,5 m&quot;:&quot;6 m&quot;);}
 // Metri &quot;di listino&quot; di una barra: il prezzo €/100 m si paga sulla misura commerciale (6 m, 12 m, 6,5 m)
 function barraNomM(mm){return Math.round(mm/100)/10;}
 function prezzoBarra(mat){const p100=getP(mat);return p100>0?p100/100*barraNomM(barraMmMat(mat)):0;}
@@ -2627,43 +2658,165 @@ function costoVerniciatura(mq,tariffa){
   const t=numOk(tariffa,UPG.vernTariffa);
   return mq>0?Math.max(numOk(UPG.vernMin,0),mq*t):0;
 }
-// ═══════ UPGRADE [3]: quote sul disegno (canvas) ═══════
+// ═══════ MOTORE DISEGNI SVG ═══════
+// &quot;Tela&quot; con la stessa interfaccia di un canvas 2D: tutti i disegni di FerroCalc la usano senza
+// cambiare una riga di geometria e il risultato è un SVG vettoriale (nitido a ogni zoom, stampabile).
+// Per l'immagine nel preventivo si usa invece un canvas vero (stesse funzioni, stesso risultato).
+function SvgCanvas(w,h){this.width=w;this.height=h;this._ctx=null;}
+SvgCanvas.prototype.getContext=function(){return this._ctx||(this._ctx=new SvgCtx(this));};
+SvgCanvas.prototype.toSVG=function(extraStyle){
+  const c=this.getContext();
+  return `<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 ${this.width} ${this.height}&quot; width=&quot;100%&quot; style=&quot;display:block;max-width:${this.width}px;margin:0 auto;${extraStyle||&quot;&quot;}&quot; font-family=&quot;Arial,Helvetica,sans-serif&quot;>`+
+    (c.defs.length?`<defs>${c.defs.join(&quot;&quot;)}</defs>`:&quot;&quot;)+c.el.join(&quot;&quot;)+`</svg>`;
+};
+function SvgCtx(canvas){
+  this.canvas=canvas;this.el=[];this.defs=[];this._id=0;this._stack=[];this._path=&quot;&quot;;this._clipPath=null;
+  this.fillStyle=&quot;#000&quot;;this.strokeStyle=&quot;#000&quot;;this.lineWidth=1;this.font=&quot;10px sans-serif&quot;;
+  this.textAlign=&quot;start&quot;;this.textBaseline=&quot;alphabetic&quot;;this.lineJoin=&quot;miter&quot;;this.lineCap=&quot;butt&quot;;this.globalAlpha=1;
+  this._dash=[];this._m=[1,0,0,1,0,0];this._clip=null;
+}
+(function(P){
+  const f=v=>Math.round(v*100)/100;
+  const PROPS=[&quot;fillStyle&quot;,&quot;strokeStyle&quot;,&quot;lineWidth&quot;,&quot;font&quot;,&quot;textAlign&quot;,&quot;textBaseline&quot;,&quot;lineJoin&quot;,&quot;lineCap&quot;,&quot;globalAlpha&quot;,&quot;_dash&quot;,&quot;_m&quot;,&quot;_clip&quot;];
+  P.save=function(){const s={};PROPS.forEach(k=>{s[k]=Array.isArray(this[k])?this[k].slice():this[k];});this._stack.push(s);};
+  P.restore=function(){const s=this._stack.pop();if(s)PROPS.forEach(k=>{this[k]=s[k];});};
+  P._mul=function(a,b,c,d,e,g){const m=this._m;this._m=[m[0]*a+m[2]*b,m[1]*a+m[3]*b,m[0]*c+m[2]*d,m[1]*c+m[3]*d,m[0]*e+m[2]*g+m[4],m[1]*e+m[3]*g+m[5]];};
+  P.translate=function(x,y){this._mul(1,0,0,1,x,y);};
+  P.rotate=function(a){const c=Math.cos(a),s=Math.sin(a);this._mul(c,s,-s,c,0,0);};
+  P.scale=function(x,y){this._mul(x,0,0,y,0,0);};
+  P.transform=function(a,b,c,d,e,g){this._mul(a,b,c,d,e,g);};
+  P.setTransform=function(a,b,c,d,e,g){this._m=(a&amp;&amp;typeof a===&quot;object&quot;)?[a.a,a.b,a.c,a.d,a.e,a.f]:[a,b,c,d,e,g];};
+  P.resetTransform=function(){this._m=[1,0,0,1,0,0];};
+  P.setLineDash=function(a){this._dash=(a||[]).slice();};
+  P.getLineDash=function(){return this._dash.slice();};
+  P.beginPath=function(){this._path=&quot;&quot;;};
+  P.moveTo=function(x,y){this._path+=`M${f(x)} ${f(y)}`;};
+  P.lineTo=function(x,y){this._path+=`L${f(x)} ${f(y)}`;};
+  P.closePath=function(){this._path+=&quot;Z&quot;;};
+  P.quadraticCurveTo=function(a,b,x,y){this._path+=`Q${f(a)} ${f(b)} ${f(x)} ${f(y)}`;};
+  P.bezierCurveTo=function(a,b,c,d,x,y){this._path+=`C${f(a)} ${f(b)} ${f(c)} ${f(d)} ${f(x)} ${f(y)}`;};
+  P.rect=function(x,y,w,h){this._path+=`M${f(x)} ${f(y)}h${f(w)}v${f(h)}h${f(-w)}Z`;};
+  P.roundRect=function(x,y,w,h,r){
+    r=Array.isArray(r)?(r[0]||0):(+r||0);r=Math.max(0,Math.min(r,Math.abs(w)/2,Math.abs(h)/2));
+    if(!r)return this.rect(x,y,w,h);
+    this._path+=`M${f(x+r)} ${f(y)}H${f(x+w-r)}A${f(r)} ${f(r)} 0 0 1 ${f(x+w)} ${f(y+r)}V${f(y+h-r)}A${f(r)} ${f(r)} 0 0 1 ${f(x+w-r)} ${f(y+h)}H${f(x+r)}A${f(r)} ${f(r)} 0 0 1 ${f(x)} ${f(y+h-r)}V${f(y+r)}A${f(r)} ${f(r)} 0 0 1 ${f(x+r)} ${f(y)}Z`;
+  };
+  P.ellipse=function(x,y,rx,ry,rot,a0,a1,ccw){
+    if(Math.abs(a1-a0)>=Math.PI*2-1e-6){
+      this._path+=`M${f(x+rx)} ${f(y)}A${f(rx)} ${f(ry)} 0 1 1 ${f(x-rx)} ${f(y)}A${f(rx)} ${f(ry)} 0 1 1 ${f(x+rx)} ${f(y)}Z`;return;
+    }
+    const sx=x+rx*Math.cos(a0),sy=y+ry*Math.sin(a0),ex=x+rx*Math.cos(a1),ey=y+ry*Math.sin(a1);
+    let d=ccw?a0-a1:a1-a0;while(d<0)d+=Math.PI*2;
+    this._path+=`${this._path?&quot;L&quot;:&quot;M&quot;}${f(sx)} ${f(sy)}A${f(rx)} ${f(ry)} 0 ${d>Math.PI?1:0} ${ccw?0:1} ${f(ex)} ${f(ey)}`;
+  };
+  P.arc=function(x,y,r,a0,a1,ccw){this.ellipse(x,y,r,r,0,a0,a1,ccw);};
+  P.createLinearGradient=function(x0,y0,x1,y1){
+    const id=&quot;g&quot;+(++this._id)+&quot;_&quot;+Math.random().toString(36).slice(2,6),stops=[],ctx=this;
+    return {_grad:true,id,stops,x0,y0,x1,y1,addColorStop(o,c){stops.push([o,c]);},_def(){
+      return `<linearGradient id=&quot;${id}&quot; gradientUnits=&quot;userSpaceOnUse&quot; x1=&quot;${f(x0)}&quot; y1=&quot;${f(y0)}&quot; x2=&quot;${f(x1)}&quot; y2=&quot;${f(y1)}&quot;>`+
+        stops.map(s=>`<stop offset=&quot;${s[0]}&quot; stop-color=&quot;${s[1]}&quot;/>`).join(&quot;&quot;)+`</linearGradient>`;}};
+  };
+  P.createRadialGradient=function(x0,y0,r0,x1,y1,r1){return this.createLinearGradient(x0,y0,x1,y1);};
+  P._paint=function(v){
+    if(v&amp;&amp;v._grad){if(!v._usato){this.defs.push(v._def());v._usato=true;}return `url(#${v.id})`;}
+    return String(v==null?&quot;none&quot;:v);
+  };
+  P._common=function(){
+    const m=this._m,t=(m[0]===1&amp;&amp;m[1]===0&amp;&amp;m[2]===0&amp;&amp;m[3]===1&amp;&amp;m[4]===0&amp;&amp;m[5]===0)?&quot;&quot;:` transform=&quot;matrix(${m.map(f).join(&quot; &quot;)})&quot;`;
+    return t+(this._clip?` clip-path=&quot;url(#${this._clip})&quot;`:&quot;&quot;)+(this.globalAlpha<1?` opacity=&quot;${this.globalAlpha}&quot;`:&quot;&quot;);
+  };
+  P._stroke=function(){
+    return ` stroke=&quot;${this._paint(this.strokeStyle)}&quot; stroke-width=&quot;${f(this.lineWidth)}&quot; stroke-linejoin=&quot;${this.lineJoin}&quot; stroke-linecap=&quot;${this.lineCap}&quot;`+
+      (this._dash.length?` stroke-dasharray=&quot;${this._dash.join(&quot; &quot;)}&quot;`:&quot;&quot;);
+  };
+  P.fill=function(){if(this._path)this.el.push(`<path d=&quot;${this._path}&quot; fill=&quot;${this._paint(this.fillStyle)}&quot;${this._common()}/>`);};
+  P.stroke=function(){if(this._path)this.el.push(`<path d=&quot;${this._path}&quot; fill=&quot;none&quot;${this._stroke()}${this._common()}/>`);};
+  P.fillRect=function(x,y,w,h){this.el.push(`<rect x=&quot;${f(Math.min(x,x+w))}&quot; y=&quot;${f(Math.min(y,y+h))}&quot; width=&quot;${f(Math.abs(w))}&quot; height=&quot;${f(Math.abs(h))}&quot; fill=&quot;${this._paint(this.fillStyle)}&quot;${this._common()}/>`);};
+  P.strokeRect=function(x,y,w,h){this.el.push(`<rect x=&quot;${f(Math.min(x,x+w))}&quot; y=&quot;${f(Math.min(y,y+h))}&quot; width=&quot;${f(Math.abs(w))}&quot; height=&quot;${f(Math.abs(h))}&quot; fill=&quot;none&quot;${this._stroke()}${this._common()}/>`);};
+  P.clearRect=function(x,y,w,h){if(x<=0&amp;&amp;y<=0&amp;&amp;w>=this.canvas.width&amp;&amp;h>=this.canvas.height){this.el=[];this.defs=[];}};
+  P.clip=function(){
+    const id=&quot;c&quot;+(++this._id)+&quot;_&quot;+Math.random().toString(36).slice(2,6);
+    this.defs.push(`<clipPath id=&quot;${id}&quot;${this._clip?` clip-path=&quot;url(#${this._clip})&quot;`:&quot;&quot;}><path d=&quot;${this._path}&quot;${this._common().replace(/ clip-path=&quot;[^&quot;]*&quot;/,&quot;&quot;)}/></clipPath>`);
+    this._clip=id;
+  };
+  P._font=function(){
+    const m=/(?:(\d{3}|bold|normal)\s+)?(\d+(?:\.\d+)?)px\s*(.*)$/.exec(this.font||&quot;&quot;)||[];
+    return {w:m[1]||&quot;normal&quot;,s:parseFloat(m[2])||10,fam:(m[3]||&quot;sans-serif&quot;).trim()};
+  };
+  P.measureText=function(t){const F=this._font();const k=/mono/.test(F.fam)?0.6:(F.w===&quot;bold&quot;||+F.w>=600?0.6:0.55);return {width:String(t).length*F.s*k};};
+  P._text=function(t,x,y,modo){
+    const F=this._font();
+    const anchor={center:&quot;middle&quot;,right:&quot;end&quot;,end:&quot;end&quot;}[this.textAlign]||&quot;start&quot;;
+    const dy={top:0.8,hanging:0.8,middle:0.35,bottom:-0.22,ideographic:-0.22}[this.textBaseline]||0;
+    const fam=/mono/.test(F.fam)?&quot;Consolas,monospace&quot;:&quot;Arial,Helvetica,sans-serif&quot;;
+    const paint=modo===&quot;s&quot;?` fill=&quot;none&quot;${this._stroke()}`:` fill=&quot;${this._paint(this.fillStyle)}&quot;`;
+    this.el.push(`<text x=&quot;${f(x)}&quot; y=&quot;${f(y+dy*F.s)}&quot; font-size=&quot;${F.s}&quot; font-weight=&quot;${F.w}&quot; font-family=&quot;${fam}&quot; text-anchor=&quot;${anchor}&quot;${paint}${this._common()}>${esc(t)}</text>`);
+  };
+  P.fillText=function(t,x,y){this._text(t,x,y,&quot;f&quot;);};
+  P.strokeText=function(t,x,y){this._text(t,x,y,&quot;s&quot;);};
+  P.drawImage=function(){};
+  P.createPattern=function(){return &quot;#999&quot;;};
+})(SvgCtx.prototype);
+
+// ═══════ STILE DEI DISEGNI ═══════
+// &quot;tecnico&quot; (predefinito) = tavola come i modelli del catalogo IronDesk: profili grigi pieni
+// con contorno scuro, luce azzurra, cerniere e quote blu su fondo chiaro.
+// &quot;realistico&quot; = lo stile precedente (effetto metallo su fondo scuro).
+function cvTec(){return (UPG.stileDisegni||&quot;tecnico&quot;)!==&quot;realistico&quot;;}
+const CV_TEC={carta:&quot;#e4ebee&quot;,cornice:&quot;#9aa9b2&quot;,profilo:&quot;#8e9196&quot;,profiloScuro:&quot;#6f7378&quot;,contorno:&quot;#2a2c30&quot;,
+  luce:&quot;#c7dce5&quot;,lamiera:&quot;#a8adb3&quot;,lamieraSegno:&quot;rgba(40,44,52,.35)&quot;,quota:&quot;#1d3a6e&quot;,testo:&quot;#1d2733&quot;,
+  fondoTesto:&quot;rgba(244,247,249,.94)&quot;,tenue:&quot;#5b6875&quot;,accento:&quot;#b0620c&quot;,manc:&quot;#1d4f9a&quot;,scala:&quot;#2a2c30&quot;};
+function CVC(ruolo){
+  if(cvTec())return CV_TEC[ruolo]||CV_TEC.contorno;
+  return ({carta:&quot;#0b1422&quot;,luce:null,lamiera:&quot;rgba(176,182,194,0.92)&quot;,lamieraSegno:&quot;rgba(74,86,108,0.5)&quot;,quota:&quot;#f08a3c&quot;,
+    testo:&quot;#8fa3c8&quot;,tenue:&quot;#4a5c80&quot;,accento:&quot;#f08a3c&quot;,manc:&quot;#64a8ff&quot;,scala:&quot;#f08a3c&quot;,contorno:&quot;rgba(4,8,16,.6)&quot;,pav:&quot;#3a4a70&quot;})[ruolo]||&quot;#8fa3c8&quot;;
+}
+
+// ═══════ QUOTE sul disegno ═══════
 function drawQuotaCv(ctx,x1,y1,x2,y2,testo,off){
   off=off==null?18:off;
+  const tec=cvTec();
   const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy)||1;
   const nx=-dy/len,ny=dx/len,X1=x1+nx*off,Y1=y1+ny*off,X2=x2+nx*off,Y2=y2+ny*off;
+  const col=CVC(&quot;quota&quot;);
   ctx.save();
-  ctx.strokeStyle=&quot;#f08a3c&quot;;ctx.fillStyle=&quot;#f08a3c&quot;;ctx.lineWidth=1.3;
-  ctx.setLineDash([3,3]);
-  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(X1+nx*5,Y1+ny*5);ctx.moveTo(x2,y2);ctx.lineTo(X2+nx*5,Y2+ny*5);ctx.stroke();
+  ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=tec?0.9:1.3;
+  // linee di richiamo (in tavola continue e sottili, come nei disegni tecnici)
+  ctx.setLineDash(tec?[]:[3,3]);
+  ctx.beginPath();ctx.moveTo(x1+nx*(tec?3:0),y1+ny*(tec?3:0));ctx.lineTo(X1+nx*5,Y1+ny*5);ctx.moveTo(x2+nx*(tec?3:0),y2+ny*(tec?3:0));ctx.lineTo(X2+nx*5,Y2+ny*5);ctx.stroke();
   ctx.setLineDash([]);
   ctx.beginPath();ctx.moveTo(X1,Y1);ctx.lineTo(X2,Y2);ctx.stroke();
   const a=Math.atan2(Y2-Y1,X2-X1);
-  [[X1,Y1,a],[X2,Y2,a+Math.PI]].forEach(f=>{
-    ctx.beginPath();ctx.moveTo(f[0],f[1]);
-    ctx.lineTo(f[0]+10*Math.cos(f[2]-0.28),f[1]+10*Math.sin(f[2]-0.28));
-    ctx.moveTo(f[0],f[1]);
-    ctx.lineTo(f[0]+10*Math.cos(f[2]+0.28),f[1]+10*Math.sin(f[2]+0.28));ctx.stroke();});
+  [[X1,Y1,a],[X2,Y2,a+Math.PI]].forEach(q=>{
+    if(tec){ // frecce piene
+      ctx.beginPath();ctx.moveTo(q[0],q[1]);
+      ctx.lineTo(q[0]+9*Math.cos(q[2]-0.3),q[1]+9*Math.sin(q[2]-0.3));
+      ctx.lineTo(q[0]+9*Math.cos(q[2]+0.3),q[1]+9*Math.sin(q[2]+0.3));ctx.closePath();ctx.fill();
+    } else {
+      ctx.beginPath();ctx.moveTo(q[0],q[1]);
+      ctx.lineTo(q[0]+10*Math.cos(q[2]-0.28),q[1]+10*Math.sin(q[2]-0.28));
+      ctx.moveTo(q[0],q[1]);
+      ctx.lineTo(q[0]+10*Math.cos(q[2]+0.28),q[1]+10*Math.sin(q[2]+0.28));ctx.stroke();
+    }
+  });
   const mx=(X1+X2)/2,my=(Y1+Y2)/2;
   let ang=Math.atan2(Y2-Y1,X2-X1);
   if(ang>Math.PI/2||ang<-Math.PI/2)ang+=Math.PI;
-  // Testo grande su fondino scuro: leggibile e MAI sovrapposto ad altre scritte.
-  // Se il posto è occupato, il testo scivola lungo la normale della quota.
-  ctx.font=&quot;700 15px monospace&quot;;ctx.textAlign=&quot;center&quot;;ctx.textBaseline=&quot;bottom&quot;;
+  // Testo su fondino: leggibile e mai sovrapposto (se il posto è occupato scivola lungo la normale)
+  ctx.font=tec?&quot;700 13px Arial&quot;:&quot;700 15px monospace&quot;;ctx.textAlign=&quot;center&quot;;ctx.textBaseline=&quot;bottom&quot;;
   const _tw=ctx.measureText(testo).width;
-  const _bw=Math.abs(Math.cos(ang))*(_tw+10)+Math.abs(Math.sin(ang))*19;
-  const _bh=Math.abs(Math.sin(ang))*(_tw+10)+Math.abs(Math.cos(ang))*19;
+  const hT=tec?17:19;
+  const _bw=Math.abs(Math.cos(ang))*(_tw+10)+Math.abs(Math.sin(ang))*hT;
+  const _bh=Math.abs(Math.sin(ang))*(_tw+10)+Math.abs(Math.cos(ang))*hT;
   let _t=0;
-  if(typeof _cvLibero==='function'){
-    const box=t2=>({x:mx+nx*t2-_bw/2,y:my+ny*t2-13-_bh/2,w:_bw,h:_bh});
-    for(const t2 of [0,18,36,-18,54]){if(_cvLibero(box(t2))){_t=t2;break;}}
-    _cvPrenota(box(_t));
-  }
+  const box=t2=>({x:mx+nx*t2-_bw/2,y:my+ny*t2-13-_bh/2,w:_bw,h:_bh});
+  for(const t2 of [0,18,36,-18,54]){if(_cvLibero(box(t2))){_t=t2;break;}}
+  _cvPrenota(box(_t));
   ctx.translate(mx+nx*_t,my+ny*_t);
   ctx.rotate(ang);
-  ctx.fillStyle=&quot;rgba(6,12,22,.88)&quot;;
-  ctx.fillRect(-_tw/2-5,-21,_tw+10,19);
-  ctx.fillStyle=&quot;#ffb340&quot;;
+  ctx.fillStyle=tec?CV_TEC.fondoTesto:&quot;rgba(6,12,22,.88)&quot;;
+  ctx.fillRect(-_tw/2-5,-hT-2,_tw+10,hT);
+  ctx.fillStyle=tec?CV_TEC.quota:&quot;#ffb340&quot;;
   ctx.fillText(testo,0,-4);
   ctx.restore();
 }
@@ -2672,41 +2825,48 @@ function drawQuotaCv(ctx,x1,y1,x2,y2,testo,off){
 let _cvOcc=[];
 let _cvLabQ=[]; // coda etichette: si disegnano per ULTIME, sopra le barre
 function cvOccReset(){_cvOcc=[];_cvLabQ=[];}
-function cvLabelQ(testo,x,y,colore,align,fontPx){_cvLabQ.push([testo,x,y,colore,align,fontPx]);}
+let _cvMuto=false; // true = disegno senza scritte (miniature)
+function cvLabelQ(testo,x,y,colore,align,fontPx){if(!_cvMuto)_cvLabQ.push([testo,x,y,colore,align,fontPx]);}
 function cvLabelFlush(ctx){_cvLabQ.forEach(a=>cvLabel(ctx,a[0],a[1],a[2],a[3],a[4],a[5]));_cvLabQ=[];}
 function _cvLibero(r){
   return !_cvOcc.some(o=>!(r.x+r.w<o.x-2||o.x+o.w<r.x-2||r.y+r.h<o.y-2||o.y+o.h<r.y-2));
 }
 function _cvPrenota(r){_cvOcc.push(r);}
-// Etichetta su fondino scuro, che NON si sovrappone mai alle altre
+// Etichetta su fondino, che NON si sovrappone mai alle altre
 function cvLabel(ctx,testo,x,y,colore,align,fontPx){
+  const tec=cvTec();
   ctx.save();
   const fs=fontPx||12;
-  ctx.font=&quot;700 &quot;+fs+&quot;px system-ui&quot;;
+  ctx.font=&quot;700 &quot;+fs+&quot;px &quot;+(tec?&quot;Arial&quot;:&quot;system-ui&quot;);
   ctx.textAlign=align||&quot;left&quot;;ctx.textBaseline=&quot;bottom&quot;;
   const w=ctx.measureText(testo).width;
   const x0=align===&quot;center&quot;?x-w/2-4:(align===&quot;right&quot;?x-w-4:x-4);
-  // cerca una posizione libera spostandosi in verticale (giù/su alternati)
   let yF=y;
   const rect=dy=>({x:x0,y:y+dy-fs-6,w:w+8,h:fs+7});
   const passi=[0,fs+9,-(fs+9),2*(fs+9),-2*(fs+9),3*(fs+9)];
   for(const dy of passi){if(_cvLibero(rect(dy))){yF=y+dy;break;}}
   const rr=rect(yF-y);_cvPrenota(rr);
-  ctx.fillStyle=&quot;rgba(6,12,22,.82)&quot;;
+  ctx.fillStyle=tec?CV_TEC.fondoTesto:&quot;rgba(6,12,22,.82)&quot;;
   ctx.fillRect(rr.x,rr.y,rr.w,rr.h);
-  ctx.fillStyle=colore||&quot;#8fa3c8&quot;;
+  // in tavola i colori chiari pensati per il fondo scuro diventano la loro versione scura
+  ctx.fillStyle=tec?_cvShade(_cvHexRgb(colore||&quot;#1d2733&quot;),0.45):(colore||&quot;#8fa3c8&quot;);
   ctx.fillText(testo,x,yF-2);
   ctx.restore();
 }
-// Griglia leggera di sfondo per gli schemi (stile tavola tecnica)
+// Fondo del disegno: in tavola foglio chiaro con cornice, altrimenti griglia leggera
 function cvGriglia(ctx,W,H){
   ctx.save();
-  ctx.strokeStyle=&quot;rgba(90,120,170,0.07)&quot;;ctx.lineWidth=1;
-  for(let gx=40;gx<W;gx+=40){ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,H);ctx.stroke();}
-  for(let gy=40;gy<H;gy+=40){ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(W,gy);ctx.stroke();}
+  if(cvTec()){
+    ctx.fillStyle=CV_TEC.carta;ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle=CV_TEC.cornice;ctx.lineWidth=1;ctx.strokeRect(4.5,4.5,W-9,H-9);
+  } else {
+    ctx.strokeStyle=&quot;rgba(90,120,170,0.07)&quot;;ctx.lineWidth=1;
+    for(let gx=40;gx<W;gx+=40){ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,H);ctx.stroke();}
+    for(let gy=40;gy<H;gy+=40){ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(W,gy);ctx.stroke();}
+  }
   ctx.restore();
 }
-// ── Effetto metallo: barra con sfumatura (bordo chiaro → scuro) e contorno ──
+// ── Colori ──
 function _cvShade(rgb,f){
   return &quot;rgb(&quot;+rgb.map(v=>Math.max(0,Math.min(255,Math.round(v*f)))).join(&quot;,&quot;)+&quot;)&quot;;
 }
@@ -2714,8 +2874,15 @@ function _cvHexRgb(hex){
   const m=/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i.exec(hex||&quot;&quot;);
   return m?[parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)]:[120,150,210];
 }
-function barra3D(ctx,x,y,w,h,rgb,r){
+// Profilo visto di fronte. Tavola: grigio pieno con contorno scuro. Realistico: sfumatura metallo.
+function barra3D(ctx,x,y,w,h,rgb,r,scuro){
   if(w<=0||h<=0)return;
+  if(cvTec()){
+    ctx.fillStyle=scuro?CV_TEC.profiloScuro:CV_TEC.profilo;
+    ctx.beginPath();ctx.rect(x,y,w,h);ctx.fill();
+    ctx.strokeStyle=CV_TEC.contorno;ctx.lineWidth=Math.min(1,Math.max(0.5,Math.min(w,h)/3));ctx.stroke();
+    return;
+  }
   const vert=h>=w;
   const g=vert?ctx.createLinearGradient(x,0,x+Math.max(w,1),0):ctx.createLinearGradient(0,y,0,y+Math.max(h,1));
   g.addColorStop(0,_cvShade(rgb,1.38));
@@ -2725,11 +2892,11 @@ function barra3D(ctx,x,y,w,h,rgb,r){
   ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,w,h,r==null?2:r);else ctx.rect(x,y,w,h);ctx.fill();
   ctx.strokeStyle=&quot;rgba(4,8,16,.5)&quot;;ctx.lineWidth=1;ctx.stroke();
 }
-// Tondo (barra a sezione circolare) visto di fronte: è un RETTANGOLO lungo quanto la barra,
-// con sfumatura cilindrica sul diametro. (Prima era un'ellisse: i tondini sembravano aghi
-// appuntiti che non toccavano le traverse.) cx,cy = centro; rx,ry = mezza larghezza/altezza.
+// Tondo (barra a sezione circolare) visto di fronte: un RETTANGOLO lungo quanto la barra.
+// cx,cy = centro; rx,ry = mezza larghezza/altezza.
 function tondo3D(ctx,cx,cy,rx,ry,rgb){
   if(rx<=0||ry<=0)return;
+  if(cvTec()){barra3D(ctx,cx-rx,cy-ry,rx*2,ry*2,rgb,0,true);return;}
   const oriz=rx>ry;
   const g=oriz?ctx.createLinearGradient(0,cy-ry,0,cy+ry):ctx.createLinearGradient(cx-rx,0,cx+rx,0);
   g.addColorStop(0,_cvShade(rgb,0.62));
@@ -2746,7 +2913,7 @@ function tondo3D(ctx,cx,cy,rx,ry,rgb){
 // (x,y,w,h) = rettangolo ESTERNO in px; sTop/sBot/sSx/sDx = spessori lati in px (0 = lato assente).
 function giunti45(ctx,x,y,w,h,sTop,sBot,sSx,sDx){
   ctx.save();
-  ctx.strokeStyle=&quot;rgba(4,8,16,.65)&quot;;ctx.lineWidth=1.3;
+  ctx.strokeStyle=cvTec()?CV_TEC.contorno:&quot;rgba(4,8,16,.65)&quot;;ctx.lineWidth=cvTec()?0.8:1.3;
   const seg=(x1,y1,x2,y2)=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();};
   if(sTop>0&amp;&amp;sSx>0)seg(x,y,x+Math.min(sSx,w/2),y+Math.min(sTop,h/2));                     // alto-sx
   if(sTop>0&amp;&amp;sDx>0)seg(x+w,y,x+w-Math.min(sDx,w/2),y+Math.min(sTop,h/2));                 // alto-dx
@@ -2754,7 +2921,49 @@ function giunti45(ctx,x,y,w,h,sTop,sBot,sSx,sDx){
   if(sBot>0&amp;&amp;sDx>0)seg(x+w,y+h,x+w-Math.min(sDx,w/2),y+h-Math.min(sBot,h/2));             // basso-dx
   ctx.restore();
 }
-
+// Cerniera vista di fronte (tavola): piccolo rettangolo sul lato esterno dell'anta
+function cerniera(ctx,x,y,w,h){
+  if(!cvTec())return;
+  ctx.save();ctx.fillStyle=CV_TEC.profiloScuro;ctx.strokeStyle=CV_TEC.contorno;ctx.lineWidth=0.8;
+  ctx.beginPath();ctx.rect(x,y,w,h);ctx.fill();ctx.stroke();ctx.restore();
+}
+// ── Decori degli elementi (come nei modelli del catalogo) ──
+// Collare / nodo decorativo su un tondino verticale (cx = asse, cy = centro, d = diametro in px)
+function decoroCollare(ctx,cx,cy,d,oriz){
+  const w=Math.max(d*2.4,6),h=Math.max(d*1.5,4);
+  const ww=oriz?h:w,hh=oriz?w:h;
+  ctx.save();
+  ctx.fillStyle=cvTec()?&quot;#3d4046&quot;:&quot;#c9a24a&quot;;ctx.strokeStyle=cvTec()?CV_TEC.contorno:&quot;rgba(0,0,0,.6)&quot;;ctx.lineWidth=0.8;
+  ctx.beginPath();ctx.ellipse(cx,cy,ww/2,hh/2,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.ellipse(cx,cy-(oriz?0:hh*0.9),ww*0.36,hh*0.34,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.ellipse(cx,cy+(oriz?0:hh*0.9),ww*0.36,hh*0.34,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.restore();
+}
+// Barra &quot;a fuso&quot; (bombata al centro), verticale: x0..x1 = larghezza, y0..y1 = altezza, in px
+function decoroFuso(ctx,xc,y0,y1,d){
+  const w=Math.max(d,1.5),hm=(y0+y1)/2,g=Math.max(w*2.2,4);
+  ctx.save();
+  ctx.fillStyle=cvTec()?CV_TEC.profiloScuro:&quot;#9fb0c8&quot;;ctx.strokeStyle=cvTec()?CV_TEC.contorno:&quot;rgba(0,0,0,.5)&quot;;ctx.lineWidth=0.8;
+  ctx.beginPath();
+  ctx.moveTo(xc-w/2,y0);ctx.lineTo(xc+w/2,y0);ctx.lineTo(xc+g/2,hm);ctx.lineTo(xc+w/2,y1);ctx.lineTo(xc-w/2,y1);ctx.lineTo(xc-g/2,hm);ctx.closePath();
+  ctx.fill();ctx.stroke();ctx.restore();
+}
+// Ricciolo a &quot;S&quot; tra due tondini (x0..x1 in px, centro yc, altezza h)
+function decoroRicciolo(ctx,x0,x1,yc,h){
+  const w=x1-x0;if(w<6)return;
+  const r=Math.min(w/4,h/4);
+  ctx.save();
+  ctx.strokeStyle=cvTec()?&quot;#24262a&quot;:&quot;#c9a24a&quot;;ctx.lineWidth=Math.max(1,r*0.35);ctx.lineCap=&quot;round&quot;;
+  const cx=(x0+x1)/2;
+  ctx.beginPath();
+  ctx.moveTo(x0,yc-h/2);
+  ctx.bezierCurveTo(x0+w*0.1,yc-h/2+r*2.2,cx+r*1.4,yc-r*1.6,cx,yc);
+  ctx.bezierCurveTo(cx-r*1.4,yc+r*1.6,x1-w*0.1,yc+h/2-r*2.2,x1,yc+h/2);
+  ctx.stroke();
+  ctx.beginPath();ctx.arc(x0+r*0.9,yc-h/2+r*0.9,r*0.7,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.arc(x1-r*0.9,yc+h/2-r*0.9,r*0.7,0,Math.PI*2);ctx.stroke();
+  ctx.restore();
+}
 // ── Dimensioni profilo ──
 // mat = oggetto {profilo, faccia?, ...} OPPURE stringa
 // eLarg = dimensione FRONTALE (quella visibile)
@@ -3242,8 +3451,7 @@ function showTab(t){
   if(t===&quot;impostazioni&quot;){aggiornaUIListino();caricaPrezziAluImp();
     try{
       document.getElementById('upg-ottim').checked=!!UPG.ottim;
-      document.getElementById('upg-kerf').value=UPG.kerf;
-      document.getElementById('upg-barra').value=(UPG.barraMm||6015)/10;
+      document.getElementById('upg-stile').value=UPG.stileDisegni||'tecnico';
       document.getElementById('upg-sfrido').value=UPG.sfrido;
       document.getElementById('upg-spz').value=(UPG.sogliaSpz||500)/10;
       document.getElementById('upg-vernmin').value=UPG.vernMin;
@@ -3255,16 +3463,99 @@ function showTab(t){
       document.getElementById('upg-quote').checked=!!UPG.quote;
       document.getElementById('upg-mag').checked=!!UPG.usaMagazzino;
       renderFerrListino();
+      renderPesi();
     }catch(e){}
   }
 }
 
+// ═══════ CONTROLLO BARRE: nessun pezzo più lungo della sua barra commerciale ═══════
+let _statoValido=null;    // ultimo stato accettato: {json, fuori:Set di chiavi}
+let _accettaStato=false;  // true dopo un caricamento (archivio, modello, ripristino): si accetta com'è
+let _statoRifiutato=null; // la modifica bloccata (per rifarla con le barre da 12 m)
+function pezziFuoriBarra(lista){
+  const out=[];
+  (lista||[]).forEach(p=>{
+    walkPezzoMateriali(p,(mat,ml,mm,q,lbl)=>{
+      const b=barraMmMat(mat);
+      if(mm>b+0.5)out.push({pid:p.id,mat,mm,lbl,barra:b,k:p.id+&quot;|&quot;+matKey(mat)+&quot;|&quot;+Math.round(mm)});
+    });
+    if(p.tipo==='alluminio'){
+      const nPz=parseInt(p.nPezziUguali)||1;
+      ALU_FACCE.forEach(fd=>{
+        const f=Object.assign({tipo:fd.k},(p.aluFacce||{})[fd.k]||{});
+        if(!f.attiva)return;
+        const c=aluCalcFac(f,nPz,p.aluBattuta);if(!c||c.isTetto)return;
+        [[c.L,fd.l+&quot; telaio ↔&quot;],[c.A,fd.l+&quot; telaio ↕&quot;]].concat(f.haAnte?[[c.antW,fd.l+&quot; anta ↔&quot;],[c.antH,fd.l+&quot; anta ↕&quot;]]:[]).forEach(x=>{
+          const mm=x[0]*10;
+          if(mm+ALU_SC*10>ALU_BAR*10+0.5)out.push({pid:p.id,mat:{profilo:&quot;Scuretto alluminio&quot;,fam:&quot;alu&quot;,cat:&quot;alluminio&quot;},mm,lbl:(p.nome||&quot;&quot;)+&quot; · &quot;+x[1],barra:ALU_BAR*10,k:p.id+&quot;|alu|&quot;+Math.round(mm)});
+        });
+      });
+    }
+  });
+  return out;
+}
+// Finestra rossa: la misura non è accettata perché un pezzo non entra nella barra
+function mostraErroreBarra(nuovi,rifiutato){
+  _statoRifiutato=rifiutato;
+  const vecchio=document.getElementById('err-barra');if(vecchio)vecchio.remove();
+  const passa12=nuovi.every(x=>x.mm<=BARRA12_MM&amp;&amp;barraScegliibile(x.mat));
+  const d=document.createElement('div');
+  d.id='err-barra';
+  d.style.cssText='position:fixed;inset:0;background:rgba(20,0,0,.82);z-index:600;display:flex;align-items:center;justify-content:center;padding:14px';
+  d.innerHTML=`<div style=&quot;background:#1a0808;border:2px solid #f06b6b;border-radius:14px;padding:18px;max-width:440px;width:100%;box-shadow:0 0 40px #f06b6b55&quot;>
+    <div style=&quot;font-weight:800;font-size:16px;color:#ff6b6b;margin-bottom:6px&quot;>⛔ Misura non accettata</div>
+    <div style=&quot;font-size:13px;color:#f3d0d0;margin-bottom:10px;line-height:1.5&quot;>Un pezzo sarebbe più lungo della barra da cui si taglia. La modifica è stata annullata.</div>
+    ${nuovi.slice(0,6).map(x=>`<div style=&quot;background:#2a0c0c;border:1px solid #6a2020;border-radius:8px;padding:7px 10px;margin-bottom:5px;font-size:12px;color:#ffd6d6&quot;>
+      <b>${esc(x.mat.profilo)}${x.mat.sp!=null&amp;&amp;x.mat.sp!==&quot;&quot;?&quot; sp.&quot;+x.mat.sp:&quot;&quot;}</b> — ${esc(String(x.lbl).split(&quot; · &quot;).slice(1).join(&quot; · &quot;)||x.lbl)}<br>
+      pezzo <b>${cmU(x.mm)}</b> · barra da <b>${nomeBarra(x.barra)}</b> (${cmU(x.barra)})</div>`).join(&quot;&quot;)}
+    ${nuovi.length>6?`<div style=&quot;font-size:11px;color:#c08080&quot;>… e altri ${nuovi.length-6}</div>`:&quot;&quot;}
+    <div style=&quot;display:flex;gap:8px;margin-top:12px;flex-wrap:wrap&quot;>
+      ${passa12?`<button onclick=&quot;usaBarre12()&quot; style=&quot;flex:1;min-width:160px;padding:10px;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px;border:2px solid #f08a3c;background:#1a1205;color:#f08a3c&quot;>Compra questi profili in barre da 12 m</button>`:&quot;&quot;}
+      <button onclick=&quot;document.getElementById('err-barra').remove()&quot; style=&quot;flex:1;min-width:100px;padding:10px;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px;border:2px solid #f06b6b;background:transparent;color:#ff8a8a&quot;>OK, correggo la misura</button>
+    </div>
+  </div>`;
+  document.body.appendChild(d);
+  d._nuovi=nuovi;
+}
+function usaBarre12(){
+  const d=document.getElementById('err-barra');
+  const nuovi=(d&amp;&amp;d._nuovi)||[];
+  const b12=Object.assign({},UPG.barre12||{});
+  nuovi.forEach(x=>{if(barraScegliibile(x.mat))b12[chiaveBarra(x.mat)]=true;});
+  UPG.barre12=b12;
+  try{localStorage.setItem(&quot;fc_upgrade&quot;,JSON.stringify(UPG));}catch(e){}
+  if(d)d.remove();
+  if(_statoRifiutato){pezzi=_statoRifiutato;_statoRifiutato=null;}
+  renderTutto();
+}
+// Barra 6 ⇄ 12 m di un profilo (dalla distinta). Tornare a 6 m non è permesso se un pezzo non ci sta.
+function toggleBarra12(chiave,vuole12){
+  const b12=Object.assign({},UPG.barre12||{});
+  if(vuole12)b12[chiave]=true;else delete b12[chiave];
+  const vecchio=UPG.barre12;UPG.barre12=b12;
+  const fuori=pezziFuoriBarra(pezzi).filter(x=>chiaveBarra(x.mat)===chiave);
+  if(fuori.length){UPG.barre12=vecchio;mostraErroreBarra(fuori,null);return;}
+  salvaUPG('barre12',b12);
+}
+
 // ═══════ RENDER PRINCIPALE ═══════
 function renderTutto(){
+  const fuori=pezziFuoriBarra(pezzi);
+  if(_statoValido&amp;&amp;!_accettaStato){
+    const nuovi=fuori.filter(x=>!_statoValido.fuori.has(x.k));
+    if(nuovi.length){
+      const rifiutato=pezzi;
+      pezzi=JSON.parse(_statoValido.json);
+      mostraErroreBarra(nuovi,rifiutato);
+      return renderTutto();
+    }
+  }
+  _accettaStato=false;
   const w=document.getElementById(&quot;lista-pezzi&quot;);
   w.innerHTML=&quot;&quot;;
   pezzi.forEach(p=>w.appendChild(buildPezzoCard(p)));
   setTimeout(()=>pezzi.forEach(p=>{if(p.aperto)disegnaPezzo(p);}),0);
+  _statoValido={json:JSON.stringify(pezzi),fuori:new Set(fuori.map(x=>x.k))};
   autosalvaCantiere();
 }
 // Il lavoro in corso si salva da solo: una ricarica della pagina (sync, backup, crash) non lo perde più.
@@ -3639,6 +3930,11 @@ function aluTagliPerColore(){
 }
 
 // Disegno canvas facce alluminio
+// Disegno alluminio in SVG nel riquadro della card
+function aluDisegnaSvg(p){
+  const host=document.getElementById('alu-dis-'+p.id);if(!host)return;
+  const sv=new SvgCanvas(680,320);aluDisegna(sv,p);host.innerHTML=sv.toSVG();
+}
 function aluDisegna(cvs,p){
   if(!cvs)return;
   var ctx=cvs.getContext('2d');
@@ -3666,7 +3962,7 @@ function aluDisegna(cvs,p){
   cvGriglia(ctx,W,H);
 
   if(!facceOk.length){
-    ctx.fillStyle='#4a5c80';ctx.font='600 17px system-ui';ctx.textAlign='center';
+    ctx.fillStyle=CVC('tenue');ctx.font='600 17px Arial';ctx.textAlign='center';
     ctx.fillText('Seleziona le facce e inserisci le misure',W/2,H/2);return;
   }
 
@@ -3682,23 +3978,23 @@ function aluDisegna(cvs,p){
     function ty(y){return dy+y*sc;}
 
     // Corpo telaio
-    ctx.fillStyle=col+'60';
+    ctx.fillStyle=cvTec()?CV_TEC.profilo:col+'60';
     ctx.fillRect(tx(0),ty(0),L*sc,A*sc);
 
     var isTetto=fd.k==='tet';
     if(!isTetto){
       // Luce interna
-      ctx.fillStyle='#0a1422';
+      ctx.fillStyle=cvTec()?CV_TEC.luce:'#0a1422';
       if(L>ALU_SC*2&amp;&amp;A>ALU_SC*2)
         ctx.fillRect(tx(ALU_SC),ty(ALU_SC),(L-ALU_SC*2)*sc,(A-ALU_SC*2)*sc);
       // Profilo scuretto
-      ctx.strokeStyle=col;ctx.lineWidth=Math.max(1,ALU_SC*sc/2);
+      ctx.strokeStyle=cvTec()?CV_TEC.contorno:col;ctx.lineWidth=cvTec()?1:Math.max(1,ALU_SC*sc/2);
       ctx.strokeRect(tx(0),ty(0),L*sc,A*sc);
       // Giunzioni a 45° agli angoli del telaio scuretto
       if(typeof giunti45==='function'&amp;&amp;L>ALU_SC*2&amp;&amp;A>ALU_SC*2)
         giunti45(ctx,tx(0)-ALU_SC*sc/4,ty(0)-ALU_SC*sc/4,(L+ALU_SC/2)*sc,(A+ALU_SC/2)*sc,ALU_SC*sc,ALU_SC*sc,ALU_SC*sc,ALU_SC*sc);
     } else {
-      ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+      ctx.strokeStyle=cvTec()?CV_TEC.contorno:col;ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
       ctx.strokeRect(tx(0),ty(0),L*sc,A*sc);ctx.setLineDash([]);
     }
 
@@ -3707,7 +4003,7 @@ function aluDisegna(cvs,p){
       var nA=Math.max(1,parseInt(f.nAnte)||1);
       var antH=A-2*B, antW=(L-2*B)/nA;
       if(antW>0&amp;&amp;antH>0){
-        ctx.strokeStyle=col+'cc';ctx.lineWidth=1;
+        ctx.strokeStyle=cvTec()?CV_TEC.contorno:col+'cc';ctx.lineWidth=1;
         for(var j=0;j<nA;j++){
           ctx.strokeRect(tx(B+j*antW),ty(B),antW*sc,antH*sc);
         }
@@ -3734,8 +4030,8 @@ function aluDisegna(cvs,p){
     }
 
     // Label
-    ctx.fillStyle='rgba(0,0,0,0.72)';ctx.fillRect(ox,oy,cellW,22);
-    ctx.fillStyle=col;ctx.font='bold 14px system-ui';ctx.textAlign='left';
+    ctx.fillStyle=cvTec()?CV_TEC.fondoTesto:'rgba(0,0,0,0.72)';ctx.fillRect(ox,oy,cellW,22);
+    ctx.fillStyle=cvTec()?CV_TEC.testo:col;ctx.font='bold 14px Arial';ctx.textAlign='left';
     ctx.fillText(fd.l+' '+L+'×'+A+' cm',ox+5,oy+16);
   });
 }
@@ -3760,7 +4056,7 @@ function aluDisegnaFogli(cvs,fogli){
   if(cvs.height!==Math.ceil(totH))cvs.height=Math.ceil(totH);
   var H=cvs.height;
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#0b1422';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=cvTec()?CV_TEC.carta:'#0b1422';ctx.fillRect(0,0,W,H);
 
   var COLS=['#64a8ff','#55d39b','#f08a3c','#9060e0','#f06b6b','#20c0d0','#d06090'];
   var yCur=margin;
@@ -3771,13 +4067,13 @@ function aluDisegnaFogli(cvs,fogli){
     var ox=margin, oy=yCur+labelH;
 
     // Label foglio
-    ctx.fillStyle='#e8eef7';ctx.font='bold 15px system-ui';ctx.textAlign='left';
+    ctx.fillStyle=cvTec()?CV_TEC.testo:'#e8eef7';ctx.font='bold 15px Arial';ctx.textAlign='left';
     ctx.fillText('Foglio '+(fi+1)+' — '+(f.tipo==='p'?'280×130cm (piccolo)':'320×160cm (grande)'),ox,yCur+18);
 
     // Sfondo foglio
-    ctx.fillStyle='#0a1422';
+    ctx.fillStyle=cvTec()?'#f4f1e8':'#0a1422';
     ctx.fillRect(ox,oy,fwPx,fhPx);
-    ctx.strokeStyle='#3a4860';ctx.lineWidth=1.5;
+    ctx.strokeStyle=cvTec()?CV_TEC.contorno:'#3a4860';ctx.lineWidth=1.5;
     ctx.strokeRect(ox,oy,fwPx,fhPx);
 
     // Pezzi dentro il foglio
@@ -3789,7 +4085,7 @@ function aluDisegnaFogli(cvs,fogli){
       ctx.strokeStyle=col;ctx.lineWidth=1.5;
       ctx.strokeRect(px,py,pw,ph);
       // Misura pezzo al centro
-      ctx.fillStyle='#e8eef7';ctx.font='bold 13px system-ui';ctx.textAlign='center';
+      ctx.fillStyle=cvTec()?CV_TEC.testo:'#e8eef7';ctx.font='bold 13px Arial';ctx.textAlign='center';
       var cx=px+pw/2, cy=py+ph/2;
       if(pw>48&amp;&amp;ph>22){
         ctx.fillText(pz.w.toFixed(0)+'×'+pz.h.toFixed(0),cx,cy+4);
@@ -3870,8 +4166,7 @@ function aluAggiornaSolo(pid){
   var tot=aluCalcPezzo(p);
   var distEl=document.getElementById('alu-dist-'+pid);
   if(distEl)distEl.innerHTML=aluDistHtml(p,tot);
-  var cvsEl=document.getElementById('alu-cvs-'+pid);
-  if(cvsEl)aluDisegna(cvsEl,p);
+  aluDisegnaSvg(p);
   ALU_FACCE.forEach(function(fd){
     var infoEl=document.getElementById('alu-info-'+pid+'-'+fd.k);
     if(infoEl){
@@ -3993,7 +4288,7 @@ function buildBodyAlluminio(p){
   // SCHEMA CANVAS
   h+='<div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#64a8ff30&quot;>';
   h+='<div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>Schema facce</div>';
-  h+='<canvas id=&quot;alu-cvs-'+p.id+'&quot; width=&quot;680&quot; height=&quot;320&quot; style=&quot;width:100%;border-radius:8px;border:1px solid #172438;background:#0b1422&quot;></canvas>';
+  h+='<div id=&quot;alu-dis-'+p.id+'&quot; class=&quot;tavola-dis&quot;></div>';
   h+='</div>';
 
   // DISTINTA RAPIDA
@@ -4003,7 +4298,7 @@ function buildBodyAlluminio(p){
   h+='</div>';
 
   // Disegna canvas dopo rendering DOM
-  setTimeout(function(){aluDisegna(document.getElementById('alu-cvs-'+p.id),p);},50);
+  setTimeout(function(){aluDisegnaSvg(p);},0);
 
   return h;
 }
@@ -4018,7 +4313,7 @@ function disegnaScala(p,cvs,ctx,leg){
   const cW=cvs.width,cH=cvs.height;
   const sc=scalaCalc(p);
   const Hmm=sc.H*1000,Lmm=sc.L*1000,n=sc.n,a=sc.alzata,pd=sc.pedata;
-  if(!(Hmm>0)||!(Lmm>0)){ctx.fillStyle=&quot;#4a5c80&quot;;ctx.font=&quot;600 18px system-ui&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci altezza e sviluppo&quot;,cW/2,cH/2);return;}
+  if(!(Hmm>0)||!(Lmm>0)){ctx.fillStyle=CVC(&quot;tenue&quot;);ctx.font=&quot;600 18px Arial&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci altezza e sviluppo&quot;,cW/2,cH/2);return;}
   const sm=p.scalaMats||{};
   const padL=64,padR=86,padT=40,padB=52;
   const conManc=!!(p.scalaHaMancorrente&amp;&amp;sm.mancorrente), Hfit=Hmm*(conManc?1.14:1);
@@ -4027,7 +4322,7 @@ function disegnaScala(p,cvs,ctx,leg){
   const X=x=>ox+x*s, Y=y=>base-y*s;
   const tanA=Hmm/Lmm, cosA=Lmm/Math.hypot(Lmm,Hmm);
   // pavimento e piano d'arrivo
-  ctx.strokeStyle=&quot;#3a4a70&quot;;ctx.lineWidth=2;
+  ctx.strokeStyle=CVC(&quot;pav&quot;);ctx.lineWidth=2;
   ctx.beginPath();ctx.moveTo(X(-Lmm*0.06),Y(0));ctx.lineTo(X(Lmm*0.35),Y(0));ctx.stroke();
   ctx.beginPath();ctx.moveTo(X(Lmm),Y(Hmm));ctx.lineTo(X(Lmm)+48,Y(Hmm));ctx.stroke();
   // cosciale: banda sotto la linea degli spigoli interni, tagliata a pavimento e in verticale in cima
@@ -4035,28 +4330,28 @@ function disegnaScala(p,cvs,ctx,leg){
     const hC=Math.max(eLarg(sm.correnti),10), dv=hC/cosA, x0=Math.min(Lmm,dv/tanA);
     const g=ctx.createLinearGradient(X(0),Y(0),X(0)+Math.sin(Math.atan(tanA))*hC*s,Y(0)+cosA*hC*s);
     g.addColorStop(0,&quot;rgb(150,110,230)&quot;);g.addColorStop(1,&quot;rgb(80,55,140)&quot;);
-    ctx.fillStyle=g;ctx.beginPath();
+    ctx.fillStyle=cvTec()?CV_TEC.profilo:g;ctx.beginPath();
     ctx.moveTo(X(0),Y(0));ctx.lineTo(X(Lmm),Y(Hmm));ctx.lineTo(X(Lmm),Y(Math.max(0,Hmm-dv)));ctx.lineTo(X(x0),Y(0));ctx.closePath();
-    ctx.fill();ctx.strokeStyle=&quot;rgba(4,8,16,.6)&quot;;ctx.lineWidth=1;ctx.stroke();
+    ctx.fill();ctx.strokeStyle=CVC(&quot;contorno&quot;);ctx.lineWidth=1;ctx.stroke();
     cvLabelQ(`cosciale ${esc(sm.correnti.profilo)} · ${cmv(sc.D*1000)} cm × ${sc.nCorr}`,X(Lmm*0.40),Y(Hmm*0.40-dv*1.2)+4,&quot;#b090f0&quot;,&quot;left&quot;,12);
   } else {
-    ctx.strokeStyle=&quot;#9060e0&quot;;ctx.setLineDash([6,4]);ctx.lineWidth=2;
+    ctx.strokeStyle=cvTec()?CV_TEC.tenue:&quot;#9060e0&quot;;ctx.setLineDash([6,4]);ctx.lineWidth=2;
     ctx.beginPath();ctx.moveTo(X(0),Y(0));ctx.lineTo(X(Lmm),Y(Hmm));ctx.stroke();ctx.setLineDash([]);
   }
   // profilo dei gradini: alzata, pedata, alzata, pedata…
-  ctx.strokeStyle=&quot;#f08a3c&quot;;ctx.lineWidth=3;ctx.lineJoin=&quot;round&quot;;ctx.beginPath();
+  ctx.strokeStyle=CVC(&quot;scala&quot;);ctx.lineWidth=3;ctx.lineJoin=&quot;round&quot;;ctx.beginPath();
   ctx.moveTo(X(0),Y(0));
   for(let i=0;i<n;i++){ctx.lineTo(X(i*pd),Y((i+1)*a));ctx.lineTo(X((i+1)*pd),Y((i+1)*a));}
   ctx.stroke();
   if(sc.gradTipo==='lamiera'){ // lamiera piegata: pedata + alzata in un pezzo (tratteggio sottile sotto)
-    ctx.strokeStyle=&quot;rgba(232,160,32,.45)&quot;;ctx.lineWidth=1;ctx.beginPath();
+    ctx.strokeStyle=cvTec()?&quot;rgba(42,44,48,.4)&quot;:&quot;rgba(232,160,32,.45)&quot;;ctx.lineWidth=1;ctx.beginPath();
     for(let i=0;i<n;i++){ctx.moveTo(X(i*pd)+3,Y(i*a)-2);ctx.lineTo(X(i*pd)+3,Y((i+1)*a)+3);ctx.lineTo(X((i+1)*pd),Y((i+1)*a)+3);}
     ctx.stroke();
   }
   // mancorrente (schematico, senza quota: l'altezza la decidi tu in cantiere)
   if(p.scalaHaMancorrente&amp;&amp;sm.mancorrente){
     const off=Hmm*0.12; // solo schematico: nessuna quota di altezza
-    ctx.strokeStyle=&quot;#64a8ff&quot;;ctx.setLineDash([8,5]);ctx.lineWidth=2;
+    ctx.strokeStyle=CVC(&quot;manc&quot;);ctx.setLineDash([8,5]);ctx.lineWidth=2;
     ctx.beginPath();ctx.moveTo(X(0),Y(a+off));ctx.lineTo(X(Lmm),Y(Hmm+off));ctx.stroke();ctx.setLineDash([]);
     cvLabelQ(&quot;mancorrente &quot;+esc(sm.mancorrente.profilo),X(Lmm*0.2),Y(a+off+Lmm*0.2*tanA)-8,&quot;#64a8ff&quot;,&quot;left&quot;,11);
   }
@@ -4097,7 +4392,7 @@ function buildBodyScala(p){
   // misure in cm a video, in metri in memoria (compatibile con i lavori già salvati)
   const cmIn=(campo,valM,col,lbl)=>`<div><label class=&quot;fl&quot;>${lbl}</label>
     <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${cmv(valM*1000)}&quot; step=&quot;1&quot; min=&quot;1&quot; inputmode=&quot;decimal&quot; style=&quot;border-color:${col}&quot;
-      onchange=&quot;setScalaProp(${p.id},'${campo}',(parseFloat(this.value)>0?parseFloat(this.value)/100:${valM}))&quot;></div>`;
+      oninput=&quot;anteprimaMisura(${p.id},'${campo}',this.value)&quot; onchange=&quot;setScalaProp(${p.id},'${campo}',(parseFloat(this.value)>0?parseFloat(this.value)/100:${valM}))&quot;></div>`;
   const toggle=(campo,on,lblOn,lblOff)=>`<button onclick=&quot;setProp(${p.id},'${campo}',${!on})&quot;
       style=&quot;padding:4px 10px;border-radius:8px;cursor:pointer;font-size:10px;font-weight:700;flex-shrink:0;
         border:1.5px solid ${on?&quot;#55d39b&quot;:&quot;#172438&quot;};background:${on?&quot;#061208&quot;:&quot;#0d1422&quot;};color:${on?&quot;#55d39b&quot;:&quot;#91a2bb&quot;}&quot;>${on?lblOn:lblOff}</button>`;
@@ -4152,7 +4447,7 @@ function buildBodyScala(p){
     <div class=&quot;g2 mb8&quot;>
       <div><label class=&quot;fl&quot;>N° gradini (= n° alzate)</label>
         <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${n}&quot; step=&quot;1&quot; min=&quot;1&quot; inputmode=&quot;numeric&quot; style=&quot;border-color:#f08a3c&quot;
-          onchange=&quot;setScalaProp(${p.id},'scalaN',Math.max(1,parseInt(this.value)||1))&quot;></div>
+          oninput=&quot;anteprimaMisura(${p.id},'scalaN',this.value,1)&quot; onchange=&quot;setScalaProp(${p.id},'scalaN',Math.max(1,parseInt(this.value)||1))&quot;></div>
       <div><label class=&quot;fl&quot;>Alzata desiderata (cm)</label>
         <div style=&quot;display:flex;gap:5px&quot;>
           <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${cmv(alzIdeale)}&quot; step=&quot;0.5&quot; min=&quot;10&quot; max=&quot;25&quot; inputmode=&quot;decimal&quot; style=&quot;border-color:#55d39b&quot;
@@ -4171,8 +4466,9 @@ function buildBodyScala(p){
     </div>
     <div class=&quot;nota-info&quot;>Alzata = altezza ÷ n° gradini · pedata = sviluppo ÷ n° gradini: si parte dal pavimento con un'alzata e l'ultimo gradino è a filo del piano d'arrivo.
       ${passo<600||passo>650?` <span style=&quot;color:#e0a050&quot;>Passo ${cmU(passo)}: una scala comoda sta tra 60 e 65 cm (2·alzata + pedata).</span>`:&quot;&quot;}</div>
-    <canvas id=&quot;cvs-${p.id}&quot; width=&quot;680&quot; height=&quot;400&quot; style=&quot;display:block;margin:10px auto 0;width:100%;max-width:680px;background:#0b1422;border-radius:9px;border:1px solid #172438&quot;></canvas>
+    <div id=&quot;dis-${p.id}&quot; class=&quot;tavola-dis&quot; data-h=&quot;400&quot; style=&quot;margin-top:10px&quot;></div>
     <div id=&quot;cvs-leg-${p.id}&quot; style=&quot;display:flex;flex-wrap:wrap;gap:9px;margin-top:8px;justify-content:center;font-size:12px;color:#8a96b0&quot;></div>
+    ${buildAbaco(p)}
   </div>
 
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#64a8ff&quot;>
@@ -4267,14 +4563,14 @@ function disegnaCorrimano(p,cvs,ctx,leg){
   const cW=cvs.width,cH=cvs.height;
   const c=corrCalc(p);
   const Lmm=c.L*1000;
-  if(!(Lmm>0)){ctx.fillStyle=&quot;#4a5c80&quot;;ctx.font=&quot;600 18px system-ui&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci la lunghezza&quot;,cW/2,cH/2);return;}
+  if(!(Lmm>0)){ctx.fillStyle=CVC(&quot;tenue&quot;);ctx.font=&quot;600 18px Arial&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci la lunghezza&quot;,cW/2,cH/2);return;}
   const padL=30,padR=30;
   const s=(cW-padL-padR)/Lmm;
   const X=x=>padL+x*s, yT=cH*0.38;
   const D=p.corrMat?Math.max(eLarg(p.corrMat),20):42;
   const dPx=Math.max(D*s,6);
   // muro
-  ctx.fillStyle=&quot;#1a2436&quot;;ctx.fillRect(X(0)-12,yT+34,Lmm*s+24,10);
+  ctx.fillStyle=cvTec()?&quot;#b9c2c8&quot;:&quot;#1a2436&quot;;ctx.fillRect(X(0)-12,yT+34,Lmm*s+24,10);
   // staffe
   const nS=Math.floor(Lmm/(c.passo*10))+1;
   const passoMm=nS>1?Lmm/(nS-1):0;
@@ -4307,7 +4603,7 @@ function buildBodyCorrimano(p){
     <div class=&quot;g2 mb8&quot;>
       <div><label class=&quot;fl&quot;>Lunghezza corrimano (cm)</label>
         <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${cmv(c.L*1000)}&quot; min=&quot;0&quot; step=&quot;1&quot; inputmode=&quot;decimal&quot; style=&quot;border-color:#f08a3c&quot;
-          onchange=&quot;setProp(${p.id},'corrLungh',Math.max(0,(parseFloat(this.value)||0)/100))&quot;></div>
+          oninput=&quot;anteprimaMisura(${p.id},'corrLungh',this.value)&quot; onchange=&quot;setProp(${p.id},'corrLungh',Math.max(0,(parseFloat(this.value)||0)/100))&quot;></div>
       <div><label class=&quot;fl&quot;>Una staffa ogni (cm)</label>
         <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${c.passo}&quot; min=&quot;20&quot; step=&quot;5&quot; inputmode=&quot;decimal&quot; style=&quot;border-color:#64a8ff&quot;
           onchange=&quot;setProp(${p.id},'corrPassoStaffe',Math.max(20,parseFloat(this.value)||80))&quot;></div>
@@ -4322,8 +4618,9 @@ function buildBodyCorrimano(p){
     </div>
     ${latoBtn(p.id,`corr-${p.id}`,&quot;Tubo corrimano&quot;,mat,&quot;#f08a3c&quot;)}
     <div class=&quot;nota-info&quot;>Nel listino trovi la categoria <b>Corrimano</b> oppure usa un tubo tondo. Staffe, curve e terminali: aggiungili nella ferramenta qui sotto per averne il costo.</div>
-    <canvas id=&quot;cvs-${p.id}&quot; width=&quot;680&quot; height=&quot;200&quot; style=&quot;display:block;margin:10px auto 0;width:100%;max-width:680px;background:#0b1422;border-radius:9px;border:1px solid #172438&quot;></canvas>
+    <div id=&quot;dis-${p.id}&quot; class=&quot;tavola-dis&quot; data-h=&quot;200&quot; style=&quot;margin-top:10px&quot;></div>
     <div id=&quot;cvs-leg-${p.id}&quot; style=&quot;display:flex;flex-wrap:wrap;gap:9px;margin-top:8px;justify-content:center;font-size:12px;color:#8a96b0&quot;></div>
+    ${buildAbaco(p)}
     <div class=&quot;costi-riga&quot; style=&quot;margin-top:8px&quot;><span>Staffe a muro</span><b>${c.nStaffe} pz</b></div>
     ${c.nCurve>0?`<div class=&quot;costi-riga&quot;><span>Curve / angoli</span><b>${c.nCurve} pz</b></div>`:&quot;&quot;}
     ${c.nTerm>0?`<div class=&quot;costi-riga&quot;><span>Terminali</span><b>${c.nTerm} pz</b></div>`:&quot;&quot;}
@@ -4534,8 +4831,10 @@ function buildBody(p){
   // ── Elementi interni ──
   const elemHtml=(p.elemList||[]).map((el,gi)=>{
     const col=EL_C[gi%EL_C.length];
+    const isR=el.dir===&quot;rombi&quot;;
     const isV=el.dir!==&quot;oriz&quot;;
     const luceEl=isV?luciaHAnta:(nCA>1?luce.luciaVF:luciaV);
+    const dec=el.decoro||&quot;nessuno&quot;;
     const elW=el.mat?eLarg(el.mat):0;
     // Conteggio dalla STESSA logica di distinta e disegno (celle tagliate da traverse e correnti)
     const nSegE=haAnte?Math.max(1,p.ante.length):nCL;
@@ -4543,7 +4842,11 @@ function buildBody(p){
     let resHtml=&quot;&quot;;
     if(el.attivo&amp;&amp;el.mat&amp;&amp;luceEl>0){
       let nPer=0,dett=&quot;&quot;;
-      if(isV){
+      if(isR){
+        const reg=barRegion(p,el,luciaV);
+        barCells(p,luciaHAnta,luciaV,reg.regY0,reg.regY1,elW,el.spMin,el.spMax,el.pd||&quot;libero&quot;).forEach(c=>{nPer+=rombiSegmenti(c.b-c.a,c.by1-c.by0,passoRombi(el,elW),elW).length;});
+        dett=&quot;diagonali a 45°, passo &quot;+cmU(passoRombi(el,elW))+&quot; — ogni diagonale è un pezzo a sé&quot;;
+      } else if(isV){
         const cells=elemCelle(p,el,luciaHAnta,luciaV,barRegion(p,el,luciaV));
         nPer=cells.reduce((a,c)=>a+c.pos.length,0);
         if(cells.length>1)dett=cells.map((c,i)=>&quot;scomparto &quot;+(i+1)+&quot;: &quot;+c.pos.length+(el.modo!==&quot;man&quot;?&quot; (spazio &quot;+cmv(c.sp)+&quot; cm)&quot;:&quot;&quot;)).join(&quot; · &quot;);
@@ -4575,10 +4878,13 @@ function buildBody(p){
         <div style=&quot;font-weight:700;font-size:11px;color:${col};flex:1&quot;>Elemento ${gi+1}</div>
         <button onclick=&quot;setElProp(${p.id},${el.id},'dir','vert')&quot;
           style=&quot;padding:3px 7px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
-            border:1.5px solid ${isV?col:&quot;#172438&quot;};color:${isV?col:&quot;#91a2bb&quot;};background:${isV?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>↕ Vert.</button>
+            border:1.5px solid ${isV&amp;&amp;!isR?col:&quot;#172438&quot;};color:${isV&amp;&amp;!isR?col:&quot;#91a2bb&quot;};background:${isV&amp;&amp;!isR?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>↕ Vert.</button>
         <button onclick=&quot;setElProp(${p.id},${el.id},'dir','oriz')&quot;
           style=&quot;padding:3px 7px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
             border:1.5px solid ${!isV?col:&quot;#172438&quot;};color:${!isV?col:&quot;#91a2bb&quot;};background:${!isV?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>↔ Oriz.</button>
+        <button onclick=&quot;setElProp(${p.id},${el.id},'dir','rombi')&quot; title=&quot;Grata a rombi: diagonali a 45°&quot;
+          style=&quot;padding:3px 7px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
+            border:1.5px solid ${isR?col:&quot;#172438&quot;};color:${isR?col:&quot;#91a2bb&quot;};background:${isR?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>◇ Rombi</button>
         <button class=&quot;btn&quot; onclick=&quot;toggleElV(${p.id},${el.id})&quot;
           style=&quot;border-color:${el.attivo?col:&quot;#172438&quot;};color:${el.attivo?col:&quot;#91a2bb&quot;};padding:3px 7px;font-size:10px&quot;>
           ${el.attivo?&quot;✓&quot;:&quot;Off&quot;}</button>
@@ -4625,6 +4931,13 @@ function buildBody(p){
                 onchange=&quot;setElProp(${p.id},${el.id},'quote',quoteCmToMm(this.value))&quot;></div>
           </div>
           <div style=&quot;font-size:10px;color:#91a2bb&quot;>Luce ${cmU(luceEl)} — lascia vuoto per distribuzione uniforme</div>`}
+        ${!isR?`<div style=&quot;display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-top:7px&quot;>
+          <span style=&quot;font-size:10px;color:#91a2bb&quot;>Decoro:</span>
+          ${[[&quot;nessuno&quot;,&quot;Nessuno&quot;],[&quot;collari&quot;,&quot;● Collari&quot;]].concat(isV?[[&quot;fuso&quot;,&quot;◆ A fuso&quot;],[&quot;riccioli&quot;,&quot;§ Riccioli&quot;]]:[]).map(d=>`<button onclick=&quot;setElProp(${p.id},${el.id},'decoro','${d[0]}')&quot;
+            style=&quot;padding:3px 8px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;border:1.5px solid ${dec===d[0]?col:&quot;#172438&quot;};color:${dec===d[0]?col:&quot;#91a2bb&quot;};background:${dec===d[0]?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>${d[1]}</button>`).join(&quot;&quot;)}
+          ${(dec===&quot;collari&quot;||dec===&quot;riccioli&quot;)?`<span style=&quot;font-size:10px;color:#91a2bb&quot;>${dec===&quot;collari&quot;?&quot;per barra&quot;:&quot;file&quot;}</span>
+            <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;1&quot; max=&quot;6&quot; step=&quot;1&quot; value=&quot;${Math.max(1,parseInt(el.nDecori)||2)}&quot; style=&quot;width:56px;padding:4px&quot; onchange=&quot;setElProp(${p.id},${el.id},'nDecori',Math.max(1,parseInt(this.value)||1))&quot;>`:&quot;&quot;}
+        </div>`:&quot;&quot;}
         ${resHtml}
       `:&quot;&quot;}
     </div>`;
@@ -4827,9 +5140,9 @@ function buildBody(p){
     </div>`:''}
     <div class=&quot;g2 mb8&quot;>
       <div><label class=&quot;fl&quot;>${ti.isGazebo?'Larghezza in pianta':(quotaLuceTelaio?'Larghezza luce interna':'Larghezza totale')} (cm)</label>
-        <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${Math.round((parseFloat(p.larg)||0)*1000)/10}&quot; step=&quot;1&quot; inputmode=&quot;decimal&quot; onchange=&quot;setProp(${p.id},'larg',String((parseFloat(this.value)||0)/100))&quot;></div>
+        <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${Math.round((parseFloat(p.larg)||0)*1000)/10}&quot; step=&quot;1&quot; inputmode=&quot;decimal&quot; oninput=&quot;anteprimaMisura(${p.id},'larg',this.value)&quot; onchange=&quot;setProp(${p.id},'larg',String((parseFloat(this.value)||0)/100))&quot;></div>
       <div><label class=&quot;fl&quot;>${ti.isGazebo?'Profondità in pianta':(quotaLuceTelaio?'Altezza luce interna':'Altezza totale')} (cm)</label>
-        <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${Math.round((parseFloat(p.alt)||0)*1000)/10}&quot; step=&quot;1&quot; inputmode=&quot;decimal&quot; onchange=&quot;setProp(${p.id},'alt',String((parseFloat(this.value)||0)/100))&quot;></div>
+        <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${Math.round((parseFloat(p.alt)||0)*1000)/10}&quot; step=&quot;1&quot; inputmode=&quot;decimal&quot; oninput=&quot;anteprimaMisura(${p.id},'alt',this.value)&quot; onchange=&quot;setProp(${p.id},'alt',String((parseFloat(this.value)||0)/100))&quot;></div>
     </div>
     ${haAnte?`<div class=&quot;g3 mb8&quot;>
       <div><label class=&quot;fl&quot;>N° ${ti.nomeAnte===&quot;battente&quot;?&quot;battenti&quot;:&quot;ante&quot;}</label>
@@ -4942,7 +5255,7 @@ function buildBody(p){
       <div>
         <label class=&quot;fl&quot;>Altezza montanti angolari (cm)</label>
         <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${Math.round((parseFloat(p.alt_montante)||2.5)*1000)/10}&quot; step=&quot;5&quot;
-          onchange=&quot;setProp(${p.id},'alt_montante',(parseFloat(this.value)||250)/100)&quot;
+          oninput=&quot;anteprimaMisura(${p.id},'alt_montante',this.value)&quot; onchange=&quot;setProp(${p.id},'alt_montante',(parseFloat(this.value)||250)/100)&quot;
           style=&quot;border-color:#64a8ff&quot;>
       </div>
       <div>
@@ -5013,10 +5326,10 @@ function buildBody(p){
 
   <!-- SCHEMA -->
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#64a8ff&quot;>
-    <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>🎨 Schema</div>
-    <canvas id=&quot;cvs-${p.id}&quot; width=&quot;680&quot; height=&quot;420&quot;
-      style=&quot;display:block;margin:0 auto;width:100%;max-width:680px;background:#0b1422;border-radius:9px;border:1px solid #172438&quot;></canvas>
+    <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>🎨 Disegno tecnico <span style=&quot;font-weight:400;text-transform:none;letter-spacing:0;color:#91a2bb&quot;>— si aggiorna mentre scrivi le misure</span></div>
+    <div id=&quot;dis-${p.id}&quot; class=&quot;tavola-dis&quot; data-h=&quot;420&quot;></div>
     <div id=&quot;cvs-leg-${p.id}&quot; style=&quot;display:flex;flex-wrap:wrap;gap:9px;margin-top:8px;justify-content:center;font-size:12px;color:#8a96b0&quot;></div>
+    ${buildAbaco(p)}
   </div>
 
   <!-- PANNELLO LAMIERA -->
@@ -5058,21 +5371,66 @@ function buildDistinta(p){
     const arr=Object.keys(m).map(Number).sort((a,b)=>b-a).map(mm=>m[mm]+&quot;×&quot;+cmv(mm));
     return arr.length>6?arr.slice(0,6).join(&quot; · &quot;)+&quot; · …&quot;:arr.join(&quot; · &quot;);
   };
+  // Peso teorico = metri di taglio × peso al metro del profilo (+ lamiera)
+  const kgProf=C.righe.reduce((a,r)=>a+r.kg,0);
+  const kgLam=(C.perPezzo[0]||{}).lamKg||0;
   return `<div style=&quot;overflow-x:auto&quot;>
-    <table class=&quot;rtable&quot; style=&quot;min-width:420px&quot;>
+    <table class=&quot;rtable&quot; style=&quot;min-width:520px&quot;>
       <thead><tr><th>Profilo</th><th>Pezzi da tagliare (cm)</th><th style=&quot;text-align:center&quot;>ml</th>
+        <th style=&quot;text-align:right&quot;>kg/m</th><th style=&quot;text-align:right&quot;>kg</th>
         <th style=&quot;text-align:center&quot;>Barre</th><th style=&quot;text-align:right&quot;>€/barra</th><th style=&quot;text-align:right&quot;>Totale</th></tr></thead>
-      <tbody>${C.righe.map(r=>`<tr>
+      <tbody>${C.righe.map(r=>{const kgm=calcolaPesoLineare(r.mat),sc12=barraScegliibile(r.mat),is12=r.barraMm>=BARRA12_MM-1;
+        return `<tr>
         <td title=&quot;${esc(r.note.join(' · '))}&quot;><b>${esc(r.mat.profilo)}</b><br><span style=&quot;font-size:10px;color:#91a2bb&quot;>${fL[r.mat.fam]||esc(r.mat.fam||&quot;&quot;)}${r.mat.sp!=null&amp;&amp;r.mat.sp!==&quot;&quot;?&quot; sp.&quot;+r.mat.sp:&quot;&quot;}</span></td>
         <td style=&quot;font-size:11px;color:#8a96b0&quot;>${pezziTxt(r.k)}</td>
         <td style=&quot;text-align:center;color:#64a8ff;font-weight:700&quot;>${fmtN(r.ml)}</td>
-        <td style=&quot;text-align:center;color:#55d39b;font-weight:700;font-size:15px&quot;>${r.nBarre}<div style=&quot;font-size:9px;color:#91a2bb;font-weight:400&quot;>da ${cmv(r.barraMm)} cm</div></td>
+        <td style=&quot;text-align:right;color:#c0a0e0;font-size:11px&quot;>${kgm>0?kgm.toFixed(2):&quot;—&quot;}</td>
+        <td style=&quot;text-align:right;color:#c0a0e0;font-weight:700&quot;>${r.kg.toFixed(1)}</td>
+        <td style=&quot;text-align:center;color:#55d39b;font-weight:700;font-size:15px&quot;>${r.nBarre}<div style=&quot;font-size:9px;color:#91a2bb;font-weight:400&quot;>da ${nomeBarra(r.barraMm)}</div>
+          ${sc12?`<button class=&quot;mini-btn&quot; title=&quot;Barre commerciali da 6 m o 12 m&quot; onclick=&quot;toggleBarra12('${esc(chiaveBarra(r.mat))}',${!is12})&quot;>${is12?&quot;→ 6 m&quot;:&quot;→ 12 m&quot;}</button>`:&quot;&quot;}</td>
         <td style=&quot;text-align:right;color:#64a8ff;font-size:11px&quot;>${r.perBarra>0?&quot;€ &quot;+fmtP(r.perBarra):&quot;—&quot;}</td>
         <td style=&quot;text-align:right;font-weight:700;color:${r.euro>0?&quot;#f08a3c&quot;:&quot;#f06b6b&quot;}&quot;>${r.euro>0?&quot;€ &quot;+fmtP(r.euro):&quot;senza prezzo&quot;}</td>
-      </tr>`).join(&quot;&quot;)}</tbody>
+      </tr>`;}).join(&quot;&quot;)}</tbody>
     </table>
   </div>
-  <div class=&quot;nota-info&quot;>Barre ${UPG.ottim?&quot;dal piano di taglio di questo manufatto (kerf &quot;+UPG.kerf+&quot; mm)&quot;:&quot;= metri + sfrido &quot;+UPG.sfrido+&quot;%&quot;}. Nel 📋 Riepilogo i profili uguali di tutti i manufatti si sommano.</div>`;
+  <div class=&quot;costi-riga&quot; style=&quot;margin-top:6px&quot;><span>⚖️ Peso teorico struttura${kgLam>0?&quot; (profili &quot;+kgProf.toFixed(1)+&quot; kg + lamiera &quot;+kgLam.toFixed(1)+&quot; kg)&quot;:&quot;&quot;}</span><b style=&quot;color:#c0a0e0&quot;>${(kgProf+kgLam).toFixed(1)} kg</b></div>
+  <div class=&quot;nota-info&quot;>Barre ${UPG.ottim?&quot;dal piano di taglio di questo manufatto (4 mm di sfrido per ogni taglio)&quot;:&quot;= metri + sfrido &quot;+UPG.sfrido+&quot;%&quot;}. Nel 📋 Riepilogo i profili uguali di tutti i manufatti si sommano.</div>`;
+}
+
+// ═══════ ABACO DEI PEZZI (sotto il disegno) ═══════
+// Elenco numerato di tutti i pezzi del manufatto: elemento, profilo, quantità, lunghezza e peso.
+function buildAbaco(p){
+  const righe={};
+  walkPezzoMateriali(p,(mat,ml,mm,q,lbl)=>{
+    const el=String(lbl).split(&quot; · &quot;).slice(1).join(&quot; · &quot;)||String(lbl);
+    const k=el+&quot;|&quot;+matKey(mat)+&quot;|&quot;+Math.round(mm);
+    if(!righe[k])righe[k]={el,mat,mm:Math.round(mm),q:0};
+    righe[k].q+=q;
+  });
+  const arr=Object.values(righe);
+  if(!arr.length)return &quot;&quot;;
+  const dec=decoriPezzo(p);
+  let kgTot=0;
+  const rows=arr.map((r,i)=>{
+    const kgm=calcolaPesoLineare(r.mat),kg=kgm*r.mm/1000*r.q;kgTot+=kg;
+    return `<tr><td style=&quot;color:#91a2bb&quot;>${i+1}</td><td>${esc(r.el)}</td><td><b>${esc(r.mat.profilo)}</b>${r.mat.sp!=null&amp;&amp;r.mat.sp!==&quot;&quot;?` <span style=&quot;color:#91a2bb&quot;>sp.${r.mat.sp}</span>`:&quot;&quot;}</td>
+      <td style=&quot;text-align:center;font-weight:700&quot;>${r.q}</td><td style=&quot;text-align:right;font-weight:700&quot;>${cmv(r.mm)}</td><td style=&quot;text-align:right;color:#c0a0e0&quot;>${kg.toFixed(1)}</td></tr>`;
+  }).join(&quot;&quot;);
+  const ld=p.lamiera?calcLamieraTot(p):null;
+  return `<details class=&quot;dett abaco&quot; open>
+    <summary>📑 Abaco dei pezzi — ${arr.reduce((a,r)=>a+r.q,0)} pezzi · peso teorico ${(kgTot+(ld?ld.pesoTot:0)).toFixed(1)} kg</summary>
+    <div class=&quot;dett-body&quot; style=&quot;overflow-x:auto&quot;>
+      <table class=&quot;rtable&quot; style=&quot;min-width:460px&quot;>
+        <thead><tr><th>Pos.</th><th>Elemento</th><th>Profilo</th><th style=&quot;text-align:center&quot;>Q.tà</th><th style=&quot;text-align:right&quot;>L (cm)</th><th style=&quot;text-align:right&quot;>kg</th></tr></thead>
+        <tbody>${rows}
+        ${ld?`<tr><td></td><td>lamiera ${esc(p.lamiera_tipo||&quot;liscia&quot;)}</td><td>sp.${esc(p.lamiera_sp)} mm</td><td></td><td></td><td style=&quot;text-align:right;color:#c0a0e0&quot;>${ld.pesoTot.toFixed(1)}</td></tr>`:&quot;&quot;}
+        ${dec.collari?`<tr><td></td><td>collari decorativi</td><td>—</td><td style=&quot;text-align:center;font-weight:700&quot;>${dec.collari}</td><td></td><td></td></tr>`:&quot;&quot;}
+        ${dec.riccioli?`<tr><td></td><td>riccioli a &quot;S&quot;</td><td>—</td><td style=&quot;text-align:center;font-weight:700&quot;>${dec.riccioli}</td><td></td><td></td></tr>`:&quot;&quot;}
+        </tbody>
+      </table>
+      ${(dec.collari||dec.riccioli)?`<div class=&quot;nota-info&quot;>Collari e riccioli si comprano a pezzo: mettili nella Ferramenta per averne il costo.</div>`:&quot;&quot;}
+    </div>
+  </details>`;
 }
 
 // ═══════ DISEGNO ═══════
@@ -5113,7 +5471,7 @@ function disegnaFacceSviluppo(p,ws,cvs,ctx,leg){
   const cW=cvs.width,cH=cvs.height,pad=26;
   const Hmm=(parseFloat(p.alt)||0)*1000;
   const totW=ws.reduce((a,b)=>a+b,0)*1000;
-  if(!totW||!Hmm){ctx.fillStyle=&quot;#4a5c80&quot;;ctx.font=&quot;600 18px system-ui&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci larghezza e altezza&quot;,cW/2,cH/2);return;}
+  if(!totW||!Hmm){ctx.fillStyle=CVC(&quot;tenue&quot;);ctx.font=&quot;600 18px Arial&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci larghezza e altezza&quot;,cW/2,cH/2);return;}
   const sc=Math.min((cW-pad*2)/totW,(cH-pad*2)/Hmm);
   const ox=pad+(cW-pad*2-totW*sc)/2, oy=pad+(cH-pad*2-Hmm*sc)/2;
   const tx=x=>ox+x*sc, ty=y=>oy+y*sc;
@@ -5124,6 +5482,7 @@ function disegnaFacceSviluppo(p,ws,cvs,ctx,leg){
     const luce=calcLuce(pf);
     const hTop=luce.hTop,hBot=luce.hBot,wSx=luce.wSx,wDx=luce.wDx,luciaH=luce.luciaH,luciaV=luce.luciaV;
     const X=v=>tx(x0+v);
+    if(cvTec()&amp;&amp;luciaH>0&amp;&amp;luciaV>0){ctx.fillStyle=CV_TEC.luce;ctx.fillRect(X(wSx),ty(hTop),luciaH*sc,luciaV*sc);} // luce azzurra
     // Telaio della faccia
     if(hTop>0)barra3D(ctx,X(0),ty(0),Lf*sc,Math.max(hTop*sc,2),[120,150,210],1);
     if(!p.aperto_sotto&amp;&amp;hBot>0)barra3D(ctx,X(0),ty(Hmm-hBot),Lf*sc,Math.max(hBot*sc,2),[120,150,210],1);
@@ -5160,7 +5519,7 @@ function disegnaFacceSviluppo(p,ws,cvs,ctx,leg){
     });
     // Marcatore angolo 90°
     if(i>0){
-      ctx.strokeStyle=&quot;#f08a3c&quot;;ctx.setLineDash([5,4]);ctx.lineWidth=1.4;
+      ctx.strokeStyle=CVC(&quot;accento&quot;);ctx.setLineDash([5,4]);ctx.lineWidth=1.4;
       ctx.beginPath();ctx.moveTo(X(0),ty(0)-6);ctx.lineTo(X(0),ty(Hmm)+6);ctx.stroke();ctx.setLineDash([]);
       cvLabelQ(&quot;90°&quot;,X(0),ty(0)-8,&quot;#f08a3c&quot;,&quot;center&quot;,14);
     }
@@ -5210,7 +5569,7 @@ function lamieraBande(p,luciaV){
 function disegnaGazebo(p,cvs,ctx,leg){
   const cW=cvs.width,cH=cvs.height;
   const W=(parseFloat(p.larg)||0)*1000,D=(parseFloat(p.alt)||0)*1000,Hm=(parseFloat(p.alt_montante)||parseFloat(p.alt)||2.5)*1000;
-  if(!W||!D){ctx.fillStyle=&quot;#4a5c80&quot;;ctx.font=&quot;600 18px system-ui&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci larghezza e profondità&quot;,cW/2,cH/2);return;}
+  if(!W||!D){ctx.fillStyle=CVC(&quot;tenue&quot;);ctx.font=&quot;600 18px Arial&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci larghezza e profondità&quot;,cW/2,cH/2);return;}
   const T=p.telaio||{};
   const mMont=T.sx&amp;&amp;T.sx.mat,mLun=T.top&amp;&amp;T.top.mat,mCor=T.bot&amp;&amp;T.bot.mat;
   const sM=mMont?Math.max(eLarg(mMont),eProf(mMont)):0, hL=mLun?eLarg(mLun):0, hC=mCor?eLarg(mCor):0;
@@ -5222,7 +5581,7 @@ function disegnaGazebo(p,cvs,ctx,leg){
   const X=x=>px0+x*scP,Y=y=>py0+y*scP;
   if(hL>0){barra3D(ctx,X(0),Y(0),W*scP,Math.max(hL*scP,2),RGB_T,1);barra3D(ctx,X(0),Y(D)-Math.max(hL*scP,2),W*scP,Math.max(hL*scP,2),RGB_T,1);}
   if(hC>0){barra3D(ctx,X(0),Y(0),Math.max(hC*scP,2),D*scP,RGB_T,1);barra3D(ctx,X(W)-Math.max(hC*scP,2),Y(0),Math.max(hC*scP,2),D*scP,RGB_T,1);}
-  if(!hL&amp;&amp;!hC){ctx.strokeStyle=&quot;#3a4a70&quot;;ctx.setLineDash([5,4]);ctx.strokeRect(X(0),Y(0),W*scP,D*scP);ctx.setLineDash([]);}
+  if(!hL&amp;&amp;!hC){ctx.strokeStyle=CVC(&quot;pav&quot;);ctx.setLineDash([5,4]);ctx.strokeRect(X(0),Y(0),W*scP,D*scP);ctx.setLineDash([]);}
   const q=Math.max(sM*scP,5);
   [[0,0],[W,0],[0,D],[W,D]].forEach(c=>barra3D(ctx,X(c[0])-(c[0]?q:0),Y(c[1])-(c[1]?q:0),q,q,RGB_M,1));
   cvLabelQ(&quot;PIANTA&quot;,X(0),Y(0)-8,&quot;#8fa3c8&quot;,&quot;left&quot;,12);
@@ -5238,7 +5597,7 @@ function disegnaGazebo(p,cvs,ctx,leg){
   const iO=(T.intermedi||[]).filter(i=>i.mat&amp;&amp;i.tipo!=='vert'),iV=(T.intermedi||[]).filter(i=>i.mat&amp;&amp;i.tipo==='vert');
   iO.forEach((im,k)=>{const h=Math.max(eLarg(im.mat)*scF,2),y=Hm*(k+1)/(iO.length+1);barra3D(ctx,FX(0),FY(y)-h/2,W*scF,h,RGB_I,1);});
   iV.forEach((im,k)=>{const w=Math.max(eLarg(im.mat)*scF,2),x=W*(k+1)/(iV.length+1);barra3D(ctx,FX(x)-w/2,FY(0),w,Hm*scF,RGB_I,1);});
-  ctx.strokeStyle=&quot;#3a4a70&quot;;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(FX(-W*0.03),FY(Hm));ctx.lineTo(FX(W*1.03),FY(Hm));ctx.stroke();
+  ctx.strokeStyle=CVC(&quot;pav&quot;);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(FX(-W*0.03),FY(Hm));ctx.lineTo(FX(W*1.03),FY(Hm));ctx.stroke();
   cvLabelQ(&quot;VISTA FRONTALE&quot;,FX(0),FY(0)-8,&quot;#8fa3c8&quot;,&quot;left&quot;,12);
   if(UPG.quote){try{drawQuotaCv(ctx,FX(0),FY(Hm),FX(W),FY(Hm),cmU(W),12);drawQuotaCv(ctx,FX(W),FY(Hm),FX(W),FY(0),cmU(Hm),12);}catch(e){}}
   if(!mMont&amp;&amp;!mLun&amp;&amp;!mCor)cvLabelQ(&quot;Scegli montanti e travi per completare il disegno&quot;,cW/2,cH-10,&quot;#e0a050&quot;,&quot;center&quot;,12);
@@ -5251,11 +5610,26 @@ function disegnaGazebo(p,cvs,ctx,leg){
   }
 }
 
+// Disegno del manufatto. Senza tela: lo disegna in SVG nel riquadro della card (#dis-ID).
+// Con cvsArg (canvas vero o SvgCanvas): disegna lì, es. l'immagine per il preventivo.
 function disegnaPezzo(p,cvsArg,legArg){
-  // cvsArg/legArg: disegno su una tela a parte (immagine per Preventivi) senza toccare quella a video
-  const cvs=cvsArg||document.getElementById(`cvs-${p.id}`);
-  const leg=cvsArg?(legArg||null):document.getElementById(`cvs-leg-${p.id}`);
-  if(!cvs)return;
+  if(cvsArg){_disegnaSu(p,cvsArg,legArg||null);return;}
+  const host=document.getElementById(`dis-${p.id}`)||document.getElementById(`cvs-${p.id}`);
+  const leg=document.getElementById(`cvs-leg-${p.id}`);
+  if(!host)return;
+  if(host.getContext){_disegnaSu(p,host,leg);return;} // tela canvas (vecchi test/strumenti)
+  const sv=new SvgCanvas(680,parseInt(host.dataset.h)||420);
+  _disegnaSu(p,sv,leg);
+  host.innerHTML=sv.toSVG();
+}
+// Aggiorna il disegno mentre si scrive una misura (senza ridisegnare tutta la card)
+function anteprimaMisura(id,campo,valCm,div){
+  const p=pezzi.find(x=>x.id===id);if(!p)return;
+  const v=parseFloat(valCm);if(!(v>0))return;
+  p[campo]=String(v/(div||100));
+  disegnaPezzo(p);
+}
+function _disegnaSu(p,cvs,leg){
   const ctx=cvs.getContext(&quot;2d&quot;);
   const cW=cvs.width,cH=cvs.height;
   ctx.clearRect(0,0,cW,cH);
@@ -5274,7 +5648,7 @@ function disegnaPezzo(p,cvsArg,legArg){
   const luce=calcLuce(p);
   const {luciaH,luciaV,hTop,hBot,wSx,wDx,WSpec,Wmm,Hmm,nCL,nCA}=luce;
   if(!Wmm||!Hmm){
-    ctx.fillStyle=&quot;#4a5c80&quot;;ctx.font=&quot;600 18px system-ui&quot;;ctx.textAlign=&quot;center&quot;;
+    ctx.fillStyle=CVC(&quot;tenue&quot;);ctx.font=&quot;600 18px Arial&quot;;ctx.textAlign=&quot;center&quot;;
     ctx.fillText(&quot;Inserisci larghezza e altezza&quot;,cW/2,cH/2);return;
   }
   const soloAnteD=isSoloAnte(p,tiD);
@@ -5317,12 +5691,27 @@ function disegnaPezzo(p,cvsArg,legArg){
   const segX0 = s => tiD.haAnte ? (antaX_(s)+wSx) : luce.campX0(s); // inizio luce del segmento
   const arcoTop = arcoAttivo(p)&amp;&amp;tiD.haAnte&amp;&amp;(!p.lamiera||p.lamiera_modo==='sotto');
 
+  // Tavola: la luce (il vano) in azzurro, come nei modelli del catalogo IronDesk
+  if(cvTec()&amp;&amp;luciaV>0&amp;&amp;segW>0){
+    ctx.save();ctx.fillStyle=CV_TEC.luce;
+    for(let s=0;s<nSeg;s++){
+      const x0=segX0(s);
+      const ad=(arcoAttivo(p)&amp;&amp;tiD.haAnte)?arcoDatiAnta(p,luce,s,nSeg):null;
+      if(ad){
+        ctx.beginPath();const N=24;
+        for(let k=0;k<=N;k++){const x=x0+segW*k/N,y=yLuce0-ad.elDh(x-antaX_(s));if(!k)ctx.moveTo(tx(x),ty(y));else ctx.lineTo(tx(x),ty(y));}
+        ctx.lineTo(tx(x0+segW),ty(yLuce0+luciaV));ctx.lineTo(tx(x0),ty(yLuce0+luciaV));ctx.closePath();ctx.fill();
+      } else ctx.fillRect(tx(x0),ty(yLuce0),segW*sc,luciaV*sc);
+    }
+    ctx.restore();
+  }
+
   // ── Pannello lamiera: in ogni anta/campata, bande tagliate da traverse e correnti, 2 cm per lato ──
   if(p.lamiera &amp;&amp; luciaV>0 &amp;&amp; segW>0){
     const ld=calcLamiera(p);
     const exMm=(ld&amp;&amp;ld.exMm)||20;
     const bande=lamieraBande(p,luciaV);
-    ctx.fillStyle='rgba(176,182,194,0.92)';ctx.strokeStyle='rgba(90,100,120,0.9)';ctx.lineWidth=1;
+    ctx.fillStyle=CVC('lamiera');ctx.strokeStyle=CVC('contorno');ctx.lineWidth=1;
     for(let s=0;s<nSeg;s++){
       const baseX=segX0(s);
       bande.forEach(bv=>{
@@ -5352,7 +5741,7 @@ function disegnaPezzo(p,cvsArg,legArg){
             ctx.fillRect(_X,_Y,_W,_H);ctx.strokeRect(_X,_Y,_W,_H);
             drawLamPattern(ctx,_X,_Y,_W,_H,p.lamiera_tipo||'liscia',p.lamiera_foro);
           }
-          ctx.fillStyle='rgba(176,182,194,0.92)';ctx.strokeStyle='rgba(90,100,120,0.9)';ctx.lineWidth=1;
+          ctx.fillStyle=CVC('lamiera');ctx.strokeStyle=CVC('contorno');ctx.lineWidth=1;
         });
       });
     }
@@ -5407,7 +5796,7 @@ function disegnaPezzo(p,cvsArg,legArg){
         const N=26;
         const gArc=ctx.createLinearGradient(0,ty(yA-Math.max(_adD.dhSx,_adD.dhDx,0)),0,ty(yA+pT));
         gArc.addColorStop(0,_cvShade(RGB_ANTA,1.38));gArc.addColorStop(1,_cvShade(RGB_ANTA,0.62));
-        ctx.fillStyle=gArc;
+        ctx.fillStyle=cvTec()?CV_TEC.profilo:gArc;
         ctx.beginPath();
         for(let s=0;s<=N;s++){const x=xA+antaWlorda*s/N,yE=yA-_adD.elDh(x-xA);if(s===0)ctx.moveTo(tx(x),ty(yE));else ctx.lineTo(tx(x),ty(yE));}
         for(let s=N;s>=0;s--){const x=xA+antaWlorda*s/N;ctx.lineTo(tx(x),ty(yA-_adD.elDh(x-xA)+pT));}
@@ -5425,6 +5814,16 @@ function disegnaPezzo(p,cvsArg,legArg){
         giunti45(ctx,tx(xA),ty(yA),antaWlorda*sc,hA*sc,pT*sc,pB*sc,pS*sc,pD*sc);
       }
     });
+  }
+
+  // Cerniere sul lato esterno delle ante (tavola), come nei modelli del catalogo
+  if(cvTec()&amp;&amp;tiD.haAnte&amp;&amp;p.ante.length>0){
+    const nA=p.ante.length,hAc=p.aperto_sotto?Math.min(AH_,H_in_):AH_;
+    for(let ai=0;ai<nA;ai++){
+      const lato=(ai===0)?'sx':(ai===nA-1?'dx':null);if(!lato)continue;
+      const xh=lato==='sx'?tx(antaX_(ai))-4:tx(antaX_(ai)+A_);
+      [0.1,0.84].forEach(fr=>cerniera(ctx,xh,ty(antaY_+hAc*fr),4,Math.max(10,hAc*sc*0.06)));
+    }
   }
 
   // ── Traverse: una per ogni anta/campata, alla quota scelta ──
@@ -5445,15 +5844,34 @@ function disegnaPezzo(p,cvsArg,legArg){
     }
   });
 
-  // ── Elementi interni (stessa logica della distinta: celle, fasce, arco) ──
+  // ── Elementi interni (stessa logica della distinta: celle, fasce, arco) + decori e rombi ──
   const legN=[];
+  let quotaPassoFatta=false;
   (p.elemList||[]).filter(e=>e.attivo&amp;&amp;e.mat).forEach((el,gi)=>{
     const rgbEl=_cvHexRgb(EL_C[gi%EL_C.length]);
     const isV=el.dir!==&quot;oriz&quot;;
     const larg=eLarg(el.mat);
     const isTondo=String(el.mat.profilo).startsWith(&quot;Ø&quot;);
+    const dec=el.decoro||&quot;nessuno&quot;,nDec=Math.max(1,parseInt(el.nDecori)||2);
     let nTot=0;
-    if(isV){
+    if(el.dir===&quot;rombi&quot;){
+      // grata a rombi: diagonali a 45° tagliate a filo del telaio in ogni cella
+      const reg=barRegion(p,el,luciaV);
+      const celle=barCells(p,segW,luciaV,reg.regY0,reg.regY1,larg,el.spMin,el.spMax,el.pd||&quot;libero&quot;);
+      for(let s=0;s<nSeg;s++){
+        const x0=segX0(s);
+        celle.forEach(c=>{
+          const w=c.b-c.a,h=c.by1-c.by0;if(!(w>0&amp;&amp;h>0))return;
+          const ox=x0+c.a,oyB=yLuce0+(luciaV-c.by0); // origine cella in basso a sinistra (mm, y verso l'alto)
+          ctx.save();ctx.beginPath();ctx.rect(tx(ox),ty(oyB-h),w*sc,h*sc);ctx.clip();
+          rombiSegmenti(w,h,passoRombi(el,larg),larg).forEach(g=>{
+            nTot++;
+            barraObliqua(ctx,tx(ox+g.x1),ty(oyB-g.y1),tx(ox+g.x2),ty(oyB-g.y2),Math.max(larg*sc,1.5));
+          });
+          ctx.restore();
+        });
+      }
+    } else if(isV){
       const cells=elemCelle(p,el,segW,luciaV,barRegion(p,el,luciaV));
       for(let s=0;s<nSeg;s++){
         const x0=segX0(s);
@@ -5461,15 +5879,31 @@ function disegnaPezzo(p,cvsArg,legArg){
         cells.forEach(c=>{
           const yTopC=yLuce0+(luciaV-c.by1),hC=c.by1-c.by0;
           if(!(hC>0))return;
-          c.pos.forEach(pos=>{
+          c.pos.forEach((pos,ip)=>{
             const xc=x0+pos;
             const dh=(ad&amp;&amp;c.by1>=luciaV-0.5)?ad.elDh(xc-antaX_(s)):0;
             const yT=yTopC-dh,len=hC+dh;
             if(!(len>0))return;
             nTot++;
-            if(isTondo)tondo3D(ctx,tx(xc),ty(yT+len/2),Math.max(larg*sc/2,1.5),len*sc/2,rgbEl);
+            if(dec===&quot;fuso&quot;)decoroFuso(ctx,tx(xc),ty(yT),ty(yT+len),Math.max(larg*sc,1.5));
+            else if(isTondo)tondo3D(ctx,tx(xc),ty(yT+len/2),Math.max(larg*sc/2,1.5),len*sc/2,rgbEl);
             else barra3D(ctx,tx(xc-larg/2),ty(yT),Math.max(larg*sc,1.5),len*sc,rgbEl,1);
+            if(dec===&quot;collari&quot;&amp;&amp;hC>=DECORO_MIN_MM)for(let k=1;k<=nDec;k++)decoroCollare(ctx,tx(xc),ty(yTopC+hC*k/(nDec+1)),Math.max(larg*sc,1.5),false);
           });
+          // riccioli a &quot;S&quot; tra le coppie di tondini (1°-2°, 3°-4°, …)
+          if(dec===&quot;riccioli&quot;&amp;&amp;c.pos.length>1&amp;&amp;hC>=DECORO_MIN_MM){
+            for(let k=1;k<=nDec;k++){
+              const yc=yTopC+hC*k/(nDec+1);
+              for(let ip=0;ip+1<c.pos.length;ip+=2){
+                decoroRicciolo(ctx,tx(x0+c.pos[ip]+larg/2),tx(x0+c.pos[ip+1]-larg/2),ty(yc),Math.min((c.pos[ip+1]-c.pos[ip])*1.6,hC/(nDec+1)*0.8)*sc);
+              }
+            }
+          }
+          // quota tecnica della luce libera tra i primi due elementi
+          if(!quotaPassoFatta&amp;&amp;UPG.quote&amp;&amp;s===0&amp;&amp;c.pos.length>1){
+            const gx1=x0+c.pos[0]+larg/2,gx2=x0+c.pos[1]-larg/2;
+            if((gx2-gx1)*sc>14){quotaPassoFatta=true;try{drawQuotaCv(ctx,tx(gx1),ty(yTopC+hC*0.12),tx(gx2),ty(yTopC+hC*0.12),cmv(gx2-gx1),0);}catch(e){}}
+          }
         });
       }
     } else {
@@ -5482,16 +5916,16 @@ function disegnaPezzo(p,cvsArg,legArg){
             nTot++;
             if(isTondo)tondo3D(ctx,tx(x0+segW/2),ty(yc),segW*sc/2,Math.max(larg*sc/2,1.5),rgbEl);
             else barra3D(ctx,tx(x0),ty(yc-larg/2),segW*sc,Math.max(larg*sc,1.5),rgbEl,1);
+            if(dec===&quot;collari&quot;)for(let k=1;k<=nDec;k++)decoroCollare(ctx,tx(x0+segW*k/(nDec+1)),ty(yc),Math.max(larg*sc,1.5),true);
           });
         });
       }
     }
     legN.push({gi,el,isV,n:nTot});
   });
-
   // ── Quote (cm) ──
-  ctx.strokeStyle=&quot;#3a4a70&quot;;ctx.lineWidth=1.2;ctx.fillStyle=&quot;#8fa3c8&quot;;
-  ctx.font=&quot;700 14px system-ui&quot;;ctx.textAlign=&quot;center&quot;;
+  ctx.strokeStyle=CVC('quota');ctx.lineWidth=1.2;ctx.fillStyle=CVC('quota');
+  ctx.font=&quot;700 14px Arial&quot;;ctx.textAlign=&quot;center&quot;;
   if(UPG.quote){
     try{
       drawQuotaCv(ctx,tx(0),ty(Hmm),tx(Wmm),ty(Hmm),cmU(Wmm),12);
@@ -6184,7 +6618,10 @@ function inviaPREV(snapId){
   const lista=(snap.pezzi||[]).map(p=>migraCampiPezzo(JSON.parse(JSON.stringify(p))));
   // Prezzo = quello del Riepilogo (costi ripartiti sui manufatti + ore × tariffa + ricarico)
   const C=costiCantiere(lista);
-  const prezzoDi=i=>Math.round(prezzoVenditaPezzo(lista[i],C.perPezzo[i].tot).prezzo*100)/100;
+  // Zincatura e verniciatura passano a Preventivi come trattamenti a PESO (con le sue caselle):
+  // dal prezzo del manufatto si tolgono, così non si pagano due volte.
+  const prezzoDi=i=>{const x=C.perPezzo[i];return Math.round(prezzoVenditaPezzo(lista[i],x.tot-x.zinc-x.vern).prezzo*100)/100;};
+  const pesoDi=i=>Math.round((C.perPezzo[i].kg||0)*10)/10;
 
   const pezziDati=lista.map((p,i)=>{
     const tiInfo=TIPI.find(t=>t.k===p.tipo)||TIPI[0];
@@ -6199,7 +6636,7 @@ function inviaPREV(snapId){
         materiali:[{ruolo:'',testo:'Profilo scuretto alluminio '+fmtN(ALU_SC*10)+' mm — '+aluTot.barre+' barre 6,50 m'}],
         desc_tecnica:'Manufatto alluminio scuretto verniciato '+(p.aluColore||''),
         img:pezzoImgDataURL(p),
-        prezzo:prezzoDi(i)
+        prezzo:prezzoDi(i),peso_kg:pesoDi(i),zinc:!!p.zinc_caldo,vern:!!p.vern_polvere
       };
     }
     // Profili usati (dalla distinta unica), senza doppioni
@@ -6212,7 +6649,7 @@ function inviaPREV(snapId){
       let descS='Scala a cosciali: altezza '+cmv(sc.H*1000)+' cm, sviluppo '+cmv(sc.L*1000)+' cm, larghezza '+cmv(sc.W*1000)+' cm — '+sc.n+' gradini'+(sc.gradTipo==='lamiera'?' in lamiera pressopiegata':'');
       if(nPzU>1)descS+=' (×'+nPzU+' pezzi uguali)';
       return{nome:p.nome||'Scala',tipo:p.tipo,larg:p.scalaW,alt:p.scalaH,nBattenti:1,nPezziUguali:nPzU,
-        desc_tecnica:descS,materiali:righeS,img:pezzoImgDataURL(p),prezzo:prezzoDi(i)};
+        desc_tecnica:descS,materiali:righeS,img:pezzoImgDataURL(p),prezzo:prezzoDi(i),peso_kg:pesoDi(i),zinc:!!p.zinc_caldo,vern:!!p.vern_polvere};
     }
     if(tiInfo.isCorrimano){
       const cc=corrCalc(p);
@@ -6221,7 +6658,7 @@ function inviaPREV(snapId){
       let descC='Corrimano a muro '+cmv(cc.L*1000)+' cm, staffe ogni '+cc.passo+' cm';
       if(nPzU>1)descC+=' (×'+nPzU+' pezzi uguali)';
       return{nome:p.nome||'Corrimano',tipo:'altro',larg:cc.L,alt:'',nBattenti:1,nPezziUguali:nPzU,
-        desc_tecnica:descC,materiali:righeC,img:pezzoImgDataURL(p),prezzo:prezzoDi(i)};
+        desc_tecnica:descC,materiali:righeC,img:pezzoImgDataURL(p),prezzo:prezzoDi(i),peso_kg:pesoDi(i),zinc:!!p.zinc_caldo,vern:!!p.vern_polvere};
     }
     const righe=visti.map(t=>({ruolo:&quot;&quot;,testo:t}));
     let _ld=null;
@@ -6249,7 +6686,7 @@ function inviaPREV(snapId){
       nome:p.nome||tiLabel,
       tipo:p.tipo==='inferriata'?'grata':p.tipo,
       larg:p.larg,alt:p.alt,nBattenti:nB,nPezziUguali:nPzU,
-      desc_tecnica:desc,materiali:righe,img:pezzoImgDataURL(p),prezzo:prezzoDi(i)
+      desc_tecnica:desc,materiali:righe,img:pezzoImgDataURL(p),prezzo:prezzoDi(i),peso_kg:pesoDi(i),zinc:!!p.zinc_caldo,vern:!!p.vern_polvere
     };
   });
 
@@ -6258,6 +6695,8 @@ function inviaPREV(snapId){
     tipo:&quot;ferrocalc_preventivo&quot;,
     nome:snap.nome,
     pezzi:pezziDati,
+    peso_tot:Math.round(pezziDati.reduce((a,x)=>a+(x.peso_kg||0),0)*10)/10,
+    tratt:{zinc:pezziDati.some(x=>x.zinc),vern:pezziDati.some(x=>x.vern)},
     ts:Date.now(),
   };
   localStorage.setItem(&quot;PREV_IMPORT&quot;, JSON.stringify(dati));
@@ -6332,6 +6771,62 @@ function traversaValida(tr,luce){
   const q=parseFloat(tr.quota_mm);
   if(!tr.mat||!(q>0))return false;
   return (tr.dir||&quot;oriz&quot;)===&quot;oriz&quot;?q<luce.luciaV:q<luce.luciaHAnta;
+}
+
+// ── Grata a rombi (diagonali a 45°) ──
+// Passo orizzontale tra due diagonali parallele: spazio libero medio + ingombro della barra inclinata
+function passoRombi(el,larg){
+  const sm=((parseFloat(el.spMin)||0)+(parseFloat(el.spMax)||0))/2;
+  return Math.max(20,(sm+larg)*Math.SQRT2);
+}
+// Diagonali dentro una cella w×h (mm, origine in basso a sinistra, y verso l'alto), simmetriche:
+// ogni diagonale è un pezzo da tagliare (estremi a 45° a filo del telaio). {x1,y1,x2,y2,len}
+function rombiSegmenti(w,h,d,larg){
+  const out=[];if(!(w>0&amp;&amp;h>0&amp;&amp;d>0))return out;
+  const r=((w+h)%d)/2;
+  for(let c=-h+r;c<w;c+=d){
+    const xa=Math.max(0,c),xb=Math.min(w,h+c);
+    if(xb-xa>0){const len=Math.SQRT2*(xb-xa);if(len>=2*(larg||0)){
+      out.push({x1:xa,y1:xa-c,x2:xb,y2:xb-c,len});
+      const cB=w-c,xa2=Math.max(0,cB-h),xb2=Math.min(w,cB); // diagonale speculare (discendente)
+      out.push({x1:xa2,y1:cB-xa2,x2:xb2,y2:cB-xb2,len:Math.SQRT2*(xb2-xa2)});
+    }}
+  }
+  return out;
+}
+// Barra inclinata (px): rettangolo ruotato di spessore t tra due punti
+function barraObliqua(ctx,x1,y1,x2,y2,t){
+  const L=Math.hypot(x2-x1,y2-y1)||1,nx=-(y2-y1)/L*t/2,ny=(x2-x1)/L*t/2;
+  ctx.save();
+  ctx.fillStyle=cvTec()?CV_TEC.profiloScuro:&quot;#9fb0c8&quot;;ctx.strokeStyle=cvTec()?CV_TEC.contorno:&quot;rgba(4,8,16,.5)&quot;;ctx.lineWidth=0.8;
+  ctx.beginPath();ctx.moveTo(x1+nx,y1+ny);ctx.lineTo(x2+nx,y2+ny);ctx.lineTo(x2-nx,y2-ny);ctx.lineTo(x1-nx,y1-ny);ctx.closePath();
+  ctx.fill();ctx.stroke();ctx.restore();
+}
+// Decori da ordinare a parte (collari, riccioli): quantità per il manufatto (tutti i pezzi uguali).
+// Nelle fasce basse (sotto 15 cm, es. le &quot;griglie&quot; tra due traverse vicine) non si mettono decori.
+const DECORO_MIN_MM=150;
+function decoriPezzo(p){
+  const out={collari:0,riccioli:0};
+  const ti=TIPI.find(t=>t.k===p.tipo)||TIPI[0];
+  if(ti.isScala||ti.isCorrimano||ti.isAlluminio||ti.isGazebo)return out;
+  const fp=faccePezzi(p);if(fp){fp.forEach(pf=>{const d=decoriPezzo(pf);out.collari+=d.collari;out.riccioli+=d.riccioli;});return out;}
+  const luce=calcLuce(p),nPz=Math.max(1,parseInt(p.nPezziUguali)||1);
+  const nSeg=ti.haAnte?Math.max(1,(p.ante||[]).length):luce.nCL;
+  (p.elemList||[]).filter(e=>e.attivo&amp;&amp;e.mat&amp;&amp;e.dir!==&quot;rombi&quot;).forEach(el=>{
+    const dec=el.decoro||&quot;nessuno&quot;,n=Math.max(1,parseInt(el.nDecori)||2),larg=eLarg(el.mat);
+    if(dec!==&quot;collari&quot;&amp;&amp;dec!==&quot;riccioli&quot;)return;
+    if(el.dir===&quot;oriz&quot;){
+      let nb=0;fasceLuce(luce).forEach(f=>{nb+=elemPosizioni(el,f.y1-f.y0,larg).length;});
+      if(dec===&quot;collari&quot;)out.collari+=nb*n*nSeg*nPz;
+      return;
+    }
+    elemCelle(p,el,luce.luciaHAnta,luce.luciaV,barRegion(p,el,luce.luciaV)).forEach(c=>{
+      if(!(c.by1-c.by0>=DECORO_MIN_MM))return;
+      if(dec===&quot;collari&quot;)out.collari+=c.pos.length*n*nSeg*nPz;
+      else out.riccioli+=Math.floor(c.pos.length/2)*n*nSeg*nPz;
+    });
+  });
+  return out;
 }
 
 function walkPezzoMateriali(p,addG){
@@ -6432,7 +6927,14 @@ function walkPezzoMateriali(p,addG){
   (p.elemList||[]).filter(e=>e.attivo&amp;&amp;e.mat).forEach((el,gi)=>{
     const isV=el.dir!==&quot;oriz&quot;;
     const larg=eLarg(el.mat);
-    const lbl=&quot;elemento &quot;+(gi+1)+(isV?&quot; verticale&quot;:&quot; orizzontale&quot;);
+    const lbl=&quot;elemento &quot;+(gi+1)+(el.dir===&quot;rombi&quot;?&quot; a rombi (diagonale 45°)&quot;:(isV?&quot; verticale&quot;:&quot; orizzontale&quot;));
+    if(el.dir===&quot;rombi&quot;){ // grata a rombi: ogni diagonale è un pezzo a sé
+      const reg=barRegion(p,el,luciaV);
+      barCells(p,segLuce,luciaV,reg.regY0,reg.regY1,larg,el.spMin,el.spMax,el.pd||&quot;libero&quot;).forEach(c=>{
+        rombiSegmenti(c.b-c.a,c.by1-c.by0,passoRombi(el,larg),larg).forEach(g=>A(el.mat,g.len,nSeg*nPz,lbl));
+      });
+      return;
+    }
     if(isV){
       const cells=elemCelle(p,el,segLuce,luciaV,barRegion(p,el,luciaV));
       for(let s=0;s<nSeg;s++){
@@ -6585,7 +7087,7 @@ function renderRiepilogo(){
     </div>
     ${righe.length?`<div class=&quot;sec&quot; style=&quot;border-color:#f08a3c&quot;>
       <div class=&quot;st&quot; style=&quot;color:#f08a3c&quot;>📦 Profili da ordinare</div>
-      <p style=&quot;font-size:11px;color:#91a2bb;margin-bottom:9px&quot;>Profili uguali di tutti i manufatti sommati — ${UPG.ottim?&quot;barre dal piano di taglio (kerf &quot;+UPG.kerf+&quot; mm)&quot;:&quot;barre = metri + sfrido &quot;+UPG.sfrido+&quot;%&quot;} · listino ${listinoLabel()}</p>
+      <p style=&quot;font-size:11px;color:#91a2bb;margin-bottom:9px&quot;>Profili uguali di tutti i manufatti sommati — ${UPG.ottim?&quot;barre dal piano di taglio (4 mm per taglio)&quot;:&quot;barre = metri + sfrido &quot;+UPG.sfrido+&quot;%&quot;} · listino ${listinoLabel()}</p>
       <div style=&quot;display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px&quot;>
         <button class=&quot;btn&quot; onclick=&quot;apriPianoTaglio()&quot; style=&quot;border-color:#f08a3c;color:#f08a3c;font-weight:700&quot;>🪚 Piano di taglio</button>
         <button class=&quot;btn&quot; onclick=&quot;stampaDistintaTaglio()&quot; style=&quot;border-color:#64a8ff;color:#64a8ff;font-weight:700&quot;>📄 Distinta taglio officina</button>
@@ -6667,7 +7169,7 @@ function renderRiepilogo(){
       </div>`:''}
       ${(aluTotFP>0||aluTotFG>0)?`<div style=&quot;margin-bottom:8px&quot;>
         <div style=&quot;font-size:11px;color:#91a2bb;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px&quot;>Schema taglio fogli interi</div>
-        <canvas id=&quot;alu-fogli-cvs&quot; width=&quot;640&quot; height=&quot;200&quot; style=&quot;width:100%;border-radius:8px;border:1px solid #172438;background:#0b1422&quot;></canvas>
+        <div id=&quot;alu-fogli-dis&quot; class=&quot;tavola-dis&quot;></div>
       </div>`:''}
     </div>`:''}
 
@@ -6693,8 +7195,8 @@ function renderRiepilogo(){
   `;
   // Disegna lo schema dei fogli interi con i pezzi
   setTimeout(function(){
-    var fcvs=document.getElementById('alu-fogli-cvs');
-    if(fcvs&amp;&amp;aluG&amp;&amp;aluG.fogli&amp;&amp;aluG.fogli.fogli)aluDisegnaFogli(fcvs,aluG.fogli.fogli);
+    var host=document.getElementById('alu-fogli-dis');
+    if(host&amp;&amp;aluG&amp;&amp;aluG.fogli&amp;&amp;aluG.fogli.fogli){var sv=new SvgCanvas(640,200);aluDisegnaFogli(sv,aluG.fogli.fogli);host.innerHTML=sv.toSVG();}
   },50);
 }
 // Ore di lavoro (solo per il prezzo di vendita nel Riepilogo)
@@ -6985,7 +7487,7 @@ function riaprePreventivo(id){
       migraCampiPezzo(p); // aggiunge campi mancanti (lamiera, ecc.) ai pezzi vecchi
     });
     if(pezzi.length)pezzi[0].aperto=true;
-    allineaContatori();
+    allineaContatori();_accettaStato=true;
     cantiereInModifica={id:snap.id, nome:snap.nome}; // memorizza che stiamo modificando questo
     showTab(&quot;cfg&quot;);
     renderTutto();
@@ -7090,7 +7592,7 @@ function apriPianoTaglio(){
   ov.style.cssText='position:fixed;inset:0;background:rgba(4,7,14,.92);z-index:9000;overflow-y:auto;padding:16px';
   let html=`<div style=&quot;max-width:760px;margin:0 auto;background:#0d1322;border:1px solid #2a3450;border-radius:12px;padding:16px&quot;>
     <div style=&quot;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px&quot;>
-      <div style=&quot;font-size:16px;font-weight:700;color:#f08a3c&quot;>🪚 Piano di taglio ottimizzato <span style=&quot;font-size:11px;color:#91a2bb&quot;>(kerf ${UPG.kerf} mm)</span></div>
+      <div style=&quot;font-size:16px;font-weight:700;color:#f08a3c&quot;>🪚 Piano di taglio ottimizzato <span style=&quot;font-size:11px;color:#91a2bb&quot;>(4 mm per taglio)</span></div>
       <button class=&quot;btn-x&quot; onclick=&quot;document.getElementById('pt-overlay').remove()&quot; style=&quot;width:30px;height:30px;font-size:15px&quot;>✕</button>
     </div>`;
   if(!keys.length){
@@ -7099,7 +7601,7 @@ function apriPianoTaglio(){
     html+=`<div style=&quot;color:#e07000;padding:12px;font-size:13px&quot;>L'ottimizzatore è disattivato (Listino → Impostazioni calcolo). Le barre sono calcolate sul totale ml + sfrido ${UPG.sfrido}%.</div>`;
   }
   keys.forEach(k=>{
-    const g=CUTS[k], pia=PIANI[k]||ottimizzaTagli(g.tagli,(g.mat&amp;&amp;g.mat.fam==='alu')?{barraMm:ALU_BAR*10}:undefined);
+    const g=CUTS[k], pia=PIANI[k]||ottimizzaTagli(g.tagli,opzTaglioMat(g.mat));
     const isAluK=g.mat&amp;&amp;g.mat.fam==='alu';
     const barraK=pia.barraMm||UPG.barraMm||6015;
     html+=`<div style=&quot;margin:14px 0;border-top:1px solid #1a2440;padding-top:10px&quot;>
@@ -7113,7 +7615,7 @@ function apriPianoTaglio(){
       let x=0,seg=&quot;&quot;;
       b.tagli.forEach(t=>{for(let i=0;i<t.qty;i++){const w=t.mm/capMm*100;
         seg+=`<div style=&quot;position:absolute;top:0;height:100%;left:${x}%;width:${w}%;background:${b.spz?'#1a5a3a':'#1e4a7a'};border-right:2px solid #0b111b;display:flex;align-items:center;justify-content:center;font-size:9px;color:#cfe0f5;overflow:hidden;white-space:nowrap&quot;>${cmv(t.mm)}</div>`;
-        x+=w+UPG.kerf/capMm*100;}});
+        x+=w+(isAluK?0:KERF_MM)/capMm*100;}});
       seg+=`<div style=&quot;position:absolute;top:0;height:100%;right:0;width:${Math.max(0,b.restoMm)/capMm*100}%;background:repeating-linear-gradient(45deg,#332211,#332211 5px,#221708 5px,#221708 10px);display:flex;align-items:center;justify-content:center;font-size:9px;color:#f08a3c&quot;>${(!b.spz&amp;&amp;b.restoMm>=UPG.sogliaSpz)?&quot;♻ &quot;:&quot;&quot;}${cmv(b.restoMm)}</div>`;
       html+=`<div style=&quot;display:flex;align-items:center;gap:6px;margin:4px 0&quot;>
         ${b.spz?`<span style=&quot;flex:0 0 auto;font-size:9px;color:#55d39b;font-weight:700&quot;>♻ SPZ ${cmv(b.spzMm)}</span>`:&quot;&quot;}
@@ -7173,7 +7675,7 @@ function stampaDistintaTaglio(){
   let corpo=&quot;&quot;;
   keys.forEach(k=>{
     const isAluK=!!(CUTS[k]&amp;&amp;CUTS[k].mat&amp;&amp;CUTS[k].mat.fam==='alu');
-    const g=CUTS[k], pia=UPG.ottim?(PIANI[k]||ottimizzaTagli(g.tagli,isAluK?{barraMm:ALU_BAR*10}:undefined)):null;
+    const g=CUTS[k], pia=UPG.ottim?(PIANI[k]||ottimizzaTagli(g.tagli,opzTaglioMat(g.mat))):null;
     const nT=g.tagli.reduce((a,t)=>a+t.qty,0);
     const intest=isAluK?`${g.mat.profilo} — ${g.mat.qual||&quot;Alluminio&quot;} · barra ${cmv(ALU_BAR*10)} cm`:`${g.mat.profilo} — sp.${g.mat.sp} mm ${g.mat.fam||&quot;&quot;}`;
     corpo+=`<h2>${intest} <span style=&quot;font-weight:400;color:#666;font-size:12px&quot;>(${nT} tagli${pia?&quot; · &quot;+pia.nBarre+&quot; barre · sfrido &quot;+pia.sfridoPerc.toFixed(1)+&quot;%&quot;:&quot;&quot;})</span></h2>
@@ -7199,7 +7701,7 @@ function stampaDistintaTaglio(){
   </style></head><body>
   <button class=&quot;no-print&quot; onclick=&quot;window.print()&quot; style=&quot;margin-bottom:16px;padding:8px 18px;background:#64a8ff;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;color:#fff&quot;>🖨️ Stampa</button>
   <h1>🪚 Distinta di taglio — officina</h1>
-  <div class=&quot;sub&quot;>${oggi} · kerf lama ${UPG.kerf} mm · barre commerciali ${cmv(UPG.barraMm)} cm · MISURE IN CM · SENZA PREZZI</div>
+  <div class=&quot;sub&quot;>${oggi} · sfrido di taglio 4 mm per taglio · barre da 6 m (${cmv(UPG.barraMm)} cm) o 12 m · MISURE IN CM · SENZA PREZZI</div>
   ${corpo}
   <div style=&quot;margin-top:22px;font-size:10px;color:#888;border-top:1px solid #ccc;padding-top:8px&quot;>Generato con FerroCalc — lunghezze ordinate dalla più lunga · spuntare i tagli eseguiti</div>
   </body></html>`);
@@ -7277,7 +7779,7 @@ function duplicaVariante(id){
   const p=pezzi.find(x=>x.id===id);if(!p)return;
   const c=clonaPezzoNuoviId(p);
   c.nome=p.nome+&quot; (variante)&quot;;
-  pezzi.push(c);renderTutto();
+  pezzi.push(c);_accettaStato=true;renderTutto();
 }
 function loadModelli(){try{return JSON.parse(localStorage.getItem(&quot;fc_modelli&quot;)||&quot;[]&quot;);}catch(e){return [];}}
 function salvaModello(id){
@@ -7298,7 +7800,7 @@ function usaModello(i){
   const c=migraCampiPezzo(clonaPezzoNuoviId(m.pezzo));
   c.nome=m.nome;c.aperto=true;
   pezzi.forEach(p=>p.aperto=false);
-  pezzi.push(c);allineaContatori();
+  pezzi.push(c);allineaContatori();_accettaStato=true;
   const ov=document.getElementById('md-overlay');if(ov)ov.remove();
   renderTutto();
 }
@@ -7324,8 +7826,62 @@ function apriModelli(){
         <button class=&quot;btn-x&quot; onclick=&quot;eliminaModello(${i})&quot; style=&quot;width:26px;height:26px&quot;>✕</button>
       </div>`;}).join(&quot;&quot;)
     :`<div style=&quot;color:#91a2bb;padding:18px;text-align:center;font-size:13px&quot;>Nessun modello salvato.<br>Usa 💾 sulla card di un manufatto per salvarlo come modello riutilizzabile.</div>`}
+    <div style=&quot;font-size:14px;font-weight:700;color:#f08a3c;margin:16px 0 4px&quot;>🧩 Riempimenti dal catalogo</div>
+    <div style=&quot;font-size:11px;color:#91a2bb;margin-bottom:8px;line-height:1.5&quot;>Si applicano al manufatto aperto (${esc((pezzi.find(p=>p.aperto)||pezzi[0]||{}).nome||&quot;—&quot;)}): cambiano solo elementi interni e traverse, misure e profili restano i tuoi.</div>
+    <div style=&quot;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px&quot;>
+      ${MODELLI_CAT.map(m=>`<button onclick=&quot;applicaModelloCatalogo('${m.k}')&quot; style=&quot;padding:6px;border-radius:10px;cursor:pointer;border:1.5px solid #2a3450;background:#0b1422;color:#e8eef7;text-align:center&quot;>
+        <div style=&quot;line-height:0&quot;>${anteprimaModelloCat(m)}</div>
+        <div style=&quot;font-size:11px;font-weight:700;margin-top:5px&quot;>${m.l}</div>
+        <div style=&quot;font-size:10px;color:#91a2bb&quot;>${m.d}</div></button>`).join(&quot;&quot;)}
+    </div>
   </div>`;
   document.body.appendChild(ov);
+}
+// ═══════ RIEMPIMENTI DAL CATALOGO (modelli di grata / inferriata) ═══════
+// Solo la &quot;trama&quot;: tipo di elementi, decori e posizione delle traverse (in frazioni della luce).
+// Misure e profili restano quelli del manufatto: nessuna sezione viene inventata.
+const MODELLI_CAT=[
+  {k:&quot;m1&quot;,l:&quot;Modello 1&quot;,d:&quot;a rombi&quot;,el:[{dir:&quot;rombi&quot;}],tr:[]},
+  {k:&quot;m2&quot;,l:&quot;Modello 2&quot;,d:&quot;tondini con collari e fasce&quot;,el:[{dir:&quot;vert&quot;,decoro:&quot;collari&quot;,nDecori:2}],tr:[0.08,0.12,0.52,0.56,0.9,0.94]},
+  {k:&quot;m3&quot;,l:&quot;Modello 3&quot;,d:&quot;griglia con riccioli&quot;,el:[{dir:&quot;vert&quot;,decoro:&quot;riccioli&quot;,nDecori:2}],tr:[0.06,0.12,0.18,0.62,0.82,0.88,0.94]},
+  {k:&quot;m4&quot;,l:&quot;Modello 4&quot;,d:&quot;collari e griglia alta e bassa&quot;,el:[{dir:&quot;vert&quot;,decoro:&quot;collari&quot;,nDecori:2}],tr:[0.06,0.12,0.18,0.5,0.54,0.82,0.88,0.94]},
+  {k:&quot;m5&quot;,l:&quot;Modello 5&quot;,d:&quot;barre orizzontali&quot;,el:[{dir:&quot;oriz&quot;}],tr:[]},
+  {k:&quot;m6&quot;,l:&quot;Modello 6&quot;,d:&quot;barre a fuso&quot;,el:[{dir:&quot;vert&quot;,decoro:&quot;fuso&quot;}],tr:[0.5]},
+  {k:&quot;m8&quot;,l:&quot;Modello 8&quot;,d:&quot;griglia con collari multipli&quot;,el:[{dir:&quot;vert&quot;,decoro:&quot;collari&quot;,nDecori:3}],tr:[0.08,0.16,0.34,0.66,0.84,0.92]},
+];
+function trattaModelloCat(p,m,matEl,matTr){
+  const luce=calcLuce(p);
+  const base=(p.elemList&amp;&amp;p.elemList[0])||nuovoElem(&quot;vert&quot;);
+  p.elemList=m.el.map(e=>Object.assign(nuovoElem(e.dir===&quot;oriz&quot;?&quot;oriz&quot;:&quot;vert&quot;),{
+    dir:e.dir,mat:matEl,spMin:base.spMin||&quot;100&quot;,spMax:base.spMax||&quot;130&quot;,pd:base.pd||&quot;libero&quot;,decoro:e.decoro||&quot;nessuno&quot;,nDecori:e.nDecori||2}));
+  p.traverse=m.tr.map(f=>({id:`tr${travCntG++}`,dir:&quot;oriz&quot;,quota_mm:Math.round(luce.luciaV*f),mat:matTr,est:&quot;tutta&quot;,est_da:&quot;&quot;,est_a:&quot;&quot;}));
+  return p;
+}
+// Anteprima (SVG) del riempimento su una grata dimostrativa 2 ante
+function anteprimaModelloCat(m){
+  try{
+    const demo=nuovoPezzo(99000);demo.tipo=&quot;porta_cancellata&quot;;demo.nBattenti=2;demo.aperto_sotto=false;demo.larg=&quot;1.2&quot;;demo.alt=&quot;1.5&quot;;
+    migraCampiPezzo(demo);aggiornaNAnte(demo);
+    const tq={profilo:&quot;30x30&quot;,cat:&quot;tub_quadri&quot;,sp:2,fam:&quot;nero&quot;,qual:&quot;&quot;},el={profilo:&quot;Ø14&quot;,cat:&quot;tondi&quot;,sp:null,fam:&quot;nero&quot;,qual:&quot;&quot;},tr={profilo:&quot;20x20&quot;,cat:&quot;tub_quadri&quot;,sp:1.5,fam:&quot;nero&quot;,qual:&quot;&quot;};
+    [&quot;top&quot;,&quot;bot&quot;,&quot;sx&quot;,&quot;dx&quot;].forEach(l=>{demo.telaio[l]={mat:tq,battuta:&quot;senza&quot;};demo.ante.forEach(a=>{a[l]={mat:tq,battuta:&quot;senza&quot;};});});
+    const tc=travCntG;trattaModelloCat(demo,m,el,tr);travCntG=tc;
+    const q=UPG.quote;UPG.quote=false;_cvMuto=true;
+    const sv=new SvgCanvas(170,200);
+    try{_disegnaSu(demo,sv,null);}finally{UPG.quote=q;_cvMuto=false;}
+    return sv.toSVG(&quot;border-radius:6px&quot;);
+  }catch(e){return &quot;&quot;;}
+}
+function applicaModelloCatalogo(k){
+  const m=MODELLI_CAT.find(x=>x.k===k);if(!m)return;
+  const p=pezzi.find(x=>x.aperto)||pezzi[0];if(!p)return;
+  const ti=TIPI.find(t=>t.k===p.tipo)||TIPI[0];
+  if(ti.isScala||ti.isCorrimano||ti.isAlluminio||ti.isGazebo){alert(&quot;I riempimenti si applicano a cancelli, porte, grate, ringhiere e recinzioni.&quot;);return;}
+  const matEl=((p.elemList||[]).find(e=>e.mat)||{}).mat||null;
+  const matTr=((p.traverse||[]).find(t=>t.mat)||{}).mat||matEl;
+  trattaModelloCat(p,m,matEl,matTr);
+  const ov=document.getElementById('md-overlay');if(ov)ov.remove();
+  renderTutto();
+  if(!matEl)alert(&quot;Riempimento applicato: ora scegli il profilo degli elementi (e delle traverse) nella card.&quot;);
 }
 
 // ═══════ UPGRADE: MAGAZZINO SPEZZONI ═══════
@@ -8417,6 +8973,39 @@ function calcLamiera(p){
 // - Profili speciali (serramenti, angolari, ferro a T, travi, ovali, corrimano, inox…): peso del Prontuario/catalogo.
 // Prima tondi pieni, piatti, angolari e travi erano calcolati come tubi cavi o a 1 kg/m fisso:
 // pesi, zincatura e verniciatura venivano sbagliati.
+// ═══════ PESI NOMINALI (kg/m) — dizionario interno dei profilati da carpenteria ═══════
+// Costruito all'avvio dal catalogo già presente nel programma: tubolari quadri e rettangolari dalla
+// sezione (lati e spessore), pieni, piatti, angolari e travi IPE/HEA/HEB/UPN dai pesi di catalogo.
+// Nessun peso inventato: ogni voce viene da un dato che il programma ha già.
+const PESI_NOMINALI=(function(){
+  const out={},d=0.00785;
+  const k=(cat,dim,sp)=>cat+&quot;|&quot;+dim+&quot;|&quot;+(sp==null?&quot;&quot;:sp);
+  [&quot;tub_quadri&quot;,&quot;tub_rett&quot;].forEach(cat=>((typeof PRON_DB!==&quot;undefined&quot;&amp;&amp;PRON_DB[cat])||[]).forEach(it=>{
+    const ps=String(it.dim).split(&quot;x&quot;).map(parseFloat),a=ps[0],b=ps[1]||ps[0],t=parseFloat(it.sp);
+    if(a>0&amp;&amp;b>0&amp;&amp;t>0&amp;&amp;a>2*t&amp;&amp;b>2*t)out[k(cat,it.dim,it.sp)]=Math.round((a*b-(a-2*t)*(b-2*t))*d*1000)/1000;
+  }));
+  [&quot;ipe&quot;,&quot;hea&quot;,&quot;heb&quot;,&quot;hem&quot;,&quot;upn&quot;,&quot;inp&quot;,&quot;ils&quot;,&quot;hls&quot;,&quot;ferri_t&quot;,&quot;elle&quot;,&quot;angolari&quot;,&quot;piatti&quot;,&quot;larghi_piatti&quot;,&quot;quadri&quot;,&quot;tondi&quot;].forEach(cat=>((typeof PRON_DB!==&quot;undefined&quot;&amp;&amp;PRON_DB[cat])||[]).forEach(it=>{
+    if(it.peso!=null)out[k(cat,it.dim,it.sp)]=it.peso;
+  }));
+  return out;
+})();
+function pesoNominale(mat){
+  if(!mat||!mat.profilo)return null;
+  const v=PESI_NOMINALI[pCanonCat(mat.cat||&quot;&quot;)+&quot;|&quot;+mat.profilo+&quot;|&quot;+(mat.sp==null?&quot;&quot;:mat.sp)];
+  return v==null?null:v;
+}
+// Tabella consultabile del dizionario (Listino → Pesi al metro)
+function renderPesi(){
+  const el=document.getElementById(&quot;pesi-tbl&quot;);if(!el)return;
+  const q=((document.getElementById(&quot;pesi-cerca&quot;)||{}).value||&quot;&quot;).toLowerCase().replace(/\s+/g,&quot;&quot;);
+  const CATN={tub_quadri:&quot;Tubolare quadro&quot;,tub_rett:&quot;Tubolare rett.&quot;,ipe:&quot;IPE&quot;,hea:&quot;HEA&quot;,heb:&quot;HEB&quot;,hem:&quot;HEM&quot;,upn:&quot;UPN&quot;,inp:&quot;INP&quot;,ils:&quot;ILS&quot;,hls:&quot;HLS&quot;,ferri_t:&quot;Ferro a T&quot;,elle:&quot;Elle&quot;,angolari:&quot;Angolare&quot;,piatti:&quot;Piatto&quot;,larghi_piatti:&quot;Largo piatto&quot;,quadri:&quot;Quadro pieno&quot;,tondi:&quot;Tondo pieno&quot;};
+  const righe=Object.keys(PESI_NOMINALI).map(k=>{const a=k.split(&quot;|&quot;);return {cat:a[0],dim:a[1],sp:a[2],kg:PESI_NOMINALI[k]};})
+    .filter(r=>!q||(CATN[r.cat]+r.dim+(r.sp?&quot;x&quot;+r.sp:&quot;&quot;)).toLowerCase().replace(/\s+/g,&quot;&quot;).includes(q));
+  const vis=righe.slice(0,120);
+  el.innerHTML=`<table class=&quot;rtable&quot;><thead><tr><th>Tipo</th><th>Profilo</th><th style=&quot;text-align:right&quot;>Spessore</th><th style=&quot;text-align:right&quot;>kg/m</th></tr></thead><tbody>`+
+    vis.map(r=>`<tr><td style=&quot;color:#8a96b0&quot;>${CATN[r.cat]||r.cat}</td><td><b>${esc(r.dim)}</b></td><td style=&quot;text-align:right&quot;>${r.sp?r.sp+&quot; mm&quot;:&quot;—&quot;}</td><td style=&quot;text-align:right;color:#c0a0e0;font-weight:700&quot;>${(+r.kg).toFixed(2)}</td></tr>`).join(&quot;&quot;)+
+    `</tbody></table><div class=&quot;nota-info&quot;>${righe.length} profili${righe.length>vis.length?&quot; (ne mostro &quot;+vis.length+&quot;: scrivi per cercare, es. 40x40, IPE 120, piatto 50)&quot;:&quot;&quot;}</div>`;
+}
 const PESI_SERR={ // Kg/mt dal Prontuario Bronifer &quot;PROFILI PER SERRAMENTI&quot; (10A/21L/21Z/21T: tavola non disponibile)
   &quot;1A&quot;:1.72,&quot;1B&quot;:2.10,&quot;1C&quot;:1.99,
   &quot;2A&quot;:1.76,&quot;2B&quot;:1.88,&quot;2N&quot;:2.30,&quot;2T&quot;:2.30,&quot;2Z&quot;:1.88,
@@ -8430,6 +9019,7 @@ const PESI_SERR={ // Kg/mt dal Prontuario Bronifer &quot;PROFILI PER SERRAMENTI&
 };
 function calcolaPesoLineare(mat){
   if(!mat?.profilo) return 0;
+  const nom=pesoNominale(mat);if(nom!=null)return nom; // dizionario interno dei pesi nominali
   const p=String(mat.profilo), cat=pCanonCat(mat.cat||&quot;&quot;), d=0.00785; // kg/m per mm² di sezione
   const sp=parseFloat(mat.sp)||0;
   const num=s=>parseFloat(String(s).replace(/[^0-9.]/g,&quot;&quot;))||0;
@@ -8691,6 +9281,30 @@ textarea{resize:vertical}
     <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>🔩 Voci di lavoro</div>
     <div id=&quot;lista-voci&quot;></div>
     <button class=&quot;btn-add&quot; style=&quot;border-color:#64a8ff;color:#64a8ff;background:#0a1628&quot; onclick=&quot;aggiungiVoce()&quot;>+ Aggiungi voce</button>
+  </div>
+
+  <!-- TRATTAMENTI SUPERFICIALI A PESO (i kg arrivano da FerroCalc) -->
+  <div class=&quot;sec&quot; style=&quot;border-color:#90c060&quot;>
+    <div class=&quot;st&quot; style=&quot;color:#90c060&quot;>🛡️ Trattamenti superficiali a peso</div>
+    <div style=&quot;font-size:12px;color:#8a96b0;margin-bottom:9px;line-height:1.5&quot;>
+      Peso della struttura: <b id=&quot;tratt-peso&quot; style=&quot;color:#c0a0e0;font-size:15px&quot;>0 kg</b>
+      <span style=&quot;font-size:10px;color:#91a2bb&quot;>(somma dei pesi delle voci — arrivano da FerroCalc, si possono correggere nelle voci)</span>
+    </div>
+    <div style=&quot;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px&quot;>
+      <input type=&quot;checkbox&quot; id=&quot;chk-zinc&quot; onchange=&quot;aggiornaTrattamenti()&quot; style=&quot;width:18px;height:18px;cursor:pointer&quot;>
+      <label for=&quot;chk-zinc&quot; style=&quot;cursor:pointer;font-size:13px;font-weight:700;min-width:150px&quot;>Zincatura a caldo</label>
+      <input class=&quot;fi&quot; id=&quot;tratt-zinc-kg&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.01&quot; value=&quot;0.65&quot; style=&quot;width:90px&quot; onchange=&quot;aggiornaTrattamenti(true)&quot;>
+      <span style=&quot;font-size:12px;color:#91a2bb&quot;>€/kg</span>
+      <b id=&quot;tratt-zinc-eur&quot; style=&quot;margin-left:auto;color:#90c060&quot;>—</b>
+    </div>
+    <div style=&quot;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px&quot;>
+      <input type=&quot;checkbox&quot; id=&quot;chk-vern&quot; onchange=&quot;aggiornaTrattamenti()&quot; style=&quot;width:18px;height:18px;cursor:pointer&quot;>
+      <label for=&quot;chk-vern&quot; style=&quot;cursor:pointer;font-size:13px;font-weight:700;min-width:150px&quot;>Verniciatura a polvere</label>
+      <input class=&quot;fi&quot; id=&quot;tratt-vern-kg&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.01&quot; placeholder=&quot;€/kg&quot; style=&quot;width:90px&quot; onchange=&quot;aggiornaTrattamenti(true)&quot;>
+      <span style=&quot;font-size:12px;color:#91a2bb&quot;>€/kg</span>
+      <b id=&quot;tratt-vern-eur&quot; style=&quot;margin-left:auto;color:#b090f0&quot;>—</b>
+    </div>
+    <div id=&quot;tratt-tot&quot; style=&quot;font-size:12px;color:#91a2bb;border-top:1px solid #172438;padding-top:6px&quot;></div>
   </div>
 
   <div class=&quot;sec&quot; style=&quot;border-color:#55d39b&quot;>
@@ -9141,7 +9755,30 @@ function showTab(t){
 // ══ VOCI ══
 function nuovaVoce(dati){
   return{id:voceCnt++,tipo:&quot;cancello_battente&quot;,titolo:&quot;&quot;,larg:&quot;&quot;,alt:&quot;&quot;,
-    quantita:&quot;1&quot;,materiali:&quot;&quot;,desc:&quot;&quot;,finiture:[],colore:&quot;&quot;,note:&quot;&quot;,prezzo:&quot;&quot;,img:null,...(dati||{})};
+    quantita:&quot;1&quot;,materiali:&quot;&quot;,desc:&quot;&quot;,finiture:[],colore:&quot;&quot;,note:&quot;&quot;,prezzo:&quot;&quot;,peso_kg:&quot;&quot;,img:null,...(dati||{})};
+}
+// ══ TRATTAMENTI A PESO ══
+// Peso totale = somma dei kg delle voci (da FerroCalc). Costo = kg × €/kg della casella scelta.
+function pesoTotaleVoci(){return voci.reduce((a,v)=>a+(parseFloat(v.peso_kg)||0),0);}
+function trattamenti(){
+  const kg=pesoTotaleVoci();
+  const z=parseFloat(sv(&quot;tratt-zinc-kg&quot;))||0,vv=parseFloat(sv(&quot;tratt-vern-kg&quot;))||0;
+  const zOn=!!($(&quot;chk-zinc&quot;)&amp;&amp;$(&quot;chk-zinc&quot;).checked),vOn=!!($(&quot;chk-vern&quot;)&amp;&amp;$(&quot;chk-vern&quot;).checked);
+  const zinc={on:zOn,eurKg:z,costo:zOn?kg*z:0},vern={on:vOn,eurKg:vv,costo:vOn?kg*vv:0};
+  return {kg,zinc,vern,tot:zinc.costo+vern.costo};
+}
+const fmtE=v=>(Math.round(v*100)/100).toFixed(2).replace(&quot;.&quot;,&quot;,&quot;);
+function aggiornaTrattamenti(salvaPrezzi){
+  const t=trattamenti();
+  if($(&quot;tratt-peso&quot;))$(&quot;tratt-peso&quot;).textContent=(Math.round(t.kg*10)/10).toString().replace(&quot;.&quot;,&quot;,&quot;)+&quot; kg&quot;;
+  if($(&quot;tratt-zinc-eur&quot;))$(&quot;tratt-zinc-eur&quot;).textContent=t.zinc.on?&quot;€ &quot;+fmtE(t.zinc.costo):&quot;—&quot;;
+  if($(&quot;tratt-vern-eur&quot;))$(&quot;tratt-vern-eur&quot;).textContent=t.vern.on?(t.vern.eurKg>0?&quot;€ &quot;+fmtE(t.vern.costo):&quot;inserisci €/kg&quot;):&quot;—&quot;;
+  if($(&quot;tratt-tot&quot;))$(&quot;tratt-tot&quot;).innerHTML=t.tot>0?&quot;Totale trattamenti: <b style='color:#f08a3c'>€ &quot;+fmtE(t.tot)+&quot;</b> — entra nella somma delle voci&quot;:(t.kg>0?&quot;&quot;:&quot;Nessun peso: invia le voci da FerroCalc o scrivi i kg nelle voci&quot;);
+  if(salvaPrezzi){try{localStorage.setItem(&quot;prevTratt&quot;,JSON.stringify({zincKg:sv(&quot;tratt-zinc-kg&quot;),vernKg:sv(&quot;tratt-vern-kg&quot;)}));}catch(e){}}
+  aggiornaSommaVoci();
+}
+function caricaPrezziTratt(){
+  try{const t=JSON.parse(localStorage.getItem(&quot;prevTratt&quot;)||&quot;null&quot;);if(t){if(t.zincKg!=null&amp;&amp;t.zincKg!==&quot;&quot;)$(&quot;tratt-zinc-kg&quot;).value=t.zincKg;if(t.vernKg!=null)$(&quot;tratt-vern-kg&quot;).value=t.vernKg;}}catch(e){}
 }
 function aggiungiVoce(dati){voci.push(nuovaVoce(dati));renderVoci();}
 function rimuoviVoce(id){confirm2(&quot;Rimuovi voce&quot;,&quot;Eliminare?&quot;,()=>{voci=voci.filter(v=>v.id!==id);renderVoci();});}
@@ -9152,11 +9789,12 @@ function togFin(vid,fk){
     return{...v,finiture:f};});renderVoci();
 }
 // Somma dei prezzi voce → suggerimento per l'importo totale
-function sommaVoci(){return voci.reduce((a,v)=>a+(parseFloat(v.prezzo)||0),0);}
+function sommaVoci(){return voci.reduce((a,v)=>a+(parseFloat(v.prezzo)||0),0)+trattamenti().tot;}
 function aggiornaSommaVoci(){
   const s=sommaVoci(),el=$(&quot;somma-voci-hint&quot;);
   if(!el)return;
-  if(s>0){el.style.display=&quot;block&quot;;el.innerHTML=&quot;💡 Somma delle voci: <b>€ &quot;+s.toFixed(2).replace(&quot;.&quot;,&quot;,&quot;)+&quot;</b> — clicca per usarla&quot;;}
+  const tr=trattamenti().tot;
+  if(s>0){el.style.display=&quot;block&quot;;el.innerHTML=&quot;💡 Somma delle voci&quot;+(tr>0?&quot; + trattamenti&quot;:&quot;&quot;)+&quot;: <b>€ &quot;+s.toFixed(2).replace(&quot;.&quot;,&quot;,&quot;)+&quot;</b> — clicca per usarla&quot;;}
   else el.style.display=&quot;none&quot;;
 }
 function usaSommaVoci(){
@@ -9208,7 +9846,10 @@ function renderVoci(){
       <div class=&quot;g2 mb8&quot; style=&quot;margin-top:8px&quot;>
         <div><label class=&quot;fl&quot;>Prezzo voce (€) — opzionale</label>
           <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${v.prezzo||''}&quot; min=&quot;0&quot; step=&quot;0.01&quot; placeholder=&quot;—&quot; style=&quot;border-color:#55d39b;font-weight:700&quot;
-            onchange=&quot;setV(${v.id},'prezzo',this.value);aggiornaSommaVoci()&quot;></div>
+            onchange=&quot;setV(${v.id},'prezzo',this.value);aggiornaSommaVoci()&quot;>
+          <label class=&quot;fl&quot; style=&quot;margin-top:6px&quot;>Peso (kg) — da FerroCalc</label>
+          <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${v.peso_kg||''}&quot; min=&quot;0&quot; step=&quot;0.1&quot; placeholder=&quot;—&quot; style=&quot;border-color:#90c060&quot;
+            onchange=&quot;setV(${v.id},'peso_kg',this.value);aggiornaTrattamenti()&quot;></div>
         <div>${v.img?`<label class=&quot;fl&quot;>Disegno (da FerroCalc — va nel PDF)</label>
           <div style=&quot;display:flex;align-items:center;gap:8px&quot;>
             <img src=&quot;${v.img}&quot; style=&quot;height:44px;border-radius:6px;border:1px solid #172438&quot;>
@@ -9329,6 +9970,16 @@ function buildHTML(){
       ${[...tuttiColori].map(c=>`<span style=&quot;display:inline-block;font-size:12px;padding:4px 12px;border-radius:20px;background:#e8f0ff;color:#333;margin:3px;border:1px solid #b0c0e0&quot;>${c}</span>`).join(&quot;&quot;)}
     </div>`:&quot;&quot;
     }
+    <!-- TRATTAMENTI A PESO -->
+    ${(()=>{const t=trattamenti();const r=[];
+      if(t.zinc.on&amp;&amp;t.kg>0)r.push([&quot;Zincatura a caldo&quot;,t.zinc]);
+      if(t.vern.on&amp;&amp;t.kg>0&amp;&amp;t.vern.eurKg>0)r.push([&quot;Verniciatura a polvere&quot;,t.vern]);
+      if(!r.length)return &quot;&quot;;
+      return `<h2 style=&quot;font-size:15px;margin:16px 0 8px;border-bottom:1.5px solid #333;padding-bottom:3px&quot;>Trattamenti superficiali</h2>
+      <table style=&quot;width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px&quot;>
+        ${r.map(x=>`<tr><td style=&quot;padding:5px 0;border-bottom:1px solid #e5e5e5&quot;>${x[0]} — peso struttura ${String(Math.round(t.kg*10)/10).replace(&quot;.&quot;,&quot;,&quot;)} kg × € ${fmtE(x[1].eurKg)}/kg</td>
+          <td style=&quot;padding:5px 0;border-bottom:1px solid #e5e5e5;text-align:right;font-weight:700;color:#804000;white-space:nowrap&quot;>€ ${fmtE(x[1].costo)}</td></tr>`).join(&quot;&quot;)}
+      </table>`;})()}
     <!-- POSA -->
     ${mostraPosa&amp;&amp;sv(&quot;prev-posa&quot;)?`
     <h2 style=&quot;font-size:15px;margin:16px 0 8px;border-bottom:1.5px solid #333;padding-bottom:3px&quot;>Fornitura e Posa in Opera</h2>
@@ -9437,6 +10088,9 @@ function salvaPrev(){
       &quot;validita&quot;:sv(&quot;validita&quot;),&quot;pag-custom&quot;:sv(&quot;pag-custom&quot;),
       &quot;chk-posa&quot;:$(&quot;chk-posa&quot;)?.checked?&quot;1&quot;:&quot;0&quot;,
       &quot;chk-val&quot;:$(&quot;chk-val&quot;)?.checked?&quot;1&quot;:&quot;0&quot;,
+      &quot;chk-zinc&quot;:$(&quot;chk-zinc&quot;)?.checked?&quot;1&quot;:&quot;0&quot;,
+      &quot;chk-vern&quot;:$(&quot;chk-vern&quot;)?.checked?&quot;1&quot;:&quot;0&quot;,
+      &quot;tratt-zinc-kg&quot;:sv(&quot;tratt-zinc-kg&quot;),&quot;tratt-vern-kg&quot;:sv(&quot;tratt-vern-kg&quot;),
     }
   };
   // Stesso numero già in archivio → aggiorna quel preventivo invece di duplicarlo
@@ -9484,17 +10138,20 @@ function riapriPrev(id){
     });
     $(&quot;wrap-posa&quot;).style.display=$(&quot;chk-posa&quot;)?.checked?&quot;block&quot;:&quot;none&quot;;
     $(&quot;wrap-val&quot;).style.display=$(&quot;chk-val&quot;)?.checked?&quot;block&quot;:&quot;none&quot;;
-    showTab(&quot;nuovo&quot;);renderVoci();
+    showTab(&quot;nuovo&quot;);renderVoci();aggiornaTrattamenti();
   });
 }
 function stampaDaArch(id){
   const s=loadArch().find(x=>x.id===id);if(!s)return;
+  // (le caselle si impostano con .checked: prima la stampa dall'archivio usava quelle del preventivo aperto)
   const oldVoci=voci,oldCampi={},oldNum=numeroCorrente;
-  Object.keys(s.campi||{}).forEach(k=>{if($(k)){oldCampi[k]=$(k).value;$(k).value=s.campi[k];}});
+  Object.keys(s.campi||{}).forEach(k=>{const el=$(k);if(!el)return;
+    if(el.type===&quot;checkbox&quot;){oldCampi[k]=el.checked;el.checked=s.campi[k]===&quot;1&quot;;}
+    else{oldCampi[k]=el.value;el.value=s.campi[k];}});
   voci=s.voci;numeroCorrente=s.numero||&quot;&quot;;
   stampaPrev();
   voci=oldVoci;numeroCorrente=oldNum;
-  Object.entries(oldCampi).forEach(([k,v])=>{if($(k))$(k).value=v;});
+  Object.entries(oldCampi).forEach(([k,v])=>{const el=$(k);if(!el)return;if(el.type===&quot;checkbox&quot;)el.checked=v;else el.value=v;});
 }
 
 // ══ IMPOSTAZIONI ══
@@ -9568,6 +10225,7 @@ function controllaDatiFC(){
             isAlluminio:true,
             aluFacce:p.aluFacce,
             prezzo:p.prezzo>0?String(p.prezzo):&quot;&quot;,
+            peso_kg:p.peso_kg>0?String(p.peso_kg):&quot;&quot;,
             img:p.img||null,
           });
         } else {
@@ -9579,13 +10237,17 @@ function controllaDatiFC(){
             materiali:Array.isArray(p.materiali)?p.materiali.map(m=>m.testo).join(&quot;, &quot;):(p.materiali||&quot;&quot;),
             desc:p.desc_tecnica||&quot;&quot;,
             prezzo:p.prezzo>0?String(p.prezzo):&quot;&quot;,
+            peso_kg:p.peso_kg>0?String(p.peso_kg):&quot;&quot;,
             img:p.img||null,
           });
         }
       });
+      // trattamenti già scelti in FerroCalc: si spuntano qui (il costo è a peso, col prezzo €/kg di Preventivi)
+      if(dati.tratt){if(dati.tratt.zinc&amp;&amp;$(&quot;chk-zinc&quot;))$(&quot;chk-zinc&quot;).checked=true;if(dati.tratt.vern&amp;&amp;$(&quot;chk-vern&quot;))$(&quot;chk-vern&quot;).checked=true;}
+      aggiornaTrattamenti();
       aggiornaSommaVoci();
       const banner=$(&quot;banner-fc&quot;);
-      if(banner){banner.style.display=&quot;block&quot;;banner.textContent=&quot;✓ &quot;+dati.pezzi.length+&quot; manufatto/i importato/i da FerroCalc (con disegno e prezzo suggerito). Controlla, aggiungi finiture e salva!&quot;;}
+      if(banner){banner.style.display=&quot;block&quot;;banner.textContent=&quot;✓ &quot;+dati.pezzi.length+&quot; manufatto/i importato/i da FerroCalc (con disegno, prezzo e peso &quot;+String(Math.round(pesoTotaleVoci()*10)/10).replace(&quot;.&quot;,&quot;,&quot;)+&quot; kg). Controlla trattamenti e finiture, poi salva!&quot;;}
       msg(&quot;✓ &quot;+dati.pezzi.length+&quot; manufatto/i importati da FerroCalc!&quot;);
     }
   }catch(e){console.error(&quot;PREV import error:&quot;,e);}
@@ -9645,6 +10307,7 @@ window.addEventListener(&quot;DOMContentLoaded&quot;,()=>{
   caricaCfg();
   renderDatalistClienti();
   voci=[nuovaVoce()];renderVoci();
+  caricaPrezziTratt();aggiornaTrattamenti();
   // Controlla subito se ci sono dati da FC (PREV aperto da FC)
   controllaDatiFC();
   // Ricontrolla dopo 1 secondo (per sicurezza se FC scrive appena dopo l'apertura)
