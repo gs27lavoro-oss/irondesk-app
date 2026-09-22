@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.9.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.10.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.9.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.10.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -2416,6 +2416,8 @@ const TIPI=[
   {k:&quot;scala&quot;,              l:&quot;🪜 Scala&quot;,                 haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isScala:true},
   {k:&quot;inferriata&quot;,         l:&quot;🛡️ Inferriata&quot;,            haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;},
   {k:&quot;corrimano_muro&quot;,     l:&quot;🤚 Corrimano a muro&quot;,       haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isCorrimano:true},
+  {k:&quot;soppalco&quot;,           l:&quot;🏗️ Soppalco&quot;,              haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isSoppalco:true},
+  {k:&quot;pensilina&quot;,          l:&quot;🏠 Pensilina / Tettoia&quot;,    haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isPensilina:true},
 ];
 
 // I profili del serramento sono sempre automatici: non c'è più una scelta
@@ -2543,7 +2545,7 @@ function arcoExtraElMm(p,luce,el,nEl,nSeg){
   for(let s=0;s<nSeg;s++){
     const ad=arcoDatiAnta(p,luce,s,nSeg);if(!ad)continue;
     for(let k=0;k<nEl;k++){
-      tot+=ad.elDh((luce.wSx||0)+sp+larg/2+k*(larg+sp));
+      tot+=ad.elDh((luce.aSx||0)+sp+larg/2+k*(larg+sp));
     }
   }
   return tot;
@@ -2652,6 +2654,7 @@ function calcolaSuperficiePezzo(p){
   let s=_supTot;
   if(p.lamiera){const ld=calcLamieraTot(p);if(ld&amp;&amp;ld.areaTot)s+=ld.areaTot*2;}          // lamiera: 2 facce
   if(p.tipo==='scala'&amp;&amp;(p.scalaGradTipo||'tubo')==='lamiera'){s+=scalaCalc(p).lamArea*2;} // gradini in lamiera: 2 facce
+  if(p.tipo==='soppalco'&amp;&amp;(p.sopPiano||'lamiera')==='lamiera'){s+=soppCalc(p).area*2;}     // piano in lamiera: 2 facce
   return s; // m²
 }
 function costoVerniciatura(mq,tariffa){
@@ -2765,10 +2768,12 @@ function SvgCtx(canvas){
 function cvTec(){return (UPG.stileDisegni||&quot;tecnico&quot;)!==&quot;realistico&quot;;}
 const CV_TEC={carta:&quot;#e4ebee&quot;,cornice:&quot;#9aa9b2&quot;,profilo:&quot;#8e9196&quot;,profiloScuro:&quot;#6f7378&quot;,contorno:&quot;#2a2c30&quot;,
   luce:&quot;#c7dce5&quot;,lamiera:&quot;#a8adb3&quot;,lamieraSegno:&quot;rgba(40,44,52,.35)&quot;,quota:&quot;#1d3a6e&quot;,testo:&quot;#1d2733&quot;,
+  vetro:&quot;#9ccbe4&quot;,vetroRiflesso:&quot;rgba(255,255,255,.95)&quot;,piano:&quot;#c9ced3&quot;,muro:&quot;#b9c2c8&quot;,
   fondoTesto:&quot;rgba(244,247,249,.94)&quot;,tenue:&quot;#5b6875&quot;,accento:&quot;#b0620c&quot;,manc:&quot;#1d4f9a&quot;,scala:&quot;#2a2c30&quot;};
 function CVC(ruolo){
   if(cvTec())return CV_TEC[ruolo]||CV_TEC.contorno;
   return ({carta:&quot;#0b1422&quot;,luce:null,lamiera:&quot;rgba(176,182,194,0.92)&quot;,lamieraSegno:&quot;rgba(74,86,108,0.5)&quot;,quota:&quot;#f08a3c&quot;,
+    vetro:&quot;rgba(120,190,235,0.38)&quot;,vetroRiflesso:&quot;rgba(225,242,255,.8)&quot;,piano:&quot;rgba(120,132,150,.45)&quot;,muro:&quot;#1a2436&quot;,
     testo:&quot;#8fa3c8&quot;,tenue:&quot;#4a5c80&quot;,accento:&quot;#f08a3c&quot;,manc:&quot;#64a8ff&quot;,scala:&quot;#f08a3c&quot;,contorno:&quot;rgba(4,8,16,.6)&quot;,pav:&quot;#3a4a70&quot;})[ruolo]||&quot;#8fa3c8&quot;;
 }
 
@@ -3075,7 +3080,9 @@ function calcLuce(p){
 
   // Spessore del telaio esterno fisso (solo per tipi non-soloAnte con telaio)
   const telH = (!soloAnteC &amp;&amp; telTop) ? eLarg(telTop) : 0;
-  const telHb = (!soloAnteC &amp;&amp; telBot) ? eLarg(telBot) : ((!soloAnteC &amp;&amp; p.aperto_sotto)?0:telH);
+  // Aperto sotto = nessuna traversa bassa del telaio: non toglie altezza (e non è in distinta),
+  // anche se un materiale era stato scelto prima di aprire il telaio.
+  const telHb = soloAnteC ? 0 : (p.aperto_sotto ? 0 : (telBot ? eLarg(telBot) : telH));
   const telWsx = (!soloAnteC &amp;&amp; telSx) ? eLarg(telSx) : 0;
   const telWdx = (!soloAnteC &amp;&amp; telDx) ? eLarg(telDx) : 0;
 
@@ -3153,7 +3160,7 @@ function calcLuce(p){
   const correnti = [];
   for(let i=1;i<nCA;i++) correnti.push({q:i*luciaVF+(i-1)*hMid+hMid/2, sp:hMid});
   // Inizio (mm dal bordo sinistro esterno) della luce della campata i
-  const campX0 = i => wSx + i*(luciaH + wMid);
+  const campX0 = i => aSx + i*(luciaH + wMid); // la luce parte dalla faccia d'appoggio del montante
 
   return {luciaH, luciaHAnta, luciaV, luciaVF, correnti, wMid, hMid, campX0, hTop, hBot, wSx, wDx, WSpec, Wmm, Hmm, nCL, nCA,
     aTop, aBot, aSx, aDx,  // facce d'appoggio (interna) dei lati anta
@@ -3250,12 +3257,13 @@ function barCells(p,segLuceEl,luciaV,regY0,regY1,larg,spMin,spMax,pd){
 }
 // Regione verticale (dal basso) occupata dai tondini, considerando il modo lamiera sotto/sopra.
 function barRegion(p,el,luciaV){
-  // tondini verticali: nei modi misti occupano solo la parte libera dalla lamiera
-  if((el.dir!=='oriz')&amp;&amp;p.lamiera&amp;&amp;(p.lamiera_modo==='sotto'||p.lamiera_modo==='sopra')){
-    const h=Math.max(0,Math.min(luciaV,lamieraConfine(p,luciaV)));
-    return p.lamiera_modo==='sotto'?{regY0:h,regY1:luciaV}:{regY0:0,regY1:h};
-  }
-  return {regY0:0,regY1:luciaV};
+  // tondini verticali: nei modi misti occupano solo la parte libera da lamiera e vetro
+  if(el.dir==='oriz')return {regY0:0,regY1:luciaV};
+  let y0=0,y1=luciaV;
+  const lim=(modo,h)=>{h=Math.max(0,Math.min(luciaV,h));if(modo==='sotto')y0=Math.max(y0,h);else y1=Math.min(y1,h);};
+  if(p.lamiera&amp;&amp;(p.lamiera_modo==='sotto'||p.lamiera_modo==='sopra'))lim(p.lamiera_modo,lamieraConfine(p,luciaV));
+  if(p.vetro&amp;&amp;ammetteVetro(p)&amp;&amp;(p.vetro_modo==='sotto'||p.vetro_modo==='sopra'))lim(p.vetro_modo,vetroConfine(p,luciaV));
+  return {regY0:y0,regY1:Math.max(y0,y1)};
 }
 
 function calcSc(luce,elW,spMin,spMax,pd){
@@ -3412,6 +3420,17 @@ function nuovoPezzo(id){
     scalaLamTipo:'mandorlata', // lamiera: superficie (liscia/striata/mandorlata)
     scalaLamRibordo:0,       // lamiera: piega di irrigidimento sul bordo (mm, aggiunta allo sviluppo)
     scalaMats:{correnti:null, gradini:null, alzate:null, mancorrente:null, reggini:null},
+    // Vetro nelle porte (stessa logica della lamiera): composizione, vetrocamera, gioco, prezzo al m²
+    vetro:false, vetro_modo:'tutto', vetro_h_mm:'', vetro_l1:'33.1', vetro_camera:0, vetro_l2:'33.1',
+    vetro_canalina:'alluminio', vetro_gas:'aria', vetro_finitura:'trasparente', vetro_gioco:'',
+    vetro_prezzoMq:'', vetro_fermavetro:null, vetro_fvLati:0, vetro_su_sp:'', vetro_su_kg:'', vetro_su_cl:'',
+    // Soppalco e pensilina: materiali per ruolo (pilastri, travi, travetti, parapetto, mensole…)
+    strMats:{},
+    sopH:2.4, sopCampate:1, sopMuro:'nessuno', sopInterasse:50,
+    sopPiano:'lamiera', sopPianoLam:'mandorlata', sopPianoSp:5, sopPianoKgMq:'', sopPianoPrezzoKg:UPG.lamPrezzoKg, sopPianoPrezzoMq:'',
+    sopPar:{fronte:true,sx:true,dx:true,retro:false}, sopParH:100, sopParPasso:100, sopParNCorr:2, sopVarco:0,
+    penPasso:150, penPend:10, penSaetta:true, penSaettaH:60, penTraveMuro:false, penInterasse:60,
+    penCop:'policarbonato', penCopKgMq:'', penCopPrezzoMq:'',
     ante:[],        // ante interne (per porta/porta cancellata)
     elemList:[nuovoElem(&quot;vert&quot;)],
     traverse:[],    // [{id,quota_mm,mat,forata}]
@@ -3587,6 +3606,7 @@ function buildCostiHtml(p){
   }
   if(c.alu>0)righe.push(['Alluminio (barre + bachelite)',c.alu,'']);
   if(c.lam>0)righe.push(['Lamiera',c.lam,'']);
+  (c.extraVoci||[]).forEach(v=>righe.push([esc(v.label)+' — '+v.det,v.costo,v.senzaPrezzo?' <span style=&quot;color:#f06b6b&quot;>(senza prezzo: scrivilo qui sopra)</span>':'']));
   if(c.zinc>0)righe.push(['Zincatura a caldo — '+fmtN(c.kg)+' kg × € '+fmtP(numOk(p.zinc_tariffa,UPG.zincTariffa))+'/kg',c.zinc,'']);
   if(c.vern>0)righe.push(['Verniciatura — '+(x.sup||0).toFixed(2)+' m² × € '+fmtP(numOk(p.vern_tariffa,UPG.vernTariffa))+'/m²',c.vern,'']);
   if(c.ferr>0)righe.push(['Ferramenta',c.ferr,'']);
@@ -3609,6 +3629,8 @@ function descrizioneBreve(p){
   else if(ti.isCorrimano)s=`${tipo} · ${cm(p.corrLungh)} cm`;
   else if(ti.isAlluminio){const f=Object.keys(p.aluFacce||{}).filter(k=>p.aluFacce[k]&amp;&amp;p.aluFacce[k].attiva).length;s=`${tipo} · ${f} facc${f===1?&quot;ia&quot;:&quot;e&quot;}`;}
   else if(ti.isGazebo)s=`${tipo} · ${cm(p.larg)} × ${cm(p.alt)} cm in pianta`;
+  else if(ti.isSoppalco)s=`${tipo} · ${cm(p.larg)} × ${cm(p.alt)} cm · piano a ${cm(numOk(p.sopH,2.4))} cm`;
+  else if(ti.isPensilina)s=`${tipo} · ${cm(p.larg)} cm × sbalzo ${cm(p.alt)} cm`;
   else{
     s=`${tipo} · ${cm(p.larg)} × ${cm(p.alt)} cm`;
     if(ti.haAnte){const n=Math.max(1,parseInt(p.nBattenti)||1),na=ti.nomeAnte||&quot;anta&quot;;s+=` · ${n} ${n>1?(na===&quot;anta&quot;?&quot;ante&quot;:na.replace(/e$/,&quot;i&quot;)):na}`;}
@@ -4634,6 +4656,251 @@ function buildBodyCorrimano(p){
   </div>`;
 }
 
+// ═══════ VETRO NELLA PORTA (card) ═══════
+function buildVetroHtml(p){
+  const on=!!p.vetro,col=&quot;#6fb6e0&quot;;
+  const v=on?calcVetro(p):null,comp=vetroComp(p);
+  const modo=p.vetro_modo||'tutto';
+  const lamMisto=p.lamiera&amp;&amp;(p.lamiera_modo==='sotto'||p.lamiera_modo==='sopra');
+  const cam=parseFloat(p.vetro_camera)||0,l1=p.vetro_l1||'33.1',l2=p.vetro_l2||'33.1';
+  const custom=l1==='su_misura'||(cam>0&amp;&amp;l2==='su_misura');
+  const G=vetroGioco(p);
+  const btn=(val,lbl)=>{const att=modo===val;return `<button onclick=&quot;setProp(${p.id},'vetro_modo','${val}')&quot; style=&quot;flex:1;min-width:92px;padding:7px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1.5px solid ${att?col:'#172438'};color:${att?col:'#91a2bb'};background:${att?'#08161f':'transparent'}&quot;>${lbl}</button>`;};
+  const optVetri=sel=>{
+    const gr=[];VETRI.forEach(x=>{if(gr.indexOf(x.g)<0)gr.push(x.g);});
+    return gr.map(g=>`<optgroup label=&quot;${esc(g)}&quot;>${VETRI.filter(x=>x.g===g).map(x=>{const li=lastraInfo(p,x.k);
+      return `<option value=&quot;${esc(x.k)}&quot;${x.k===sel?&quot; selected&quot;:&quot;&quot;}>${esc(x.l)}${x.custom?&quot;&quot;:&quot; · &quot;+fmtN(li.sp)+&quot; mm · &quot;+li.kgMq.toFixed(1)+&quot; kg/m²&quot;+(x.cl!==&quot;—&quot;?&quot; · &quot;+x.cl:&quot;&quot;)}</option>`;}).join(&quot;&quot;)}</optgroup>`).join(&quot;&quot;);
+  };
+  const sel=(campo,opts,cur,num)=>`<select class=&quot;fi&quot; onchange=&quot;setProp(${p.id},'${campo}',${num?&quot;parseFloat(this.value)&quot;:&quot;this.value&quot;})&quot;>${opts.map(o=>{const val=Array.isArray(o)?o[0]:o,lb=Array.isArray(o)?o[1]:o;return `<option value=&quot;${esc(val)}&quot;${String(val)===String(cur)?&quot; selected&quot;:&quot;&quot;}>${esc(lb)}</option>`;}).join(&quot;&quot;)}</select>`;
+  const numIn=(campo,val,ph,step)=>`<input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;${step||1}&quot; value=&quot;${esc(val)}&quot; placeholder=&quot;${esc(ph)}&quot; style=&quot;border-color:${col}&quot; onchange=&quot;setProp(${p.id},'${campo}',this.value===''?'':Math.max(0,parseFloat(this.value)||0))&quot;>`;
+  let body=&quot;&quot;;
+  if(on){
+    body=`
+    <div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Dove va il vetro</label><div style=&quot;display:flex;gap:6px;flex-wrap:wrap&quot;>
+      ${btn('tutto','Tutta la luce')}${btn('sopra',p.lamiera&amp;&amp;p.lamiera_modo==='sotto'?'Vetro sopra (lamiera sotto)':'Vetro sopra')}${btn('sotto',p.lamiera&amp;&amp;p.lamiera_modo==='sopra'?'Vetro sotto (lamiera sopra)':'Vetro sotto')}
+    </div></div>
+    ${(modo!=='tutto'&amp;&amp;!lamMisto)?`<div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Altezza del vetro nella luce (mm) — vuoto = dalla prima traversa o metà luce</label>
+      <div style=&quot;max-width:160px&quot;>${numIn('vetro_h_mm',p.vetro_h_mm,'auto',10)}</div></div>`:&quot;&quot;}
+    <div class=&quot;mb8&quot;><label class=&quot;fl&quot;>${cam>0?&quot;Lastra esterna&quot;:&quot;Tipo di vetro&quot;}</label>
+      <select class=&quot;fi&quot; style=&quot;border-color:${col}&quot; onchange=&quot;setProp(${p.id},'vetro_l1',this.value)&quot;>${optVetri(l1)}</select></div>
+    <label style=&quot;display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px;font-size:12px;color:${cam>0?col:'#8a96b0'};font-weight:700&quot;>
+      <input type=&quot;checkbox&quot; ${cam>0?'checked':''} onchange=&quot;setProp(${p.id},'vetro_camera',this.checked?16:0)&quot; style=&quot;width:16px;height:16px&quot;> Vetrocamera (doppio vetro con canalina)</label>
+    ${cam>0?`<div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Canalina</label>${sel('vetro_camera',VETRO_CANALINE.map(c=>[c,c+&quot; mm&quot;]),cam,true)}</div>
+      <div><label class=&quot;fl&quot;>Tipo canalina</label>${sel('vetro_canalina',[&quot;alluminio&quot;,&quot;warm edge&quot;,&quot;acciaio inox&quot;],p.vetro_canalina||'alluminio')}</div>
+    </div>
+    <div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Gas nella camera</label>${sel('vetro_gas',[[&quot;aria&quot;,&quot;Aria&quot;],[&quot;argon&quot;,&quot;Argon&quot;]],p.vetro_gas||'aria')}</div>
+      <div><label class=&quot;fl&quot;>Lastra interna</label><select class=&quot;fi&quot; style=&quot;border-color:${col}&quot; onchange=&quot;setProp(${p.id},'vetro_l2',this.value)&quot;>${optVetri(l2)}</select></div>
+    </div>`:&quot;&quot;}
+    ${custom?`<div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Blindato: spessore (mm)</label>${numIn('vetro_su_sp',p.vetro_su_sp,'dalla scheda',0.5)}</div>
+      <div><label class=&quot;fl&quot;>Blindato: peso (kg/m²)</label>${numIn('vetro_su_kg',p.vetro_su_kg,'dalla scheda',0.5)}</div>
+    </div>
+    <div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Classe (es. BR4-NS, P8B)</label><input class=&quot;fi&quot; type=&quot;text&quot; value=&quot;${esc(p.vetro_su_cl)}&quot; placeholder=&quot;dalla scheda del fornitore&quot; onchange=&quot;setProp(${p.id},'vetro_su_cl',this.value)&quot;></div>`:&quot;&quot;}
+    <div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Finitura</label>${sel('vetro_finitura',VETRO_FINITURE,p.vetro_finitura||'trasparente')}</div>
+      <div><label class=&quot;fl&quot;>Gioco per lato (mm)</label>${numIn('vetro_gioco',p.vetro_gioco,'auto '+fmtN(G),0.5)}</div>
+    </div>
+    <div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Prezzo vetro (€/m²)</label>${numIn('vetro_prezzoMq',p.vetro_prezzoMq,'prezzo del tuo vetraio',1)}</div>
+      <div><label class=&quot;fl&quot;>Fermavetro su</label>${sel('vetro_fvLati',[[0,&quot;auto&quot;],[1,&quot;1 lato&quot;],[2,&quot;2 lati&quot;]],parseInt(p.vetro_fvLati)||0,true)}</div>
+    </div>
+    ${latoBtn(p.id,`vfv-${p.id}`,&quot;Profilo fermavetro&quot;,p.vetro_fermavetro,col)}
+    <div class=&quot;nota-info&quot;>Fermavetro facoltativo (es. quadro 10x10 o angolare): entra in distinta e nel piano di taglio, 4 pezzi per lastra per ogni lato fermato. Con i profili a doppia battuta di solito basta 1 lato.</div>
+    ${v?`<div style=&quot;background:#08161f;border:1.5px solid ${col};border-radius:9px;padding:10px;margin-top:8px&quot;>
+      <div style=&quot;font-size:12px;margin-bottom:4px&quot;><b style=&quot;color:${col}&quot;>${esc(v.sigla)}</b> — ${esc(comp.desc)}</div>
+      <div style=&quot;font-size:11px;color:#91a2bb;margin:4px 0 2px&quot;>Lastre da ordinare (gioco di ${fmtN(v.G)} mm per lato già tolto):</div>
+      ${v.gruppi.map(g=>`<div style=&quot;display:flex;justify-content:space-between;font-size:12px;padding:2px 0&quot;><span style=&quot;color:#8a96b0&quot;>${g.q}× lastra</span><span style=&quot;color:${col};font-weight:700&quot;>${g.w_cm} × ${g.h_cm} cm</span></div>`).join(&quot;&quot;)}
+      <div class=&quot;costi-riga&quot; style=&quot;margin-top:3px&quot;><span>Superficie vetro</span><b>${v.areaTot.toFixed(2)} m²</b></div>
+      <div class=&quot;costi-riga&quot;><span>Peso vetro (${comp.kgMq.toFixed(1)} kg/m² · sp. ${fmtN(comp.sp)} mm)</span><b>${v.pesoTot.toFixed(1)} kg</b></div>
+      <div class=&quot;costi-riga&quot;><span>Guarnizione (2 lati)</span><b>${v.guarnizioneM.toFixed(1)} m</b></div>
+      <div style=&quot;display:flex;justify-content:space-between;font-size:15px;font-weight:700;border-top:1px solid ${col};margin-top:5px;padding-top:5px&quot;><span>Costo vetro</span><span style=&quot;color:${v.prezzoMq>0?'#f08a3c':'#f06b6b'}&quot;>${v.prezzoMq>0?&quot;€ &quot;+fmtP(v.costo):&quot;scrivi il €/m²&quot;}</span></div>
+      <div class=&quot;nota-info&quot;>Il peso del vetro serve per cerniere e trasporto: non entra nella zincatura.</div>
+    </div>`:`<div style=&quot;font-size:11px;color:#e0a050;margin-top:6px&quot;>Scegli i profili delle ante per calcolare le lastre.</div>`}
+    ${(v?v.avvisi:comp.avvisi).map(a=>`<div style=&quot;margin-top:6px;background:#1a0808;border:1px solid #f06b6b;border-radius:8px;padding:7px 9px;font-size:11px;color:#ff9a9a&quot;>⚠️ ${esc(a)}</div>`).join(&quot;&quot;)}`;
+  }
+  return `<div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${on?col:'#172438'}&quot;>
+    <label style=&quot;display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:${on?'10px':'0'}&quot;>
+      <input type=&quot;checkbox&quot; ${on?'checked':''} onchange=&quot;setProp(${p.id},'vetro',this.checked)&quot; style=&quot;width:18px;height:18px;cursor:pointer&quot;>
+      <span style=&quot;font-size:13px;font-weight:700;color:${on?col:'#91a2bb'}&quot;>🪟 Vetro nella porta</span>
+      ${on?'':'<span style=&quot;font-size:11px;color:#273851&quot;>— stratificato, temperato, vetrocamera, blindato</span>'}
+    </label>${body}</div>`;
+}
+
+// ═══════ SOPPALCO e PENSILINA (card) ═══════
+function setSoppPar(id,lato,val){
+  pezzi=pezzi.map(p=>p.id!==id?p:{...p,sopPar:Object.assign({fronte:true,sx:true,dx:true,retro:false},p.sopPar||{},{[lato]:!!val})});
+  renderTutto();
+}
+function _tipoChips(p){
+  return TIPI.map(t=>`<button class=&quot;chip${t.k===p.tipo?&quot; on&quot;:&quot;&quot;}&quot; onclick=&quot;setTipo(${p.id},'${t.k}')&quot;
+    style=&quot;border-color:${t.k===p.tipo?&quot;#f08a3c&quot;:&quot;#172438&quot;};color:${t.k===p.tipo?&quot;#f08a3c&quot;:&quot;#91a2bb&quot;};background:${t.k===p.tipo?&quot;#1a1205&quot;:&quot;#101a29&quot;}&quot;>${t.l}</button>`).join(&quot;&quot;);
+}
+function _testaStruttura(p,nomeN){
+  return `<div class=&quot;sec&quot; style=&quot;padding:10px&quot;>
+    <div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Nome</label><input class=&quot;fi&quot; type=&quot;text&quot; value=&quot;${esc(p.nome)}&quot; onchange=&quot;setProp(${p.id},'nome',this.value)&quot;></div>
+      <div><label class=&quot;fl&quot;>${nomeN}</label><input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${Math.max(1,parseInt(p.nPezziUguali)||1)}&quot; min=&quot;1&quot; step=&quot;1&quot; inputmode=&quot;numeric&quot; onchange=&quot;setProp(${p.id},'nPezziUguali',Math.max(1,parseInt(this.value)||1))&quot;></div>
+    </div>
+    <label class=&quot;fl&quot; style=&quot;margin-bottom:6px&quot;>Tipo manufatto</label>
+    <div class=&quot;chips&quot;>${_tipoChips(p)}</div>
+  </div>`;
+}
+// Campo numerico in cm di un valore salvato in metri (con anteprima del disegno mentre scrivi)
+function _cmInput(p,lbl,campo,valM,col){
+  return `<div><label class=&quot;fl&quot;>${lbl}</label><input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${cmv((parseFloat(valM)||0)*1000)}&quot; min=&quot;0&quot; step=&quot;1&quot; inputmode=&quot;decimal&quot; style=&quot;border-color:${col}&quot;
+    oninput=&quot;anteprimaMisura(${p.id},'${campo}',this.value)&quot; onchange=&quot;setProp(${p.id},'${campo}',Math.max(0,(parseFloat(this.value)||0)/100))&quot;></div>`;
+}
+function _numInput(p,lbl,campo,val,step,col,intero){
+  return `<div><label class=&quot;fl&quot;>${lbl}</label><input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${esc(val)}&quot; min=&quot;0&quot; step=&quot;${step||1}&quot; inputmode=&quot;decimal&quot;${col?` style=&quot;border-color:${col}&quot;`:&quot;&quot;}
+    onchange=&quot;setProp(${p.id},'${campo}',this.value===''?'':Math.max(0,${intero?&quot;parseInt(this.value)&quot;:&quot;parseFloat(this.value)&quot;}||0))&quot;></div>`;
+}
+function _scelte(p,campo,opzioni,cur,col){
+  return `<div style=&quot;display:flex;gap:6px;flex-wrap:wrap&quot;>${opzioni.map(o=>{const att=o[0]===cur;
+    return `<button onclick=&quot;setProp(${p.id},'${campo}','${o[0]}')&quot; style=&quot;flex:1;min-width:88px;padding:7px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1.5px solid ${att?col:'#172438'};color:${att?col:'#91a2bb'};background:${att?'#1a1205':'transparent'}&quot;>${o[1]}</button>`;}).join(&quot;&quot;)}</div>`;
+}
+function _rigaInfo(l,v){return `<div class=&quot;costi-riga&quot;><span>${l}</span><b>${v}</b></div>`;}
+function _notaTecnico(){return `<div style=&quot;margin-top:8px;background:#1a1205;border:1px solid #f08a3c;border-radius:8px;padding:8px 10px;font-size:11px;color:#e0b060;line-height:1.5&quot;>⚠️ Carichi, sezioni, saldature e ancoraggi vanno verificati da un tecnico abilitato (calcolo strutturale). FerroCalc calcola quantità, pesi e costi del materiale che scegli.</div>`;}
+
+function buildBodySoppalco(p){
+  const s=soppCalc(p),M=p.strMats||{},col=&quot;#c0a060&quot;;
+  const piano=s.piano;
+  return `
+  ${_testaStruttura(p,&quot;N° soppalchi uguali&quot;)}
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${col}&quot;>
+    <div class=&quot;st&quot; style=&quot;color:${col}&quot;>🏗️ Soppalco — misure</div>
+    <div class=&quot;g2 mb8&quot;>
+      ${_cmInput(p,&quot;Larghezza (fronte, cm)&quot;,&quot;larg&quot;,p.larg,col)}
+      ${_cmInput(p,&quot;Profondità (cm)&quot;,&quot;alt&quot;,p.alt,col)}
+    </div>
+    <div class=&quot;g2 mb8&quot;>
+      ${_cmInput(p,&quot;Altezza del piano da terra (cm)&quot;,&quot;sopH&quot;,numOk(p.sopH,2.4),col)}
+      ${_numInput(p,&quot;Campate sul fronte (pilastri − 1)&quot;,&quot;sopCampate&quot;,Math.max(1,parseInt(p.sopCampate)||1),1,col,true)}
+    </div>
+    <div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Appoggio</label>${_scelte(p,'sopMuro',[[&quot;nessuno&quot;,&quot;Libero: pilastri davanti e dietro&quot;],[&quot;retro&quot;,&quot;Retro appoggiato al muro&quot;]],s.muro?&quot;retro&quot;:&quot;nessuno&quot;,col)}</div>
+    <div class=&quot;g2 mb8&quot;>
+      ${_numInput(p,&quot;Travetti: uno ogni (cm)&quot;,&quot;sopInterasse&quot;,numOk(p.sopInterasse,50),5,col)}
+      <div></div>
+    </div>
+    ${latoBtn(p.id,`str-${p.id}-pilastri`,&quot;Pilastri&quot;,M.pilastri,col)}
+    ${latoBtn(p.id,`str-${p.id}-travi`,&quot;Travi principali&quot;,M.travi,col)}
+    ${latoBtn(p.id,`str-${p.id}-travetti`,&quot;Travetti&quot;,M.travetti,col)}
+    <div class=&quot;nota-info&quot;>Le travi principali corrono lungo il fronte (davanti e dietro), da pilastro a pilastro; i travetti poggiano sopra, lungo la profondità. Per travi e tubolari grandi trovi IPE, HEA, UPN e tubolari nel listino.</div>
+  </div>
+
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${col}&quot;>
+    <div class=&quot;st&quot; style=&quot;color:${col}&quot;>🟫 Piano di calpestio</div>
+    <div class=&quot;mb8&quot;>${_scelte(p,'sopPiano',SOPP_PIANI,piano,col)}</div>
+    ${piano==='lamiera'?`<div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Tipo lamiera</label>${_scelte(p,'sopPianoLam',[[&quot;mandorlata&quot;,&quot;Mandorlata&quot;],[&quot;striata&quot;,&quot;Striata&quot;],[&quot;liscia&quot;,&quot;Liscia&quot;]],p.sopPianoLam||'mandorlata',col)}</div>
+    <div class=&quot;g2 mb8&quot;>${_numInput(p,&quot;Spessore (mm)&quot;,&quot;sopPianoSp&quot;,numOk(p.sopPianoSp,5),0.5,col)}${_numInput(p,&quot;Prezzo lamiera (€/kg)&quot;,&quot;sopPianoPrezzoKg&quot;,numOk(p.sopPianoPrezzoKg,UPG.lamPrezzoKg),0.05,col)}</div>`
+    :piano!=='nessuno'?`<div class=&quot;g2 mb8&quot;>${_numInput(p,&quot;Spessore del piano (mm)&quot;,&quot;sopPianoSp&quot;,numOk(p.sopPianoSp,5),1,col)}${_numInput(p,&quot;Peso (kg/m²) dalla scheda&quot;,&quot;sopPianoKgMq&quot;,p.sopPianoKgMq,0.5,col)}</div>
+    <div class=&quot;g2 mb8&quot;>${_numInput(p,&quot;Prezzo (€/m²)&quot;,&quot;sopPianoPrezzoMq&quot;,p.sopPianoPrezzoMq,1,col)}<div></div></div>`:&quot;&quot;}
+    ${piano!=='nessuno'?_rigaInfo(&quot;Superficie del piano&quot;,s.area.toFixed(2)+&quot; m²&quot;)+(s.pianoKg>0?_rigaInfo(&quot;Peso del piano&quot;,s.pianoKg.toFixed(1)+&quot; kg&quot;+(s.pianoAcciaio?&quot;&quot;:&quot; (non in acciaio)&quot;)):&quot;&quot;)
+      +_rigaInfo(&quot;Costo del piano&quot;,s.pianoPrezzo>0?&quot;€ &quot;+fmtP(s.pianoCosto):'<span style=&quot;color:#f06b6b&quot;>scrivi il prezzo</span>'):&quot;&quot;}
+  </div>
+
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${col}&quot;>
+    <div class=&quot;st&quot; style=&quot;color:${col}&quot;>🛡️ Parapetto</div>
+    <div style=&quot;display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px&quot;>
+      ${SOPP_LATI.map(l=>`<label style=&quot;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:${s.par[l[0]]?col:'#8a96b0'};font-weight:700&quot;>
+        <input type=&quot;checkbox&quot; ${s.par[l[0]]?'checked':''} onchange=&quot;setSoppPar(${p.id},'${l[0]}',this.checked)&quot; style=&quot;width:16px;height:16px&quot;>${l[1]}</label>`).join(&quot;&quot;)}
+    </div>
+    <div class=&quot;g2 mb8&quot;>
+      ${_numInput(p,&quot;Altezza parapetto (cm, min. 100)&quot;,&quot;sopParH&quot;,numOk(p.sopParH,100),5,col)}
+      ${_numInput(p,&quot;Un montante ogni (cm)&quot;,&quot;sopParPasso&quot;,numOk(p.sopParPasso,100),5,col)}
+    </div>
+    <div class=&quot;g2 mb8&quot;>
+      ${_numInput(p,&quot;Correnti orizzontali (n°)&quot;,&quot;sopParNCorr&quot;,Math.round(numOk(p.sopParNCorr,2)),1,col,true)}
+      ${_numInput(p,&quot;Varco scala sul fronte (cm)&quot;,&quot;sopVarco&quot;,numOk(p.sopVarco,0),5,col)}
+    </div>
+    ${latoBtn(p.id,`str-${p.id}-parMont`,&quot;Montanti&quot;,M.parMont,col)}
+    ${latoBtn(p.id,`str-${p.id}-parCorrimano`,&quot;Corrimano&quot;,M.parCorrimano,col)}
+    ${s.nCorr>0?latoBtn(p.id,`str-${p.id}-parCorrenti`,&quot;Correnti&quot;,M.parCorrenti,col):&quot;&quot;}
+    <div class=&quot;nota-info&quot;>Il varco (a destra sul fronte) lascia il passaggio per la scala: la scala la aggiungi come manufatto 🪜 Scala.</div>
+  </div>
+
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${col}&quot;>
+    <div class=&quot;st&quot; style=&quot;color:${col}&quot;>📐 Disegno e quantità</div>
+    <div id=&quot;dis-${p.id}&quot; class=&quot;tavola-dis&quot; data-h=&quot;300&quot; style=&quot;margin-top:4px&quot;></div>
+    <div id=&quot;cvs-leg-${p.id}&quot; style=&quot;display:flex;flex-wrap:wrap;gap:9px;margin-top:8px;justify-content:center;font-size:12px;color:#8a96b0&quot;></div>
+    ${buildAbaco(p)}
+    ${_rigaInfo(&quot;Pilastri&quot;,s.nPil*s.nPz+&quot; × &quot;+cmv(s.hPil)+&quot; cm&quot;)}
+    ${_rigaInfo(&quot;Travetti&quot;,s.nTrav*s.nPz+&quot; (uno ogni &quot;+cmv(s.passoTrav)+&quot; cm)&quot;)}
+    ${s.tratti.length?_rigaInfo(&quot;Montanti parapetto&quot;,s.nMont*s.nPz+&quot; × &quot;+cmv(s.lMont)+&quot; cm&quot;):&quot;&quot;}
+    ${_rigaInfo(&quot;Piastre di base&quot;,s.nPiastre+&quot; pz&quot;)}
+    ${s.muro?_rigaInfo(&quot;Appoggi a muro (piastre / tasselli)&quot;,s.nAppMuro+&quot; pz&quot;):&quot;&quot;}
+    <div class=&quot;nota-info&quot;>Pilastro = altezza del piano − piano (${fmtN(s.spPiano)} mm) − travetto (${fmtN(s.hTrav)} mm) − trave (${fmtN(s.hTrave)} mm). Piastre, tasselli e bulloni: aggiungili nella ferramenta per averne il costo.</div>
+    ${_notaTecnico()}
+  </div>
+
+  ${buildLavorazioniHtml(p)}
+
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#64a8ff&quot;>
+    <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>📋 Distinta di taglio</div>
+    ${buildDistinta(p)}
+  </div>`;
+}
+
+function buildBodyPensilina(p){
+  const c=penCalc(p),M=p.strMats||{},col=&quot;#90c060&quot;;
+  return `
+  ${_testaStruttura(p,&quot;N° pensiline uguali&quot;)}
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${col}&quot;>
+    <div class=&quot;st&quot; style=&quot;color:${col}&quot;>🏠 Pensilina a sbalzo — misure</div>
+    <div class=&quot;g2 mb8&quot;>
+      ${_cmInput(p,&quot;Lunghezza lungo il muro (cm)&quot;,&quot;larg&quot;,p.larg,col)}
+      ${_cmInput(p,&quot;Sporgenza dal muro (cm)&quot;,&quot;alt&quot;,p.alt,col)}
+    </div>
+    <div class=&quot;g2 mb8&quot;>
+      ${_numInput(p,&quot;Una mensola ogni (cm)&quot;,&quot;penPasso&quot;,numOk(p.penPasso,150),5,col)}
+      ${_numInput(p,&quot;Pendenza (%)&quot;,&quot;penPend&quot;,numOk(p.penPend,10),1,col)}
+    </div>
+    <label style=&quot;display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px;font-size:12px;color:${c.saetta?col:'#8a96b0'};font-weight:700&quot;>
+      <input type=&quot;checkbox&quot; ${c.saetta?'checked':''} onchange=&quot;setProp(${p.id},'penSaetta',this.checked)&quot; style=&quot;width:16px;height:16px&quot;> Saetta a 45° sotto ogni mensola</label>
+    <div class=&quot;g2 mb8&quot;>
+      ${c.saetta?_numInput(p,&quot;Saetta: attacco a muro sotto la mensola (cm)&quot;,&quot;penSaettaH&quot;,numOk(p.penSaettaH,60),5,col):&quot;<div></div>&quot;}
+      ${_numInput(p,&quot;Arcarecci: uno ogni (cm)&quot;,&quot;penInterasse&quot;,numOk(p.penInterasse,60),5,col)}
+    </div>
+    <label style=&quot;display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px;font-size:12px;color:${c.traveMuro?col:'#8a96b0'};font-weight:700&quot;>
+      <input type=&quot;checkbox&quot; ${c.traveMuro?'checked':''} onchange=&quot;setProp(${p.id},'penTraveMuro',this.checked)&quot; style=&quot;width:16px;height:16px&quot;> Trave a muro (lungo tutta la pensilina)</label>
+    ${latoBtn(p.id,`str-${p.id}-mensole`,&quot;Mensole&quot;,M.mensole,col)}
+    ${c.saetta?latoBtn(p.id,`str-${p.id}-saette`,&quot;Saette&quot;,M.saette,col):&quot;&quot;}
+    ${latoBtn(p.id,`str-${p.id}-frontale`,&quot;Trave frontale&quot;,M.frontale,col)}
+    ${c.traveMuro?latoBtn(p.id,`str-${p.id}-muro`,&quot;Trave a muro&quot;,M.muro,col):&quot;&quot;}
+    ${c.nArc>0?latoBtn(p.id,`str-${p.id}-arcarecci`,&quot;Arcarecci&quot;,M.arcarecci,col):&quot;&quot;}
+  </div>
+
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${col}&quot;>
+    <div class=&quot;st&quot; style=&quot;color:${col}&quot;>☂️ Copertura</div>
+    <div class=&quot;mb8&quot;>${_scelte(p,'penCop',PEN_COPERTURE,c.cop,col)}</div>
+    ${c.cop!=='nessuna'?`<div class=&quot;g2 mb8&quot;>${_numInput(p,&quot;Peso (kg/m²) dalla scheda&quot;,&quot;penCopKgMq&quot;,p.penCopKgMq,0.5,col)}${_numInput(p,&quot;Prezzo (€/m²)&quot;,&quot;penCopPrezzoMq&quot;,p.penCopPrezzoMq,1,col)}</div>
+    ${_rigaInfo(&quot;Superficie copertura (con la pendenza)&quot;,c.area.toFixed(2)+&quot; m²&quot;)}
+    ${c.copKg>0?_rigaInfo(&quot;Peso copertura&quot;,c.copKg.toFixed(1)+&quot; kg&quot;):&quot;&quot;}
+    ${_rigaInfo(&quot;Costo copertura&quot;,c.copPrezzo>0?&quot;€ &quot;+fmtP(c.copCosto):'<span style=&quot;color:#f06b6b&quot;>scrivi il prezzo</span>')}`:&quot;&quot;}
+  </div>
+
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${col}&quot;>
+    <div class=&quot;st&quot; style=&quot;color:${col}&quot;>📐 Disegno e quantità</div>
+    <div id=&quot;dis-${p.id}&quot; class=&quot;tavola-dis&quot; data-h=&quot;300&quot; style=&quot;margin-top:4px&quot;></div>
+    <div id=&quot;cvs-leg-${p.id}&quot; style=&quot;display:flex;flex-wrap:wrap;gap:9px;margin-top:8px;justify-content:center;font-size:12px;color:#8a96b0&quot;></div>
+    ${buildAbaco(p)}
+    ${_rigaInfo(&quot;Mensole&quot;,c.nMens*c.nPz+&quot; × &quot;+cmv(c.lMens)+&quot; cm (una ogni &quot;+cmv(c.passoMens)+&quot; cm)&quot;)}
+    ${c.saetta?_rigaInfo(&quot;Saette 45°&quot;,c.nMens*c.nPz+&quot; × &quot;+cmv(c.lSaet)+&quot; cm&quot;):&quot;&quot;}
+    ${c.nArc>0?_rigaInfo(&quot;Arcarecci&quot;,c.nArc*c.nPz+&quot; × &quot;+cmv(c.L)+&quot; cm&quot;):&quot;&quot;}
+    ${_rigaInfo(&quot;Piastre a muro&quot;,c.nPiastre+&quot; pz&quot;)}
+    <div class=&quot;nota-info&quot;>Piastre, tasselli chimici e bulloni: aggiungili nella ferramenta per averne il costo.</div>
+    ${_notaTecnico()}
+  </div>
+
+  ${buildLavorazioniHtml(p)}
+
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#64a8ff&quot;>
+    <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>📋 Distinta di taglio</div>
+    ${buildDistinta(p)}
+  </div>`;
+}
+
 // ═══════ LAVORAZIONI (zincatura, verniciatura, ferramenta) — comuni a tutti i manufatti in ferro ═══════
 // Solo i TUOI prezzi: niente scenari, fasce o prezzi suggeriti.
 function buildLavorazioniHtml(p){
@@ -5112,6 +5379,8 @@ function buildBody(p){
   if(ti&amp;&amp;ti.isAlluminio)return buildBodyAlluminio(p);
   if(ti&amp;&amp;ti.isScala)return buildBodyScala(p);
   if(ti&amp;&amp;ti.isCorrimano)return buildBodyCorrimano(p);
+  if(ti&amp;&amp;ti.isSoppalco)return buildBodySoppalco(p);
+  if(ti&amp;&amp;ti.isPensilina)return buildBodyPensilina(p);
 
   return `
   <!-- TIPO + NOME -->
@@ -5345,6 +5614,7 @@ function buildBody(p){
     </div>
     ${p.lamiera?lamieraHtml:&quot;&quot;}
   </div>
+  ${ammetteVetro(p)?buildVetroHtml(p):&quot;&quot;}
 
   ${buildLavorazioniHtml(p)}
 
@@ -5373,7 +5643,7 @@ function buildDistinta(p){
   };
   // Peso teorico = metri di taglio × peso al metro del profilo (+ lamiera)
   const kgProf=C.righe.reduce((a,r)=>a+r.kg,0);
-  const kgLam=(C.perPezzo[0]||{}).lamKg||0;
+  const kgLam=((C.perPezzo[0]||{}).lamKg||0)+((C.perPezzo[0]||{}).extraKgAcciaio||0);
   return `<div style=&quot;overflow-x:auto&quot;>
     <table class=&quot;rtable&quot; style=&quot;min-width:520px&quot;>
       <thead><tr><th>Profilo</th><th>Pezzi da tagliare (cm)</th><th style=&quot;text-align:center&quot;>ml</th>
@@ -5393,7 +5663,7 @@ function buildDistinta(p){
       </tr>`;}).join(&quot;&quot;)}</tbody>
     </table>
   </div>
-  <div class=&quot;costi-riga&quot; style=&quot;margin-top:6px&quot;><span>⚖️ Peso teorico struttura${kgLam>0?&quot; (profili &quot;+kgProf.toFixed(1)+&quot; kg + lamiera &quot;+kgLam.toFixed(1)+&quot; kg)&quot;:&quot;&quot;}</span><b style=&quot;color:#c0a0e0&quot;>${(kgProf+kgLam).toFixed(1)} kg</b></div>
+  <div class=&quot;costi-riga&quot; style=&quot;margin-top:6px&quot;><span>⚖️ Peso teorico struttura${kgLam>0?&quot; (profili &quot;+kgProf.toFixed(1)+&quot; kg + lamiera/piano &quot;+kgLam.toFixed(1)+&quot; kg)&quot;:&quot;&quot;}</span><b style=&quot;color:#c0a0e0&quot;>${(kgProf+kgLam).toFixed(1)} kg</b></div>
   <div class=&quot;nota-info&quot;>Barre ${UPG.ottim?&quot;dal piano di taglio di questo manufatto (4 mm di sfrido per ogni taglio)&quot;:&quot;= metri + sfrido &quot;+UPG.sfrido+&quot;%&quot;}. Nel 📋 Riepilogo i profili uguali di tutti i manufatti si sommano.</div>`;
 }
 
@@ -5417,13 +5687,17 @@ function buildAbaco(p){
       <td style=&quot;text-align:center;font-weight:700&quot;>${r.q}</td><td style=&quot;text-align:right;font-weight:700&quot;>${cmv(r.mm)}</td><td style=&quot;text-align:right;color:#c0a0e0&quot;>${kg.toFixed(1)}</td></tr>`;
   }).join(&quot;&quot;);
   const ld=p.lamiera?calcLamieraTot(p):null;
+  const ex=extraPezzo(p),vd=(p.vetro&amp;&amp;ammetteVetro(p))?calcVetro(p):null;
+  const altri=ex.voci.filter(v=>v.k!=='vetro');
   return `<details class=&quot;dett abaco&quot; open>
-    <summary>📑 Abaco dei pezzi — ${arr.reduce((a,r)=>a+r.q,0)} pezzi · peso teorico ${(kgTot+(ld?ld.pesoTot:0)).toFixed(1)} kg</summary>
+    <summary>📑 Abaco dei pezzi — ${arr.reduce((a,r)=>a+r.q,0)} pezzi · peso teorico ${(kgTot+(ld?ld.pesoTot:0)+ex.kgAcciaio).toFixed(1)} kg${vd?&quot; + vetro &quot;+vd.pesoTot.toFixed(1)+&quot; kg&quot;:&quot;&quot;}</summary>
     <div class=&quot;dett-body&quot; style=&quot;overflow-x:auto&quot;>
       <table class=&quot;rtable&quot; style=&quot;min-width:460px&quot;>
         <thead><tr><th>Pos.</th><th>Elemento</th><th>Profilo</th><th style=&quot;text-align:center&quot;>Q.tà</th><th style=&quot;text-align:right&quot;>L (cm)</th><th style=&quot;text-align:right&quot;>kg</th></tr></thead>
         <tbody>${rows}
         ${ld?`<tr><td></td><td>lamiera ${esc(p.lamiera_tipo||&quot;liscia&quot;)}</td><td>sp.${esc(p.lamiera_sp)} mm</td><td></td><td></td><td style=&quot;text-align:right;color:#c0a0e0&quot;>${ld.pesoTot.toFixed(1)}</td></tr>`:&quot;&quot;}
+        ${vd?vd.gruppi.map(g=>`<tr><td></td><td>lastra vetro ${esc(vd.sigla)}</td><td>sp.${fmtN(vd.comp.sp)} mm</td><td style=&quot;text-align:center;font-weight:700&quot;>${g.q}</td><td style=&quot;text-align:right;font-weight:700&quot;>${g.w_cm}×${g.h_cm}</td><td style=&quot;text-align:right;color:#6fb6e0&quot;>${(g.w_cm*g.h_cm/1e4*g.q*vd.comp.kgMq).toFixed(1)}</td></tr>`).join(&quot;&quot;):&quot;&quot;}
+        ${altri.map(v=>`<tr><td></td><td>${esc(v.label)}</td><td>${v.mq.toFixed(2)} m²</td><td></td><td></td><td style=&quot;text-align:right;color:#c0a0e0&quot;>${v.kg>0?v.kg.toFixed(1):&quot;—&quot;}</td></tr>`).join(&quot;&quot;)}
         ${dec.collari?`<tr><td></td><td>collari decorativi</td><td>—</td><td style=&quot;text-align:center;font-weight:700&quot;>${dec.collari}</td><td></td><td></td></tr>`:&quot;&quot;}
         ${dec.riccioli?`<tr><td></td><td>riccioli a &quot;S&quot;</td><td>—</td><td style=&quot;text-align:center;font-weight:700&quot;>${dec.riccioli}</td><td></td><td></td></tr>`:&quot;&quot;}
         </tbody>
@@ -5438,6 +5712,30 @@ function wSxTel(p){return (p.telaio&amp;&amp;p.telaio.sx&amp;&amp;p.telaio.sx.ma
 function wDxTel(p){return (p.telaio&amp;&amp;p.telaio.dx&amp;&amp;p.telaio.dx.mat)?eLarg(p.telaio.dx.mat):0;}
 function telHtop(p){return (p.telaio&amp;&amp;p.telaio.top&amp;&amp;p.telaio.top.mat)?eLarg(p.telaio.top.mat):0;}
 function telHbot(p){if(p.aperto_sotto)return 0;return (p.telaio&amp;&amp;p.telaio.bot&amp;&amp;p.telaio.bot.mat)?eLarg(p.telaio.bot.mat):0;}
+// Geometria del disegno frontale, ricavata da calcLuce (mm; x da sinistra, y dall'alto):
+// - telaio esterno con gli stessi spessori del calcolo (anche la traversa bassa &quot;di riferimento&quot;);
+// - ante alla loro misura reale, sovrapposte al telaio e tra loro del sormonto delle battute;
+// - la luce parte dalla faccia d'APPOGGIO dei profili (non dalla mostra): così luce, lamiera,
+//   vetro, traverse ed elementi restano centrati nell'anta anche con i profili da serramento.
+function layoutDisegno(p,luce,tiD){
+  luce=luce||calcLuce(p);tiD=tiD||TIPI.find(t=>t.k===p.tipo)||TIPI[0];
+  const haAnte=!!tiD.haAnte,soloAnte=isSoloAnte(p,tiD),conTel=haAnte&amp;&amp;!soloAnte;
+  const telTop=conTel?luce.telH:0,telBot=conTel?luce.telHb:0,telSx=conTel?luce.telWsx:0,telDx=conTel?luce.telWdx:0;
+  const nA=haAnte?Math.max(1,(p.ante||[]).length):1;
+  const W_in=haAnte?Math.max(0,soloAnte?luce.Wmm:(luce.WSpec-telSx-telDx)):0;
+  const H_in=Math.max(0,luce.Hmm-telTop-telBot);
+  const A=haAnte?(luce.antaLargLorda>0?luce.antaLargLorda:W_in/nA):0;
+  const AH=haAnte?(luce.antaAltLorda>0?luce.antaAltLorda:H_in):H_in;
+  const gC=nA>1?(luce.giuntoCentro||0)/(nA-1):0;       // sormonto tra due ante affiancate
+  const x0=telSx-(conTel?(luce.giuntoSx||0):0);           // la prima anta copre il telaio del suo sormonto
+  const antaX=i=>x0+i*(A-gC);
+  const antaY=telTop-(conTel?(luce.giuntoAlto||0):0);
+  const aSx=luce.aSx||0,aTop=luce.aTop||0;
+  const yLuce0=haAnte?antaY+aTop:aTop;
+  const segX0=s=>haAnte?(antaX(s)+aSx):luce.campX0(s);
+  return {conTel,telTop,telBot,telSx,telDx,nA,W_in,H_in,A,AH,antaX,antaY,yLuce0,
+    nSeg:haAnte?nA:luce.nCL,segW:luce.luciaHAnta,segX0,luciaV:luce.luciaV};
+}
 // Disegna il pattern della lamiera (liscia/striata/mandorlata/forata/ondulata) dentro un rettangolo del canvas
 function drawLamPattern(ctx,x,y,w,h,tipo,foro){
   if(!tipo||tipo==='liscia'||w<6||h<6)return;
@@ -5480,9 +5778,9 @@ function disegnaFacceSviluppo(p,ws,cvs,ctx,leg){
   fp.forEach((pf,i)=>{
     const Lf=(parseFloat(pf.larg)||0)*1000;
     const luce=calcLuce(pf);
-    const hTop=luce.hTop,hBot=luce.hBot,wSx=luce.wSx,wDx=luce.wDx,luciaH=luce.luciaH,luciaV=luce.luciaV;
+    const hTop=luce.hTop,hBot=luce.hBot,wSx=luce.wSx,wDx=luce.wDx,luciaH=luce.luciaH,luciaV=luce.luciaV,aSxF=luce.aSx,aTopF=luce.aTop;
     const X=v=>tx(x0+v);
-    if(cvTec()&amp;&amp;luciaH>0&amp;&amp;luciaV>0){ctx.fillStyle=CV_TEC.luce;ctx.fillRect(X(wSx),ty(hTop),luciaH*sc,luciaV*sc);} // luce azzurra
+    if(cvTec()&amp;&amp;luciaH>0&amp;&amp;luciaV>0){ctx.fillStyle=CV_TEC.luce;ctx.fillRect(X(aSxF),ty(aTopF),luciaH*sc,luciaV*sc);} // luce azzurra
     // Telaio della faccia
     if(hTop>0)barra3D(ctx,X(0),ty(0),Lf*sc,Math.max(hTop*sc,2),[120,150,210],1);
     if(!p.aperto_sotto&amp;&amp;hBot>0)barra3D(ctx,X(0),ty(Hmm-hBot),Lf*sc,Math.max(hBot*sc,2),[120,150,210],1);
@@ -5548,14 +5846,15 @@ function lamieraConfine(p,luciaV){
 }
 // Bande di lamiera (dal basso) nella luce: tagliate da traverse orizzontali e correnti intermedi,
 // limitate al confine nei modi misti. Stessa funzione per disegno e calcolo.
-function lamieraBande(p,luciaV){
-  const modo=p.lamiera_modo||'tutto';
+function lamieraBande(p,luciaV){return bandeLuce(p,luciaV,p.lamiera_modo||'tutto',()=>lamieraConfine(p,luciaV));}
+// Bande (dal basso) di un tamponamento: tagliate da traverse e correnti, limitate al confine nei modi misti
+function bandeLuce(p,luciaV,modo,confineFn){
   let bande=[],cur=0;
   tagliOrizzontali(p,luciaV).forEach(t=>{const lo=t.q-t.sp/2;if(lo>cur)bande.push({a:cur,b:lo});cur=t.q+t.sp/2;});
   if(cur<luciaV)bande.push({a:cur,b:luciaV});
   if(!bande.length)bande.push({a:0,b:luciaV});
   if(modo==='sotto'||modo==='sopra'){
-    const h=lamieraConfine(p,luciaV),nb=[];
+    const h=confineFn(),nb=[];
     bande.forEach(b=>{
       if(modo==='sotto'){if(b.a<h)nb.push({a:b.a,b:Math.min(b.b,h)});}
       else if(b.b>h)nb.push({a:Math.max(b.a,h),b:b.b});
@@ -5610,6 +5909,152 @@ function disegnaGazebo(p,cvs,ctx,leg){
   }
 }
 
+// Simbolo del vetro nei disegni tecnici: brevi tratti obliqui (riflessi) in un angolo della lastra
+function riflessiVetro(ctx,x,y,w,h){
+  const m=Math.min(w,h);if(!(m>=12))return;
+  const d=Math.min(m*0.28,40),x0=x+w*0.16,y0=y+h*0.1;
+  ctx.save();ctx.strokeStyle=CVC('vetroRiflesso');ctx.lineWidth=Math.max(1,Math.min(2.2,m*0.025));ctx.lineCap=&quot;round&quot;;
+  ctx.beginPath();
+  ctx.moveTo(x0,y0+d);ctx.lineTo(x0+d,y0);
+  ctx.moveTo(x0+d*0.4,y0+d*1.4);ctx.lineTo(x0+d*1.4,y0+d*0.4);
+  ctx.moveTo(x+w*0.84-d*0.7,y+h*0.9);ctx.lineTo(x+w*0.84,y+h*0.9-d*0.7);
+  ctx.stroke();ctx.restore();
+}
+// Muro tratteggiato (sezione) per soppalco a muro e pensilina
+function muroTratteggio(ctx,x,y,w,h){
+  ctx.save();ctx.fillStyle=CVC('muro');ctx.fillRect(x,y,w,h);
+  ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+  ctx.strokeStyle=CVC('contorno');ctx.globalAlpha=0.45;ctx.lineWidth=1;ctx.beginPath();
+  for(let k=-h;k<w+h;k+=7){ctx.moveTo(x+k,y+h);ctx.lineTo(x+k+h,y);}
+  ctx.stroke();ctx.restore();
+  ctx.save();ctx.strokeStyle=CVC('contorno');ctx.lineWidth=1;ctx.strokeRect(x,y,w,h);ctx.restore();
+}
+
+// ═══════ SOPPALCO: pianta + vista frontale ═══════
+function disegnaSoppalco(p,cvs,ctx,leg){
+  const cW=cvs.width,cH=cvs.height,s=soppCalc(p),M=p.strMats||{};
+  if(!(s.L>0&amp;&amp;s.P>0&amp;&amp;s.H>0)){ctx.fillStyle=CVC(&quot;tenue&quot;);ctx.font=&quot;600 18px Arial&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci larghezza, profondità e altezza&quot;,cW/2,cH/2);return;}
+  const RGB_P=[77,157,224],RGB_T=[120,150,210],RGB_TR=[80,192,144],RGB_PAR=[176,98,12];
+  const half=(cW-40)/2,pad=34;
+  const bTr=M.travetti?Math.max(eProf(M.travetti),1):40,bTv=M.travi?Math.max(eProf(M.travi),1):60;
+  const sPil=M.pilastri?Math.max(eLarg(M.pilastri),eProf(M.pilastri)):80;
+  // PIANTA (sinistra): y = 0 retro, y = P fronte
+  const scP=Math.min((half-pad*2)/s.L,(cH-pad*2-20)/s.P);
+  const px0=20+(half-s.L*scP)/2,py0=pad+14+(cH-pad*2-24-s.P*scP)/2;
+  const X=x=>px0+x*scP,Y=y=>py0+y*scP;
+  if(s.muro)muroTratteggio(ctx,X(0)-6,Y(0)-9,s.L*scP+12,8);
+  if(s.piano!=='nessuno'){ctx.fillStyle=CVC('piano');ctx.fillRect(X(0),Y(0),s.L*scP,s.P*scP);}
+  const wT=Math.max(bTr*scP,1.5);
+  for(let i=0;i<s.nTrav;i++){const x=Math.min(Math.max(i*s.passoTrav-bTr/2,0),s.L-bTr);barra3D(ctx,X(x),Y(0),wT,s.P*scP,RGB_TR,1);}
+  const wV=Math.max(bTv*scP,2.5);
+  barra3D(ctx,X(0),Y(0),s.L*scP,wV,RGB_T,1);barra3D(ctx,X(0),Y(s.P)-wV,s.L*scP,wV,RGB_T,1);
+  const q=Math.max(sPil*scP,5);
+  const file=s.muro?[s.P]:[0,s.P];
+  file.forEach(yf=>{for(let i=0;i<=s.nCamp;i++){const x=i*s.campL;const xx=Math.min(Math.max(X(x)-q/2,X(0)),X(s.L)-q),yy=Math.min(Math.max(Y(yf)-q/2,Y(0)),Y(s.P)-q);barra3D(ctx,xx,yy,q,q,RGB_P,1);}});
+  ctx.save();ctx.strokeStyle=CVC('accento');ctx.lineWidth=3;ctx.lineCap=&quot;round&quot;;ctx.beginPath();
+  s.tratti.forEach(t=>{
+    if(t.lato==='fronte'){ctx.moveTo(X(0),Y(s.P)+4);ctx.lineTo(X(t.len),Y(s.P)+4);}
+    if(t.lato==='retro'){ctx.moveTo(X(0),Y(0)-4);ctx.lineTo(X(s.L),Y(0)-4);}
+    if(t.lato==='sx'){ctx.moveTo(X(0)-4,Y(0));ctx.lineTo(X(0)-4,Y(s.P));}
+    if(t.lato==='dx'){ctx.moveTo(X(s.L)+4,Y(0));ctx.lineTo(X(s.L)+4,Y(s.P));}
+  });
+  ctx.stroke();ctx.restore();
+  if(s.varco>0)cvLabelQ(&quot;varco &quot;+cmv(s.varco)+&quot; cm&quot;,X(s.L-s.varco/2),Y(s.P)+18,&quot;#b0620c&quot;,&quot;center&quot;,11);
+  cvLabelQ(&quot;PIANTA&quot;,X(0),Y(0)-14,&quot;#8fa3c8&quot;,&quot;left&quot;,12);
+  if(UPG.quote){try{drawQuotaCv(ctx,X(0),Y(s.P)+10,X(s.L),Y(s.P)+10,cmU(s.L),12);drawQuotaCv(ctx,X(s.L),Y(s.P),X(s.L),Y(0),cmU(s.P),14);}catch(e){}}
+  // VISTA FRONTALE (destra): y = 0 in cima al parapetto, terra = hPar + H
+  const yP=s.hPar,yG=s.hPar+s.H,Ht=yG;
+  const scF=Math.min((half-pad*2)/s.L,(cH-pad*2-24)/Ht);
+  const fx0=20+half+(half-s.L*scF)/2,fy0=pad+14+(cH-pad*2-24-Ht*scF)/2;
+  const FX=x=>fx0+x*scF,FY=y=>fy0+y*scF;
+  ctx.strokeStyle=CVC(&quot;pav&quot;);ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(FX(-s.L*0.04),FY(yG));ctx.lineTo(FX(s.L*1.04),FY(yG));ctx.stroke();
+  const ySt=yP+s.spPiano,yTr=ySt+s.hTrav,yTv=yTr+s.hTrave;
+  if(s.spPiano>0)barra3D(ctx,FX(0),FY(yP),s.L*scF,Math.max(s.spPiano*scF,1.5),[150,156,164],1);
+  for(let i=0;i<s.nTrav;i++){const x=Math.min(Math.max(i*s.passoTrav-bTr/2,0),s.L-bTr);barra3D(ctx,FX(x),FY(ySt),Math.max(bTr*scF,1.5),Math.max(s.hTrav*scF,1.5),RGB_TR,1);}
+  barra3D(ctx,FX(0),FY(yTr),s.L*scF,Math.max(s.hTrave*scF,2),RGB_T,1);
+  const wPil=Math.max((M.pilastri?eLarg(M.pilastri):80)*scF,3);
+  for(let i=0;i<=s.nCamp;i++){const x=i*s.campL;const xx=Math.min(Math.max(FX(x)-wPil/2,FX(0)),FX(s.L)-wPil);barra3D(ctx,xx,FY(yTv),wPil,Math.max((yG-yTv)*scF,1),RGB_P,1);}
+  const fr=s.tratti.find(t=>t.lato==='fronte');
+  if(fr){
+    const nM=Math.ceil(fr.len/s.passoPar-1e-6)+1,dM=nM>1?fr.len/(nM-1):0;
+    const wM=Math.max((M.parMont?eLarg(M.parMont):40)*scF,1.5),hC=Math.max((M.parCorrimano?eLarg(M.parCorrimano):40)*scF,2);
+    for(let k=0;k<nM;k++){const x=Math.min(k*dM,fr.len);barra3D(ctx,Math.min(FX(x)-wM/2,FX(fr.len)-wM),FY(0),wM,(yP-0)*scF,RGB_PAR,1);}
+    barra3D(ctx,FX(0),FY(0),fr.len*scF,hC,RGB_PAR,1);
+    const hK=Math.max((M.parCorrenti?eLarg(M.parCorrenti):30)*scF,1.5);
+    for(let k=1;k<=s.nCorr;k++){const y=s.hPar*k/(s.nCorr+1);barra3D(ctx,FX(0),FY(y)-hK/2,fr.len*scF,hK,RGB_PAR,1);}
+  }
+  cvLabelQ(&quot;VISTA FRONTALE&quot;,FX(0),FY(0)-14,&quot;#8fa3c8&quot;,&quot;left&quot;,12);
+  if(UPG.quote){try{
+    drawQuotaCv(ctx,FX(0),FY(yG),FX(s.L),FY(yG),cmU(s.L),12);
+    drawQuotaCv(ctx,FX(s.L),FY(yG),FX(s.L),FY(yP),&quot;piano &quot;+cmU(s.H),24);
+    if(fr)drawQuotaCv(ctx,FX(s.L),FY(yP),FX(s.L),FY(0),cmU(s.hPar),24);
+  }catch(e){}}
+  if(!M.pilastri&amp;&amp;!M.travi&amp;&amp;!M.travetti)cvLabelQ(&quot;Scegli pilastri, travi e travetti per completare il disegno&quot;,cW/2,cH-10,&quot;#e0a050&quot;,&quot;center&quot;,12);
+  cvLabelFlush(ctx);
+  if(leg){
+    leg.innerHTML=&quot;&quot;;
+    const addL=(c,t)=>leg.innerHTML+=`<span><span style=&quot;color:${c}&quot;>■</span> ${t}</span>`;
+    addL(&quot;#64a8ff&quot;,&quot;Pilastri: &quot;+(M.pilastri?esc(M.pilastri.profilo):&quot;—&quot;)+&quot; × &quot;+s.nPil);
+    addL(&quot;#7896d2&quot;,&quot;Travi: &quot;+(M.travi?esc(M.travi.profilo):&quot;—&quot;));
+    addL(&quot;#55d39b&quot;,&quot;Travetti: &quot;+(M.travetti?esc(M.travetti.profilo):&quot;—&quot;)+&quot; × &quot;+s.nTrav);
+    if(s.tratti.length)addL(&quot;#b0620c&quot;,&quot;Parapetto: &quot;+s.tratti.map(t=>t.lato).join(&quot;, &quot;));
+  }
+}
+
+// ═══════ PENSILINA: pianta + sezione laterale ═══════
+function disegnaPensilina(p,cvs,ctx,leg){
+  const cW=cvs.width,cH=cvs.height,c=penCalc(p),M=p.strMats||{};
+  if(!(c.L>0&amp;&amp;c.S>0)){ctx.fillStyle=CVC(&quot;tenue&quot;);ctx.font=&quot;600 18px Arial&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci lunghezza e sporgenza&quot;,cW/2,cH/2);return;}
+  const RGB_M=[77,157,224],RGB_S=[120,150,210],RGB_F=[80,192,144],RGB_A=[64,154,115];
+  const half=(cW-40)/2,pad=34;
+  const hM=M.mensole?eLarg(M.mensole):60,bM=M.mensole?Math.max(eProf(M.mensole),1):40;
+  const hF=M.frontale?eLarg(M.frontale):60,bF=M.frontale?Math.max(eProf(M.frontale),1):40;
+  const hA=M.arcarecci?eLarg(M.arcarecci):40,bA=M.arcarecci?Math.max(eProf(M.arcarecci),1):20;
+  const tS=M.saette?eLarg(M.saette):40;
+  // PIANTA: y = 0 muro, y = S sporgenza
+  const scP=Math.min((half-pad*2)/c.L,(cH-pad*2-30)/c.S);
+  const px0=20+(half-c.L*scP)/2,py0=pad+20+(cH-pad*2-30-c.S*scP)/2;
+  const X=x=>px0+x*scP,Y=y=>py0+y*scP;
+  muroTratteggio(ctx,X(0)-6,Y(0)-9,c.L*scP+12,8);
+  if(c.cop!=='nessuna'){ctx.fillStyle=c.cop==='vetro'?CVC('vetro'):CVC('piano');ctx.fillRect(X(0),Y(0),c.L*scP,c.S*scP);}
+  const wMe=Math.max(bM*scP,2);
+  for(let i=0;i<c.nMens;i++){const x=Math.min(Math.max(i*c.passoMens-bM/2,0),c.L-bM);barra3D(ctx,X(x),Y(0),wMe,c.S*scP,RGB_M,1);}
+  for(let j=1;j<=c.nArc;j++){const y=c.S*j/(c.nArc+1);barra3D(ctx,X(0),Y(y)-Math.max(bA*scP,1.5)/2,c.L*scP,Math.max(bA*scP,1.5),RGB_A,1);}
+  barra3D(ctx,X(0),Y(c.S)-Math.max(bF*scP,2),c.L*scP,Math.max(bF*scP,2),RGB_F,1);
+  if(c.traveMuro)barra3D(ctx,X(0),Y(0),c.L*scP,Math.max(bF*scP,2),RGB_F,1);
+  cvLabelQ(&quot;PIANTA&quot;,X(0),Y(0)-16,&quot;#8fa3c8&quot;,&quot;left&quot;,12);
+  if(UPG.quote){try{drawQuotaCv(ctx,X(0),Y(c.S)+8,X(c.L),Y(c.S)+8,cmU(c.L),12);drawQuotaCv(ctx,X(c.L),Y(c.S),X(c.L),Y(0),cmU(c.S),14);}catch(e){}}
+  // SEZIONE: x = distanza dal muro, y verso il basso; la mensola scende della pendenza verso l'esterno
+  const dy=c.S*c.pend/100,V=Math.max(hF,hA)+hM+dy+Math.max(c.saetta?c.hS:0,200)+60;
+  const scS=Math.min((half-pad*2-24)/c.S,(cH-pad*2-30)/V);
+  const sx0=20+half+24+(half-24-c.S*scS)/2,sy0=pad+20+Math.max(hF,hA)*scS;
+  const SX=x=>sx0+x*scS,SY=y=>sy0+y*scS,yM=x=>x*c.pend/100; // estradosso della mensola
+  muroTratteggio(ctx,SX(0)-16,SY(-Math.max(hF,hA))-6,14,(V)*scS);
+  if(c.saetta&amp;&amp;c.hS>0)barraObliqua(ctx,SX(0),SY(hM+c.hS),SX(c.hS),SY(yM(c.hS)+hM),Math.max(tS*scS,2));
+  barraObliqua(ctx,SX(0),SY(hM/2),SX(c.S),SY(dy+hM/2),Math.max(hM*scS,2));
+  for(let j=1;j<=c.nArc;j++){const x=c.S*j/(c.nArc+1);barra3D(ctx,SX(x)-Math.max(bA*scS,2)/2,SY(yM(x)-hA),Math.max(bA*scS,2),Math.max(hA*scS,2),RGB_A,1);}
+  barra3D(ctx,SX(c.S)-Math.max(bF*scS,2),SY(dy-hF),Math.max(bF*scS,2),Math.max(hF*scS,2),RGB_F,1);
+  if(c.traveMuro)barra3D(ctx,SX(0),SY(-hF),Math.max(bF*scS,2),Math.max(hF*scS,2),RGB_F,1);
+  if(c.cop!=='nessuna'){const t=Math.max(hF,hA);ctx.save();ctx.strokeStyle=c.cop==='vetro'?&quot;#3b7fae&quot;:CVC('accento');ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(SX(0),SY(-t-4));ctx.lineTo(SX(c.S)+4,SY(dy-t-4));ctx.stroke();ctx.restore();}
+  cvLabelQ(&quot;SEZIONE&quot;,SX(0),SY(-Math.max(hF,hA))-16,&quot;#8fa3c8&quot;,&quot;left&quot;,12);
+  if(UPG.quote){try{
+    drawQuotaCv(ctx,SX(0),SY(dy+hM+(c.saetta?c.hS:0))+14,SX(c.S),SY(dy+hM+(c.saetta?c.hS:0))+14,cmU(c.S),10);
+    if(c.saetta&amp;&amp;c.hS>0)drawQuotaCv(ctx,SX(0)-20,SY(hM+c.hS),SX(0)-20,SY(hM),cmU(c.hS),0);
+  }catch(e){}}
+  if(c.pend>0)cvLabelQ(&quot;pendenza &quot;+fmtN(c.pend)+&quot;%&quot;,SX(c.S/2),SY(dy/2+hM)+22,&quot;#b0620c&quot;,&quot;center&quot;,11);
+  if(!M.mensole&amp;&amp;!M.frontale)cvLabelQ(&quot;Scegli mensole e trave frontale per completare il disegno&quot;,cW/2,cH-10,&quot;#e0a050&quot;,&quot;center&quot;,12);
+  cvLabelFlush(ctx);
+  if(leg){
+    leg.innerHTML=&quot;&quot;;
+    const addL=(col,t)=>leg.innerHTML+=`<span><span style=&quot;color:${col}&quot;>■</span> ${t}</span>`;
+    addL(&quot;#64a8ff&quot;,&quot;Mensole: &quot;+(M.mensole?esc(M.mensole.profilo):&quot;—&quot;)+&quot; × &quot;+c.nMens);
+    if(c.saetta)addL(&quot;#7896d2&quot;,&quot;Saette: &quot;+(M.saette?esc(M.saette.profilo):&quot;—&quot;));
+    addL(&quot;#55d39b&quot;,&quot;Frontale: &quot;+(M.frontale?esc(M.frontale.profilo):&quot;—&quot;));
+    if(c.nArc>0)addL(&quot;#409a73&quot;,&quot;Arcarecci: &quot;+(M.arcarecci?esc(M.arcarecci.profilo):&quot;—&quot;)+&quot; × &quot;+c.nArc);
+  }
+}
+
 // Disegno del manufatto. Senza tela: lo disegna in SVG nel riquadro della card (#dis-ID).
 // Con cvsArg (canvas vero o SvgCanvas): disegna lì, es. l'immagine per il preventivo.
 function disegnaPezzo(p,cvsArg,legArg){
@@ -5643,6 +6088,8 @@ function _disegnaSu(p,cvs,leg){
   if(tiD.isGazebo){disegnaGazebo(p,cvs,ctx,leg);return;}
   if(tiD.isScala){disegnaScala(p,cvs,ctx,leg);return;}
   if(tiD.isCorrimano){disegnaCorrimano(p,cvs,ctx,leg);return;}
+  if(tiD.isSoppalco){disegnaSoppalco(p,cvs,ctx,leg);return;}
+  if(tiD.isPensilina){disegnaPensilina(p,cvs,ctx,leg);return;}
   if(tiD.isAlluminio){aluDisegna(cvs,p);return;}
 
   const luce=calcLuce(p);
@@ -5664,31 +6111,10 @@ function _disegnaSu(p,cvs,leg){
   const oy=padT+(cH-padT-padB-(Hmm+_arcoUp)*sc)/2;
   const tx=x=>ox+x*sc, ty=y=>oy+(y+_arcoUp)*sc;
 
-  // Telaio esterno separato dalle ante: porta, grata, battente con piantoni/telaio chiuso
-  const haTelaioEsterno = tiD.haAnte &amp;&amp; !soloAnteD;
-  const telExtTop = haTelaioEsterno ? telHtop(p) : 0;
-  const telExtSx  = haTelaioEsterno ? wSxTel(p)  : 0;
-  // ── Layout ante coerente con calcLuce: larghezza REALE dell'anta + giochi distribuiti ──
-  const nA_ = tiD.haAnte ? Math.max(1,p.ante.length) : 1;
-  const telExtDx_ = haTelaioEsterno ? wDxTel(p) : 0;
-  const W_in_ = tiD.haAnte ? Math.max(0,(soloAnteD?Wmm:(WSpec-telExtSx-telExtDx_))) : 0;
-  const A_ = tiD.haAnte ? (luce.antaLargLorda>0?luce.antaLargLorda:W_in_/nA_) : 0;
-  const hasTelW_ = haTelaioEsterno &amp;&amp; !!((p.telaio&amp;&amp;p.telaio.sx&amp;&amp;p.telaio.sx.mat)||(p.telaio&amp;&amp;p.telaio.dx&amp;&amp;p.telaio.dx.mat));
-  const hasTelV_ = haTelaioEsterno &amp;&amp; !!((p.telaio&amp;&amp;p.telaio.top&amp;&amp;p.telaio.top.mat)||(p.telaio&amp;&amp;p.telaio.bot&amp;&amp;p.telaio.bot.mat));
-  const nGapW_=(hasTelW_?2:0)+Math.max(0,nA_-1);
-  const gapW_ = (tiD.haAnte&amp;&amp;nGapW_>0) ? Math.max(0,(W_in_-nA_*A_)/nGapW_) : 0;
-  const antaX_ = i => telExtSx + (hasTelW_?gapW_:0) + i*(A_+gapW_);
-  const telExtBot_ = haTelaioEsterno ? telHbot(p) : 0;
-  const H_in_ = Math.max(0,Hmm-telExtTop-telExtBot_);
-  const AH_ = tiD.haAnte ? (luce.antaAltLorda>0?luce.antaAltLorda:H_in_) : H_in_;
-  const nGapV_ = hasTelV_ ? (p.aperto_sotto?1:2) : 0;
-  const gapV_ = nGapV_>0 ? Math.max(0,(H_in_-AH_)/nGapV_) : 0;
-  const antaY_ = telExtTop + (hasTelV_?gapV_:0);
-  // Luce interna: in alto a yLuce0 (mm dal bordo alto). Segmenti = ante oppure campate.
-  const yLuce0 = (tiD.haAnte?antaY_:telExtTop) + hTop;
-  const nSeg = tiD.haAnte ? nA_ : nCL;
-  const segW = luce.luciaHAnta;                                     // luce di un'anta o di una campata
-  const segX0 = s => tiD.haAnte ? (antaX_(s)+wSx) : luce.campX0(s); // inizio luce del segmento
+  // ── Posizioni di telaio, ante e luce: le STESSE misure di calcLuce (vedi layoutDisegno) ──
+  const LY=layoutDisegno(p,luce,tiD);
+  const telExtTop=LY.telTop, H_in_=LY.H_in, A_=LY.A, AH_=LY.AH, antaX_=LY.antaX, antaY_=LY.antaY;
+  const yLuce0=LY.yLuce0, nSeg=LY.nSeg, segW=LY.segW, segX0=LY.segX0;
   const arcoTop = arcoAttivo(p)&amp;&amp;tiD.haAnte&amp;&amp;(!p.lamiera||p.lamiera_modo==='sotto');
 
   // Tavola: la luce (il vano) in azzurro, come nei modelli del catalogo IronDesk
@@ -5747,82 +6173,17 @@ function _disegnaSu(p,cvs,leg){
     }
   }
 
-  // ── Telaio esterno ──
-  const RGB_TEL=[77,157,224]; // acciaio azzurro
-  const fTop = tiD.haAnte ? telHtop(p) : hTop;
-  const fBot = tiD.haAnte ? telHbot(p) : (p.aperto_sotto?0:hBot);
-  const fSx  = tiD.haAnte ? wSxTel(p)  : wSx;
-  const fDx  = tiD.haAnte ? wDxTel(p)  : wDx;
-  if(!soloAnteD){
-    if(fTop>0)barra3D(ctx,tx(0),ty(0),Wmm*sc,fTop*sc,RGB_TEL,2);
-    if(!p.aperto_sotto&amp;&amp;fBot>0)barra3D(ctx,tx(0),ty(Hmm-fBot),Wmm*sc,fBot*sc,RGB_TEL,2);
-    if(fSx>0)barra3D(ctx,tx(0),ty(0),fSx*sc,Hmm*sc,RGB_TEL,2);
-    if(fDx>0)barra3D(ctx,tx(Wmm-fDx),ty(0),fDx*sc,Hmm*sc,RGB_TEL,2);
-    const isPiant=p.tipo==='cancello_battente'&amp;&amp;(p.telaio_modo||'nessuno')==='piantoni';
-    if(!isPiant)giunti45(ctx,tx(0),ty(0),Wmm*sc,Hmm*sc,fTop*sc,(!p.aperto_sotto&amp;&amp;fBot>0)?fBot*sc:0,fSx*sc,fDx*sc);
-    // Code scorrevole: prolungano le traverse a sinistra
-    if(p.tipo==='cancello_scorrevole'){
-      const _cs=parseFloat(p.coda_sup)||0,_ci=parseFloat(p.coda_inf)||0;
-      if(_cs>0&amp;&amp;fTop>0)barra3D(ctx,tx(-_cs),ty(0),_cs*sc,fTop*sc,RGB_TEL,2);
-      if(_ci>0&amp;&amp;fBot>0)barra3D(ctx,tx(-_ci),ty(Hmm-fBot),_ci*sc,fBot*sc,RGB_TEL,2);
-    }
-  }
-  // Montanti intermedi (campate) e correnti intermedi (fasce), col loro profilo
-  const RGB_MID=[58,120,175];
-  if(!tiD.haAnte&amp;&amp;nCL>1&amp;&amp;luce.wMid>0){
-    const yT=fTop,yB=Hmm-(p.aperto_sotto?0:fBot);
-    for(let i=1;i<nCL;i++)barra3D(ctx,tx(luce.campX0(i)-luce.wMid),ty(yT),luce.wMid*sc,(yB-yT)*sc,RGB_MID,1);
-  }
-  if(!tiD.haAnte&amp;&amp;nCA>1&amp;&amp;luce.hMid>0){
-    (luce.correnti||[]).forEach(c=>{
-      const yc=yLuce0+luciaV-c.q;
-      for(let s=0;s<nSeg;s++)barra3D(ctx,tx(segX0(s)),ty(yc-c.sp/2),segW*sc,Math.max(c.sp*sc,2),RGB_MID,1);
-    });
-  }
-
-  // ── Ante: ogni anta ha il suo telaio (4 lati) ──
-  if(tiD.haAnte&amp;&amp;p.ante.length>0){
-    const antaWlorda=A_, yA=antaY_;
-    // Telaio aperto sotto: l'anta non scende oltre il fondo del telaio
-    const hA = p.aperto_sotto ? Math.min(AH_, H_in_) : AH_;
-    const RGB_ANTA=[120,150,210];
-    const _nAd=p.ante.length;
-    p.ante.forEach((a,ai)=>{
-      const xA=antaX_(ai);
-      const mTop=a.top&amp;&amp;a.top.mat,mBot=a.bot&amp;&amp;a.bot.mat,mSx=a.sx&amp;&amp;a.sx.mat,mDx=a.dx&amp;&amp;a.dx.mat;
-      const pT=mTop?eLarg(mTop):wSx,pB=mBot?eLarg(mBot):wSx,pS=mSx?eLarg(mSx):wSx,pD=mDx?eLarg(mDx):wSx;
-      const _adD=arcoDatiAnta(p,luce,ai,_nAd);
-      if(_adD){
-        const N=26;
-        const gArc=ctx.createLinearGradient(0,ty(yA-Math.max(_adD.dhSx,_adD.dhDx,0)),0,ty(yA+pT));
-        gArc.addColorStop(0,_cvShade(RGB_ANTA,1.38));gArc.addColorStop(1,_cvShade(RGB_ANTA,0.62));
-        ctx.fillStyle=cvTec()?CV_TEC.profilo:gArc;
-        ctx.beginPath();
-        for(let s=0;s<=N;s++){const x=xA+antaWlorda*s/N,yE=yA-_adD.elDh(x-xA);if(s===0)ctx.moveTo(tx(x),ty(yE));else ctx.lineTo(tx(x),ty(yE));}
-        for(let s=N;s>=0;s--){const x=xA+antaWlorda*s/N;ctx.lineTo(tx(x),ty(yA-_adD.elDh(x-xA)+pT));}
-        ctx.closePath();ctx.fill();
-        ctx.strokeStyle=&quot;rgba(4,8,16,.5)&quot;;ctx.lineWidth=1;ctx.stroke();
-        barra3D(ctx,tx(xA),ty(yA-_adD.dhSx),pS*sc,Math.max(0,hA+_adD.dhSx)*sc,RGB_ANTA,1.5);
-        barra3D(ctx,tx(xA+antaWlorda-pD),ty(yA-_adD.dhDx),pD*sc,Math.max(0,hA+_adD.dhDx)*sc,RGB_ANTA,1.5);
-        if(pB>0)barra3D(ctx,tx(xA),ty(yA+hA-pB),antaWlorda*sc,pB*sc,RGB_ANTA,1.5);
-        giunti45(ctx,tx(xA),ty(yA-_adD.dhSx),antaWlorda*sc,(hA+_adD.dhSx)*sc,0,pB*sc,pS*sc,pD*sc);
-      } else {
-        barra3D(ctx,tx(xA),ty(yA),antaWlorda*sc,pT*sc,RGB_ANTA,1.5);
-        barra3D(ctx,tx(xA),ty(yA+hA-pB),antaWlorda*sc,pB*sc,RGB_ANTA,1.5);
-        barra3D(ctx,tx(xA),ty(yA),pS*sc,hA*sc,RGB_ANTA,1.5);
-        barra3D(ctx,tx(xA+antaWlorda-pD),ty(yA),pD*sc,hA*sc,RGB_ANTA,1.5);
-        giunti45(ctx,tx(xA),ty(yA),antaWlorda*sc,hA*sc,pT*sc,pB*sc,pS*sc,pD*sc);
-      }
-    });
-  }
-
-  // Cerniere sul lato esterno delle ante (tavola), come nei modelli del catalogo
-  if(cvTec()&amp;&amp;tiD.haAnte&amp;&amp;p.ante.length>0){
-    const nA=p.ante.length,hAc=p.aperto_sotto?Math.min(AH_,H_in_):AH_;
-    for(let ai=0;ai<nA;ai++){
-      const lato=(ai===0)?'sx':(ai===nA-1?'dx':null);if(!lato)continue;
-      const xh=lato==='sx'?tx(antaX_(ai))-4:tx(antaX_(ai)+A_);
-      [0.1,0.84].forEach(fr=>cerniera(ctx,xh,ty(antaY_+hAc*fr),4,Math.max(10,hAc*sc*0.06)));
+  // ── Vetro (porte): lastre per anta con il gioco per lato; simbolo del vetro (riflessi) ──
+  const _vd=(p.vetro&amp;&amp;ammetteVetro(p)&amp;&amp;luciaV>0&amp;&amp;segW>0)?calcVetro(p):null;
+  if(_vd){
+    for(let s=0;s<nSeg;s++){
+      const bx=segX0(s);
+      _vd.lastre.forEach(l=>{
+        const X=tx(bx+l.ca+_vd.G),Y=ty(yLuce0+(luciaV-l.b)+_vd.G),W=l.w*sc,H=l.h*sc;
+        ctx.fillStyle=CVC('vetro');ctx.fillRect(X,Y,W,H);
+        ctx.strokeStyle=CVC('contorno');ctx.lineWidth=1;ctx.strokeRect(X,Y,W,H);
+        riflessiVetro(ctx,X,Y,W,H);
+      });
     }
   }
 
@@ -5923,6 +6284,93 @@ function _disegnaSu(p,cvs,leg){
     }
     legN.push({gi,el,isV,n:nTot});
   });
+  // Telaio e ante si disegnano DOPO lamiera, vetro, traverse ed elementi: coprono le loro teste
+  // (come nella realtà, dove i tamponamenti entrano nella battuta dei profili).
+  // ── Telaio esterno ──
+  const RGB_TEL=[77,157,224]; // acciaio azzurro
+  const fTop = tiD.haAnte ? telHtop(p) : hTop;
+  const fBot = tiD.haAnte ? telHbot(p) : (p.aperto_sotto?0:hBot);
+  const fSx  = tiD.haAnte ? wSxTel(p)  : wSx;
+  const fDx  = tiD.haAnte ? wDxTel(p)  : wDx;
+  if(!soloAnteD){
+    if(fTop>0)barra3D(ctx,tx(0),ty(0),Wmm*sc,fTop*sc,RGB_TEL,2);
+    if(!p.aperto_sotto&amp;&amp;fBot>0)barra3D(ctx,tx(0),ty(Hmm-fBot),Wmm*sc,fBot*sc,RGB_TEL,2);
+    if(fSx>0)barra3D(ctx,tx(0),ty(0),fSx*sc,Hmm*sc,RGB_TEL,2);
+    if(fDx>0)barra3D(ctx,tx(Wmm-fDx),ty(0),fDx*sc,Hmm*sc,RGB_TEL,2);
+    const isPiant=p.tipo==='cancello_battente'&amp;&amp;(p.telaio_modo||'nessuno')==='piantoni';
+    if(!isPiant)giunti45(ctx,tx(0),ty(0),Wmm*sc,Hmm*sc,fTop*sc,(!p.aperto_sotto&amp;&amp;fBot>0)?fBot*sc:0,fSx*sc,fDx*sc);
+    // Telaio chiuso sotto ma traversa bassa senza profilo: il calcolo la considera uguale a quella alta
+    if(tiD.haAnte&amp;&amp;!p.aperto_sotto&amp;&amp;!(fBot>0)&amp;&amp;LY.telBot>0){
+      ctx.save();ctx.setLineDash([5,4]);ctx.strokeStyle=CVC('quota');ctx.lineWidth=1;
+      ctx.strokeRect(tx(0),ty(Hmm-LY.telBot),Wmm*sc,LY.telBot*sc);ctx.restore();
+      cvLabelQ(&quot;traversa bassa da scegliere&quot;,tx(Wmm/2),ty(Hmm-LY.telBot/2)+4,&quot;#e0a050&quot;,&quot;center&quot;,11);
+    }
+    // Code scorrevole: prolungano le traverse a sinistra
+    if(p.tipo==='cancello_scorrevole'){
+      const _cs=parseFloat(p.coda_sup)||0,_ci=parseFloat(p.coda_inf)||0;
+      if(_cs>0&amp;&amp;fTop>0)barra3D(ctx,tx(-_cs),ty(0),_cs*sc,fTop*sc,RGB_TEL,2);
+      if(_ci>0&amp;&amp;fBot>0)barra3D(ctx,tx(-_ci),ty(Hmm-fBot),_ci*sc,fBot*sc,RGB_TEL,2);
+    }
+  }
+  // Montanti intermedi (campate) e correnti intermedi (fasce), col loro profilo
+  const RGB_MID=[58,120,175];
+  if(!tiD.haAnte&amp;&amp;nCL>1&amp;&amp;luce.wMid>0){
+    const yT=fTop,yB=Hmm-(p.aperto_sotto?0:fBot);
+    for(let i=1;i<nCL;i++)barra3D(ctx,tx(luce.campX0(i)-luce.wMid),ty(yT),luce.wMid*sc,(yB-yT)*sc,RGB_MID,1);
+  }
+  if(!tiD.haAnte&amp;&amp;nCA>1&amp;&amp;luce.hMid>0){
+    (luce.correnti||[]).forEach(c=>{
+      const yc=yLuce0+luciaV-c.q;
+      for(let s=0;s<nSeg;s++)barra3D(ctx,tx(segX0(s)),ty(yc-c.sp/2),segW*sc,Math.max(c.sp*sc,2),RGB_MID,1);
+    });
+  }
+
+  // ── Ante: ogni anta ha il suo telaio (4 lati) ──
+  if(tiD.haAnte&amp;&amp;p.ante.length>0){
+    const antaWlorda=A_, yA=antaY_;
+    // Telaio aperto sotto: l'anta non scende oltre il fondo del telaio
+    const hA = AH_;
+    const RGB_ANTA=[120,150,210];
+    const _nAd=p.ante.length;
+    p.ante.forEach((a,ai)=>{
+      const xA=antaX_(ai);
+      const mTop=a.top&amp;&amp;a.top.mat,mBot=a.bot&amp;&amp;a.bot.mat,mSx=a.sx&amp;&amp;a.sx.mat,mDx=a.dx&amp;&amp;a.dx.mat;
+      const pT=mTop?eLarg(mTop):wSx,pB=mBot?eLarg(mBot):wSx,pS=mSx?eLarg(mSx):wSx,pD=mDx?eLarg(mDx):wSx;
+      const _adD=arcoDatiAnta(p,luce,ai,_nAd);
+      if(_adD){
+        const N=26;
+        const gArc=ctx.createLinearGradient(0,ty(yA-Math.max(_adD.dhSx,_adD.dhDx,0)),0,ty(yA+pT));
+        gArc.addColorStop(0,_cvShade(RGB_ANTA,1.38));gArc.addColorStop(1,_cvShade(RGB_ANTA,0.62));
+        ctx.fillStyle=cvTec()?CV_TEC.profilo:gArc;
+        ctx.beginPath();
+        for(let s=0;s<=N;s++){const x=xA+antaWlorda*s/N,yE=yA-_adD.elDh(x-xA);if(s===0)ctx.moveTo(tx(x),ty(yE));else ctx.lineTo(tx(x),ty(yE));}
+        for(let s=N;s>=0;s--){const x=xA+antaWlorda*s/N;ctx.lineTo(tx(x),ty(yA-_adD.elDh(x-xA)+pT));}
+        ctx.closePath();ctx.fill();
+        ctx.strokeStyle=&quot;rgba(4,8,16,.5)&quot;;ctx.lineWidth=1;ctx.stroke();
+        barra3D(ctx,tx(xA),ty(yA-_adD.dhSx),pS*sc,Math.max(0,hA+_adD.dhSx)*sc,RGB_ANTA,1.5);
+        barra3D(ctx,tx(xA+antaWlorda-pD),ty(yA-_adD.dhDx),pD*sc,Math.max(0,hA+_adD.dhDx)*sc,RGB_ANTA,1.5);
+        if(pB>0)barra3D(ctx,tx(xA),ty(yA+hA-pB),antaWlorda*sc,pB*sc,RGB_ANTA,1.5);
+        giunti45(ctx,tx(xA),ty(yA-_adD.dhSx),antaWlorda*sc,(hA+_adD.dhSx)*sc,0,pB*sc,pS*sc,pD*sc);
+      } else {
+        barra3D(ctx,tx(xA),ty(yA),antaWlorda*sc,pT*sc,RGB_ANTA,1.5);
+        barra3D(ctx,tx(xA),ty(yA+hA-pB),antaWlorda*sc,pB*sc,RGB_ANTA,1.5);
+        barra3D(ctx,tx(xA),ty(yA),pS*sc,hA*sc,RGB_ANTA,1.5);
+        barra3D(ctx,tx(xA+antaWlorda-pD),ty(yA),pD*sc,hA*sc,RGB_ANTA,1.5);
+        giunti45(ctx,tx(xA),ty(yA),antaWlorda*sc,hA*sc,pT*sc,pB*sc,pS*sc,pD*sc);
+      }
+    });
+  }
+
+  // Cerniere sul lato esterno delle ante (tavola), come nei modelli del catalogo
+  if(cvTec()&amp;&amp;tiD.haAnte&amp;&amp;p.ante.length>0){
+    const nA=p.ante.length,hAc=AH_;
+    for(let ai=0;ai<nA;ai++){
+      const lato=(ai===0)?'sx':(ai===nA-1?'dx':null);if(!lato)continue;
+      const xh=lato==='sx'?tx(antaX_(ai))-4:tx(antaX_(ai)+A_);
+      [0.1,0.84].forEach(fr=>cerniera(ctx,xh,ty(antaY_+hAc*fr),4,Math.max(10,hAc*sc*0.06)));
+    }
+  }
+
   // ── Quote (cm) ──
   ctx.strokeStyle=CVC('quota');ctx.lineWidth=1.2;ctx.fillStyle=CVC('quota');
   ctx.font=&quot;700 14px Arial&quot;;ctx.textAlign=&quot;center&quot;;
@@ -5963,6 +6411,7 @@ function _disegnaSu(p,cvs,leg){
     addL(&quot;#64a8ff&quot;,&quot;Telaio: &quot;+(tMat?esc(tMat.profilo):&quot;—&quot;));
     legN.forEach(x=>addL(EL_C[x.gi%EL_C.length],`El.${x.gi+1}: ${esc(x.el.mat.profilo)} ${x.isV?&quot;↕&quot;:&quot;↔&quot;} ×${x.n}`));
     (p.traverse||[]).forEach((tr,i)=>{if(tr.mat){const d=(tr.dir||&quot;oriz&quot;)===&quot;oriz&quot;?&quot;↔&quot;:&quot;↕&quot;;addL(&quot;#55d39b&quot;,`Trav.${i+1}: ${d} ${esc(tr.mat.profilo)} a ${cmv(tr.quota_mm)} cm`);}});
+    if(_vd)addL(&quot;#6fb6e0&quot;,`Vetro ${esc(_vd.sigla)} · ${_vd.nLastre} lastr${_vd.nLastre===1?&quot;a&quot;:&quot;e&quot;}`);
   }
 }
 
@@ -6558,6 +7007,14 @@ function applicaMat(mat){
     // corr-{pid} — tubo corrimano a muro
     const pidC=parseInt(parts[1]);
     pezzi=pezzi.map(p=>p.id!==pidC?p:{...p,corrMat:mat});
+  } else if(mTarget.startsWith(&quot;str-&quot;)){
+    // str-{pid}-{ruolo} — soppalco / pensilina (pilastri, travi, travetti, parapetto, mensole…)
+    const pidS=parseInt(parts[1]),ruolo=parts[2];
+    pezzi=pezzi.map(p=>p.id!==pidS?p:{...p,strMats:{...(p.strMats||{}),[ruolo]:mat}});
+  } else if(mTarget.startsWith(&quot;vfv-&quot;)){
+    // vfv-{pid} — fermavetro del vetro della porta
+    const pidV=parseInt(parts[1]);
+    pezzi=pezzi.map(p=>p.id!==pidV?p:{...p,vetro_fermavetro:mat});
   } else if(mTarget===&quot;mag-add&quot;){
     // Magazzino: materiale REALE dal listino per l'inserimento manuale spezzoni
     window._magMat=mat||null;
@@ -6660,7 +7117,28 @@ function inviaPREV(snapId){
       return{nome:p.nome||'Corrimano',tipo:'altro',larg:cc.L,alt:'',nBattenti:1,nPezziUguali:nPzU,
         desc_tecnica:descC,materiali:righeC,img:pezzoImgDataURL(p),prezzo:prezzoDi(i),peso_kg:pesoDi(i),zinc:!!p.zinc_caldo,vern:!!p.vern_polvere};
     }
+    if(tipoStruttura(tiInfo)){
+      const righeT=visti.map(t=>({ruolo:'',testo:t}));
+      let descT;
+      if(tiInfo.isSoppalco){
+        const s=soppCalc(p);
+        if(s.piano!=='nessuno')righeT.push({ruolo:'',testo:'piano di calpestio in '+nomePianoSopp(p)+' ('+s.area.toFixed(2)+' m²)'});
+        descT='Soppalco '+cmv(s.L)+'×'+cmv(s.P)+' cm, piano a '+cmv(s.H)+' cm da terra, '+s.nPil+' pilastri'+(s.muro?', lato posteriore appoggiato al muro':'')
+          +(s.tratti.length?', parapetto h '+cmv(s.hPar)+' cm ('+s.tratti.map(t=>t.lato).join(', ')+')':'');
+      } else {
+        const c=penCalc(p),nc=(PEN_COPERTURE.find(x=>x[0]===c.cop)||[&quot;&quot;,c.cop])[1].toLowerCase();
+        if(c.cop!=='nessuna')righeT.push({ruolo:'',testo:'copertura in '+nc+' ('+c.area.toFixed(2)+' m²)'});
+        descT='Pensilina a sbalzo '+cmv(c.L)+' cm, sporgenza '+cmv(c.S)+' cm, '+c.nMens+' mensole a muro'+(c.saetta?' con saette':'')+(c.pend>0?', pendenza '+fmtN(c.pend)+'%':'');
+      }
+      if(p.zinc_caldo)descT+=', zincato a caldo';
+      if(p.vern_polvere)descT+=', verniciato a polvere';
+      if(nPzU>1)descT+=' (×'+nPzU+' pezzi uguali)';
+      return{nome:p.nome||tiInfo.l.replace(/^[^ ]+ /,&quot;&quot;),tipo:tiInfo.isSoppalco?'soppalco':'pensilina',larg:p.larg,alt:p.alt,nBattenti:1,nPezziUguali:nPzU,
+        desc_tecnica:descT,materiali:righeT,img:pezzoImgDataURL(p),prezzo:prezzoDi(i),peso_kg:pesoDi(i),zinc:!!p.zinc_caldo,vern:!!p.vern_polvere};
+    }
     const righe=visti.map(t=>({ruolo:&quot;&quot;,testo:t}));
+    const _vd=(p.vetro&amp;&amp;ammetteVetro(p))?calcVetro(p):null;
+    if(_vd)righe.push({ruolo:'',testo:_vd.comp.desc+' — '+_vd.nLastre+' lastr'+(_vd.nLastre===1?'a':'e')+' ('+_vd.areaTot.toFixed(2)+' m²)'});
     let _ld=null;
     if(p.lamiera){
       _ld=calcLamiera(p);
@@ -6676,6 +7154,7 @@ function inviaPREV(snapId){
     if(tiInfo.haAnte)desc+=`, ${nB} ${nB>1?(tiInfo.nomeAnte===&quot;battente&quot;?&quot;battenti&quot;:&quot;ante&quot;):(tiInfo.nomeAnte||&quot;anta&quot;)}`;
     if(arcoAttivo(p))desc+=`, ad arco (${p.arco.verso==='giu'?'ribassato':'colmo'} ${cmv(Math.abs(parseFloat(p.arco.freccia)||0))} cm)`;
     if(_ld)desc+=_ld.modo==='sotto'?', con pannellatura in lamiera (parte bassa)':(_ld.modo==='sopra'?', con pannellatura in lamiera (parte alta)':', con pannellatura in lamiera');
+    if(_vd)desc+=', con vetro '+_vd.sigla+(_vd.modo==='sopra'?' (parte alta)':(_vd.modo==='sotto'?' (parte bassa)':''));
     if(p.zinc_caldo)desc+=', zincato a caldo';
     if(p.vern_polvere)desc+=', verniciato a polvere';
     if(nPzU>1)desc+=` (×${nPzU} pezzi uguali)`;
@@ -6808,7 +7287,7 @@ const DECORO_MIN_MM=150;
 function decoriPezzo(p){
   const out={collari:0,riccioli:0};
   const ti=TIPI.find(t=>t.k===p.tipo)||TIPI[0];
-  if(ti.isScala||ti.isCorrimano||ti.isAlluminio||ti.isGazebo)return out;
+  if(ti.isScala||ti.isCorrimano||ti.isAlluminio||ti.isGazebo||tipoStruttura(ti))return out;
   const fp=faccePezzi(p);if(fp){fp.forEach(pf=>{const d=decoriPezzo(pf);out.collari+=d.collari;out.riccioli+=d.riccioli;});return out;}
   const luce=calcLuce(p),nPz=Math.max(1,parseInt(p.nPezziUguali)||1);
   const nSeg=ti.haAnte?Math.max(1,(p.ante||[]).length):luce.nCL;
@@ -6843,6 +7322,30 @@ function walkPezzoMateriali(p,addG){
     addG(mat,mm/1000*qty,mm,qty,nome+&quot; · &quot;+lbl);
   };
   if(ti.isCorrimano){const c=corrCalc(p);A(p.corrMat,c.L*1000,c.nPz,&quot;corrimano&quot;);return;}
+  if(ti.isSoppalco){
+    const s=soppCalc(p),M=p.strMats||{};
+    A(M.pilastri,s.hPil,s.nPil*nPz,&quot;pilastro&quot;);
+    A(M.travi,s.campL,s.nCamp*nPz,&quot;trave principale fronte&quot;);
+    A(M.travi,s.campL,s.nCamp*nPz,s.muro?&quot;trave a muro (retro)&quot;:&quot;trave principale retro&quot;);
+    A(M.travetti,s.P,s.nTrav*nPz,&quot;travetto&quot;);
+    if(s.tratti.length){
+      A(M.parMont,s.lMont,s.nMont*nPz,&quot;montante parapetto&quot;);
+      s.tratti.forEach(t=>{
+        A(M.parCorrimano,t.len,nPz,&quot;corrimano parapetto &quot;+t.lato);
+        if(s.nCorr>0)A(M.parCorrenti,t.len,s.nCorr*nPz,&quot;corrente parapetto &quot;+t.lato);
+      });
+    }
+    return;
+  }
+  if(ti.isPensilina){
+    const c=penCalc(p),M=p.strMats||{};
+    A(M.mensole,c.lMens,c.nMens*nPz,&quot;mensola&quot;);
+    if(c.saetta)A(M.saette,c.lSaet,c.nMens*nPz,&quot;saetta 45°&quot;);
+    A(M.frontale,c.L,nPz,&quot;trave frontale&quot;);
+    if(c.traveMuro)A(M.muro,c.L,nPz,&quot;trave a muro&quot;);
+    if(c.nArc>0)A(M.arcarecci,c.L,c.nArc*nPz,&quot;arcareccio&quot;);
+    return;
+  }
   if(ti.isScala){
     const sc=scalaCalc(p),sm=p.scalaMats||{};
     const rL=(parseFloat(p.scalaRegginoL)||0.10)*1000;
@@ -6942,7 +7445,7 @@ function walkPezzoMateriali(p,addG){
         cells.forEach(c=>{
           const hC=c.by1-c.by0;if(!(hC>0)||!c.pos.length)return;
           if(ad&amp;&amp;c.by1>=luciaV-0.5){ // la cella in cima segue l'arco: ogni pezzo ha la sua misura
-            c.pos.forEach(x=>A(el.mat,Math.max(0,hC+ad.elDh((luce.wSx||0)+x)),nPz,lbl+&quot; &quot;+nomeAnte(p.tipo)+&quot; &quot;+(s+1)+&quot; (arco)&quot;));
+            c.pos.forEach(x=>A(el.mat,Math.max(0,hC+ad.elDh((luce.aSx||0)+x)),nPz,lbl+&quot; &quot;+nomeAnte(p.tipo)+&quot; &quot;+(s+1)+&quot; (arco)&quot;));
           } else A(el.mat,hC,c.pos.length*nPz,lbl);
         });
       }
@@ -6957,6 +7460,11 @@ function walkPezzoMateriali(p,addG){
     if((tr.dir||&quot;oriz&quot;)===&quot;oriz&quot;)A(tr.mat,segLuce,nSeg*nPz,&quot;traversa ↔ &quot;+(i+1)+&quot; a &quot;+cmv(tr.quota_mm)+&quot; cm&quot;);
     else{const ex=travExtent(p,tr,luciaV);A(tr.mat,ex.y1-ex.y0,nSeg*nPz,&quot;traversa ↕ &quot;+(i+1)+&quot; a &quot;+cmv(tr.quota_mm)+&quot; cm&quot;);}
   });
+  // ── Fermavetro: 4 pezzi per lastra (per ogni lato fermato), alla misura della lastra ──
+  if(p.vetro&amp;&amp;p.vetro_fermavetro&amp;&amp;ammetteVetro(p)){
+    const vd=calcVetro(p);
+    if(vd){const q=vd.moltSeg*nPz*vd.latiFV;vd.lastre.forEach(l=>{A(p.vetro_fermavetro,l.w,2*q,&quot;fermavetro orizzontale&quot;);A(p.vetro_fermavetro,l.h,2*q,&quot;fermavetro verticale&quot;);});}
+  }
 }
 
 // ═══════ COSTI: un solo calcolo per card, riepilogo, stampa, archivio e Preventivi ═══════
@@ -7016,15 +7524,23 @@ function costiCantiere(lista,opz){
     const ferr=costoFerrPezzo(p);
     let aluP=0;
     if(p.tipo==='alluminio'&amp;&amp;alu.mlTot>0)aluP=aluEuro*(aluCalcPezzo(p).mlTot/alu.mlTot);
-    return {mat,lam,lamKg,kg,sup,zinc,vern,ferr,alu:aluP,tot:mat+lam+zinc+vern+ferr+aluP};
+    const ex=extraPezzo(p); // vetri, piano soppalco, copertura
+    return {mat,lam,lamKg,kg,sup,zinc,vern,ferr,alu:aluP,extra:ex.costo,extraKgAcciaio:ex.kgAcciaio,extraVoci:ex.voci,
+      tot:mat+lam+zinc+vern+ferr+aluP+ex.costo};
   });
   const somma=f=>perPezzo.reduce((a,x)=>a+x[f],0);
+  const extraK={};
+  perPezzo.forEach(x=>x.extraVoci.forEach(v=>{
+    const e=extraK[v.k]||(extraK[v.k]={costo:0,mq:0,kg:0,senzaPrezzo:false});
+    e.costo+=v.costo||0;e.mq+=v.mq||0;e.kg+=v.kg||0;if(v.senzaPrezzo)e.senzaPrezzo=true;
+  }));
   const tot={
     materiale:righe.reduce((a,r)=>a+r.euro,0),barre:righe.reduce((a,r)=>a+r.nBarre,0),
     ml:righe.reduce((a,r)=>a+r.ml,0),kgProfili:righe.reduce((a,r)=>a+r.kg,0),
-    lamiera:somma('lam'),lamieraKg:somma('lamKg'),zinc:somma('zinc'),vern:somma('vern'),ferr:somma('ferr'),alu:aluEuro
+    lamiera:somma('lam'),lamieraKg:somma('lamKg'),zinc:somma('zinc'),vern:somma('vern'),ferr:somma('ferr'),alu:aluEuro,
+    extra:somma('extra'),extraKgAcciaio:somma('extraKgAcciaio'),extraK
   };
-  tot.totale=tot.materiale+tot.lamiera+tot.zinc+tot.vern+tot.ferr+tot.alu;
+  tot.totale=tot.materiale+tot.lamiera+tot.zinc+tot.vern+tot.ferr+tot.alu+tot.extra;
   return {righe,piani,cuts,perPezzo,alu,aluEuro,tot,senzaPrezzo:righe.filter(r=>r.senzaPrezzo)};
 }
 
@@ -7065,7 +7581,8 @@ function renderRiepilogo(){
     aluSfrido=tt>0?sf/tt*100:null;
   }
   const aluTotEuro=aluTotB*(ALU_PZ_SC||0)+aluTotFP*(ALU_PZ_BP||0)+aluTotFG*(ALU_PZ_BG||0);
-  const totaleCosti=T.materiale+T.lamiera+T.zinc+T.vern+T.ferr+aluTotEuro;
+  const totaleCosti=T.materiale+T.lamiera+T.zinc+T.vern+T.ferr+aluTotEuro+(T.extra||0);
+  const vetriOrd=vetriDaOrdinare(pezzi);
   // costo di ogni manufatto: la quota alluminio segue il piano col magazzino
   const quotaAlu=T.alu>0?aluTotEuro/T.alu:1;
   const costoPz=C.perPezzo.map(x=>x.tot-x.alu+x.alu*quotaAlu);
@@ -7117,17 +7634,28 @@ function renderRiepilogo(){
       ${C.senzaPrezzo.length?`<div style=&quot;margin-top:8px;background:#1a0808;border:1px solid #f06b6b;border-radius:8px;padding:8px 10px;font-size:11px;color:#f06b6b&quot;>⚠️ ${C.senzaPrezzo.length} profil${C.senzaPrezzo.length===1?&quot;o&quot;:&quot;i&quot;} senza prezzo (${C.senzaPrezzo.map(r=>esc(r.mat.profilo)).join(&quot;, &quot;)}): <b>non inclus${C.senzaPrezzo.length===1?&quot;o&quot;:&quot;i&quot;} nel totale</b>. Imposta &quot;Ferro senza listino €/kg&quot; in 🔧 Listino → I miei prezzi.</div>`:&quot;&quot;}
     </div>`:&quot;&quot;}
 
+    ${vetriOrd.length?`<div class=&quot;sec&quot; style=&quot;border-color:#6fb6e0&quot;>
+      <div class=&quot;st&quot; style=&quot;color:#6fb6e0&quot;>🪟 Vetri da ordinare</div>
+      <p style=&quot;font-size:11px;color:#91a2bb;margin-bottom:9px&quot;>Misure delle lastre (già tolto il gioco per lato) da passare al vetraio.</p>
+      <div style=&quot;overflow-x:auto&quot;><table class=&quot;rtable&quot; style=&quot;min-width:420px&quot;>
+        <thead><tr><th>Manufatto</th><th>Vetro</th><th style=&quot;text-align:center&quot;>Q.tà</th><th style=&quot;text-align:right&quot;>Misura (cm)</th><th style=&quot;text-align:right&quot;>m²</th></tr></thead>
+        <tbody>${vetriOrd.map(v=>`<tr><td>${esc(v.nome)}</td><td><b>${esc(v.sigla)}</b><br><span style=&quot;font-size:10px;color:#91a2bb&quot;>${esc(v.desc)}</span></td>
+          <td style=&quot;text-align:center;font-weight:700;color:#6fb6e0;font-size:15px&quot;>${v.q}</td><td style=&quot;text-align:right;font-weight:700&quot;>${v.w_cm} × ${v.h_cm}</td><td style=&quot;text-align:right;color:#8a96b0&quot;>${v.mq.toFixed(2)}</td></tr>`).join(&quot;&quot;)}</tbody>
+      </table></div>
+    </div>`:&quot;&quot;}
     <div class=&quot;tbox&quot;>
       <div style=&quot;font-size:11px;color:#c08020;font-weight:700;text-transform:uppercase;margin-bottom:4px&quot;>Costi del cantiere</div>
       ${righe.length?riga(&quot;Profili in ferro&quot;,`${T.barre} barre · ${fmtN(T.ml)} ml · ${T.kgProfili.toFixed(0)} kg${sfridoMedio!=null?&quot; · sfrido &quot;+sfridoMedio.toFixed(1)+&quot;%&quot;:&quot;&quot;}`,T.materiale,&quot;#f08a3c&quot;):&quot;&quot;}
       ${aluTotEuro>0?riga(&quot;Alluminio scuretto&quot;,&quot;barre + fogli bachelite (vedi sotto)&quot;,aluTotEuro,&quot;#64a8ff&quot;):&quot;&quot;}
       ${T.lamiera>0?riga(&quot;🪨 Lamiera&quot;,`${T.lamieraKg.toFixed(1)} kg`+(lamSug?` · <span style=&quot;color:#55d39b&quot;>♻ ${lamSug.n} pannell${lamSug.n>1?&quot;i&quot;:&quot;o&quot;} dal magazzino${lamSug.risparmio>0?&quot; (risparmio € &quot;+fmtP(lamSug.risparmio)+&quot;)&quot;:&quot;&quot;}</span>`:&quot;&quot;),T.lamiera,&quot;#c95f25&quot;):&quot;&quot;}
+      ${Object.keys(T.extraK||{}).map(k=>{const e=T.extraK[k],n=EXTRA_NOMI[k]||[k,&quot;#8a96b0&quot;];
+        return riga(n[0],e.mq.toFixed(2)+&quot; m²&quot;+(e.kg>0?&quot; · &quot;+e.kg.toFixed(0)+&quot; kg&quot;:&quot;&quot;)+(e.senzaPrezzo?' · <span style=&quot;color:#f06b6b&quot;>senza prezzo: scrivilo nel manufatto</span>':&quot;&quot;),e.costo,n[1]);}).join(&quot;&quot;)}
       ${T.zinc>0?riga(&quot;⚙️ Zincatura a caldo&quot;,&quot;peso × il tuo €/kg (minimo € &quot;+fmtP(numOk(UPG.zincMin,0))+&quot; per manufatto)&quot;,T.zinc,&quot;#90c060&quot;):&quot;&quot;}
       ${T.vern>0?riga(&quot;🎨 Verniciatura a polvere&quot;,&quot;superficie × il tuo €/m²&quot;,T.vern,&quot;#b090f0&quot;):&quot;&quot;}
       ${T.ferr>0?riga(&quot;🔩 Ferramenta e accessori&quot;,fbRighe.some(x=>x.stock>0)?fbRighe.map(x=>{const daC=Math.max(0,x.need-x.stock);return esc(x.nome)+&quot;: &quot;+x.need+(x.stock>0?&quot; (&quot;+Math.min(x.stock,x.need)+&quot; in mag.)&quot;:&quot;&quot;)+(daC>0?&quot;&quot;:&quot; ✔&quot;);}).join(&quot; · &quot;):&quot;voci spuntate × prezzi del tuo catalogo&quot;,T.ferr,&quot;#f08a3c&quot;):&quot;&quot;}
       <div style=&quot;display:flex;justify-content:space-between;align-items:center;margin-top:10px;background:#1a1205;border:2px solid #f08a3c;border-radius:8px;padding:10px 12px&quot;>
         <div><div style=&quot;font-size:12px;font-weight:700;color:#f08a3c;text-transform:uppercase&quot;>Totale costi</div>
-          <div style=&quot;font-size:10px;color:#91a2bb;margin-top:2px&quot;>IVA esclusa · peso totale ${(T.kgProfili+T.lamieraKg).toFixed(0)} kg</div></div>
+          <div style=&quot;font-size:10px;color:#91a2bb;margin-top:2px&quot;>IVA esclusa · peso totale ${(T.kgProfili+T.lamieraKg+(T.extraKgAcciaio||0)).toFixed(0)} kg</div></div>
         <div style=&quot;font-size:30px;font-weight:700;color:#f08a3c&quot;>€ ${fmtP(totaleCosti)}</div>
       </div>
       <div style=&quot;font-size:9px;color:#91a2bb;margin-top:8px;line-height:1.5&quot;>Condizioni Sideralba: min. 2 pacchi · +20€/ton pacco singolo · trasporto escluso</div>
@@ -7509,9 +8037,10 @@ function stampaPDF(id){
   const C=costiCantiere(lista,{magazzino:_isCorrente});
   const T=C.tot;
   const aluE=C.aluEuro||0;
-  const totale=T.materiale+T.lamiera+T.zinc+T.vern+T.ferr+aluE;
+  const totale=T.materiale+T.lamiera+T.zinc+T.vern+T.ferr+aluE+(T.extra||0);
   const fL={dec:&quot;Decapato&quot;,nero:&quot;Nero&quot;,zinc:&quot;Zincato&quot;};
   const riga=(lbl,val)=>`<div class=&quot;tot-row&quot;><span>${lbl}</span><span class=&quot;tot&quot;>€ ${fmtP(val)}</span></div>`;
+  const vetriOrd=vetriDaOrdinare(lista);
 
   const w=apriFinestraStampa();
   w.document.write(`<!DOCTYPE html><html><head><meta charset=&quot;UTF-8&quot;><title>Materiali — ${esc(snap.nome)}</title>
@@ -7561,12 +8090,15 @@ function stampaPDF(id){
     </tbody>
   </table>`:&quot;&quot;}
   ${C.alu&amp;&amp;C.alu.barre>0?`<h2>Alluminio scuretto</h2><p style=&quot;font-size:13px&quot;>${C.alu.barre} barre da 6,50 m${C.alu.fogli.p?&quot; · &quot;+C.alu.fogli.p+&quot; fogli bachelite 280×130&quot;:&quot;&quot;}${C.alu.fogli.g?&quot; · &quot;+C.alu.fogli.g+&quot; fogli bachelite 320×160&quot;:&quot;&quot;}</p>`:&quot;&quot;}
+  ${vetriOrd.length?`<h2>Vetri da ordinare</h2><table><thead><tr><th>Manufatto</th><th>Vetro</th><th style=&quot;text-align:center&quot;>Q.tà</th><th style=&quot;text-align:right&quot;>Misura (cm)</th><th style=&quot;text-align:right&quot;>m²</th></tr></thead>
+    <tbody>${vetriOrd.map(v=>`<tr><td>${esc(v.nome)}</td><td><b>${esc(v.sigla)}</b><br><span style=&quot;font-size:10px;color:#666&quot;>${esc(v.desc)}</span></td><td style=&quot;text-align:center;font-weight:700&quot;>${v.q}</td><td style=&quot;text-align:right;font-weight:700&quot;>${v.w_cm} × ${v.h_cm}</td><td style=&quot;text-align:right&quot;>${v.mq.toFixed(2)}</td></tr>`).join(&quot;&quot;)}</tbody></table>`:&quot;&quot;}
 
   <div class=&quot;totbox&quot;>
     <h3>Totale costi</h3>
     ${C.righe.length?`<div class=&quot;tot-row&quot;><span>Profili: ${T.barre} barre · ${fmtN(T.ml)} ml · ${T.kgProfili.toFixed(0)} kg</span><span class=&quot;tot&quot;>€ ${fmtP(T.materiale)}</span></div>`:&quot;&quot;}
     ${aluE>0?riga(&quot;Alluminio scuretto&quot;,aluE):&quot;&quot;}
     ${T.lamiera>0?riga(&quot;Lamiera (&quot;+T.lamieraKg.toFixed(1)+&quot; kg)&quot;,T.lamiera):&quot;&quot;}
+    ${Object.keys(T.extraK||{}).map(k=>{const e=T.extraK[k];return riga((EXTRA_NOMI[k]||[k])[0].replace(/^\S+\s/,&quot;&quot;)+&quot; (&quot;+e.mq.toFixed(2)+&quot; m²)&quot;,e.costo);}).join(&quot;&quot;)}
     ${T.zinc>0?riga(&quot;Zincatura a caldo&quot;,T.zinc):&quot;&quot;}
     ${T.vern>0?riga(&quot;Verniciatura a polvere&quot;,T.vern):&quot;&quot;}
     ${T.ferr>0?riga(&quot;Ferramenta e accessori&quot;,T.ferr):&quot;&quot;}
@@ -7712,9 +8244,10 @@ function stampaDistintaTaglio(){
 // Costi di UN manufatto (card e confronto varianti): stessa logica del riepilogo, barre dal suo piano di taglio.
 function calcCostoPezzo(p){
   const C=costiCantiere([p]);
-  const x=C.perPezzo[0]||{mat:0,lam:0,zinc:0,vern:0,ferr:0,alu:0,kg:0,tot:0};
+  const x=C.perPezzo[0]||{mat:0,lam:0,zinc:0,vern:0,ferr:0,alu:0,kg:0,extra:0,extraVoci:[],tot:0};
   const sfrMm=Object.values(C.piani).reduce((a,pp)=>a+(pp.sfridoMm||0),0);
-  return {ml:C.tot.ml,eu:x.mat,barre:C.tot.barre+(C.alu?C.alu.barre:0),sfrMm,kg:x.kg,lam:x.lam,zinc:x.zinc,vern:x.vern,ferr:x.ferr,alu:x.alu,tot:x.tot,C};
+  return {ml:C.tot.ml,eu:x.mat,barre:C.tot.barre+(C.alu?C.alu.barre:0),sfrMm,kg:x.kg,lam:x.lam,zinc:x.zinc,vern:x.vern,ferr:x.ferr,alu:x.alu,
+    extra:x.extra||0,extraVoci:x.extraVoci||[],tot:x.tot,C};
 }
 function apriConfronto(){
   if(pezzi.length<2){alert(&quot;Servono almeno 2 manufatti da confrontare. Suggerimento: usa ⧉ sulla card per duplicare una variante.&quot;);return;}
@@ -7875,7 +8408,7 @@ function applicaModelloCatalogo(k){
   const m=MODELLI_CAT.find(x=>x.k===k);if(!m)return;
   const p=pezzi.find(x=>x.aperto)||pezzi[0];if(!p)return;
   const ti=TIPI.find(t=>t.k===p.tipo)||TIPI[0];
-  if(ti.isScala||ti.isCorrimano||ti.isAlluminio||ti.isGazebo){alert(&quot;I riempimenti si applicano a cancelli, porte, grate, ringhiere e recinzioni.&quot;);return;}
+  if(ti.isScala||ti.isCorrimano||ti.isAlluminio||ti.isGazebo||tipoStruttura(ti)){alert(&quot;I riempimenti si applicano a cancelli, porte, grate, ringhiere e recinzioni.&quot;);return;}
   const matEl=((p.elemList||[]).find(e=>e.mat)||{}).mat||null;
   const matTr=((p.traverse||[]).find(t=>t.mat)||{}).mat||matEl;
   trattaModelloCat(p,m,matEl,matTr);
@@ -8884,7 +9417,7 @@ function calcLamiera(p){
   const luceSeg=luce.luciaHAnta;
   const luciaV_mm=luce.luciaV;
   const moltSeg=luce.haAnte?(luce.nAnte||1):(luce.nCL||1);
-  const wSx=luce.wSx;
+  const wSx=luce.aSx; // la luce parte dalla faccia d'appoggio
   if(!(luceSeg>0)||!(luciaV_mm>0)) return null;
   const sp=parseFloat(p.lamiera_sp)||2; // mm
   const nPz=parseInt(p.nPezziUguali)||1;
@@ -8965,6 +9498,226 @@ function calcLamiera(p){
     areaTot:areaTot,pesoTot:pesoTot,
     prezzoKg:prezzoKg,costo:costo
   };
+}
+
+// ═══════ VETRO NELLE PORTE — tamponamento vetrato, stessa logica della lamiera ═══════
+// Le lastre si ricavano dalla luce di ogni anta divisa da traverse e correnti (bande × colonne),
+// meno il gioco perimetrale per lato (con i profili a doppia battuta: l'appoggio della battuta interna,
+// come la lamiera; con i tubolari: 3 mm per lato, modificabile).
+// Composizioni e classi dalle schede dei vetri di sicurezza: UNI EN 12600 (urto: 1B1, 2B2, 1C1),
+// UNI EN 356 (antieffrazione P1A…P8B), UNI EN 1063 (antiproiettile BR1…BR7, &quot;S&quot; = con schegge).
+// Nelle porte la UNI 7697 chiede vetri di sicurezza: temperato o stratificato.
+// Peso: vetro 2,5 kg/m² per mm (densità 2500 kg/m³) + PVB 1,07 kg/m² per mm.
+const VETRO_KG_MM=2.5,PVB_KG_MM=1.07;
+const VETRO_GIOCO_MM=3;
+const VETRO_CANALINE=[6,8,9,10,12,14,15,16,18,20,22,24];
+const VETRI=[
+  {k:&quot;f4&quot;,t:&quot;float&quot;,g:&quot;Float (NON di sicurezza)&quot;,sig:&quot;4&quot;,l:&quot;Float 4 mm&quot;,v:[4],sic:false,cl:&quot;—&quot;},
+  {k:&quot;f5&quot;,t:&quot;float&quot;,g:&quot;Float (NON di sicurezza)&quot;,sig:&quot;5&quot;,l:&quot;Float 5 mm&quot;,v:[5],sic:false,cl:&quot;—&quot;},
+  {k:&quot;f6&quot;,t:&quot;float&quot;,g:&quot;Float (NON di sicurezza)&quot;,sig:&quot;6&quot;,l:&quot;Float 6 mm&quot;,v:[6],sic:false,cl:&quot;—&quot;},
+  {k:&quot;f8&quot;,t:&quot;float&quot;,g:&quot;Float (NON di sicurezza)&quot;,sig:&quot;8&quot;,l:&quot;Float 8 mm&quot;,v:[8],sic:false,cl:&quot;—&quot;},
+  {k:&quot;f10&quot;,t:&quot;float&quot;,g:&quot;Float (NON di sicurezza)&quot;,sig:&quot;10&quot;,l:&quot;Float 10 mm&quot;,v:[10],sic:false,cl:&quot;—&quot;},
+  {k:&quot;t4&quot;,t:&quot;temperato&quot;,g:&quot;Temperato di sicurezza&quot;,sig:&quot;4T&quot;,l:&quot;Temperato 4 mm&quot;,v:[4],sic:true,cl:&quot;1C1&quot;},
+  {k:&quot;t5&quot;,t:&quot;temperato&quot;,g:&quot;Temperato di sicurezza&quot;,sig:&quot;5T&quot;,l:&quot;Temperato 5 mm&quot;,v:[5],sic:true,cl:&quot;1C1&quot;},
+  {k:&quot;t6&quot;,t:&quot;temperato&quot;,g:&quot;Temperato di sicurezza&quot;,sig:&quot;6T&quot;,l:&quot;Temperato 6 mm&quot;,v:[6],sic:true,cl:&quot;1C1&quot;},
+  {k:&quot;t8&quot;,t:&quot;temperato&quot;,g:&quot;Temperato di sicurezza&quot;,sig:&quot;8T&quot;,l:&quot;Temperato 8 mm&quot;,v:[8],sic:true,cl:&quot;1C1&quot;},
+  {k:&quot;t10&quot;,t:&quot;temperato&quot;,g:&quot;Temperato di sicurezza&quot;,sig:&quot;10T&quot;,l:&quot;Temperato 10 mm&quot;,v:[10],sic:true,cl:&quot;1C1&quot;},
+  {k:&quot;t12&quot;,t:&quot;temperato&quot;,g:&quot;Temperato di sicurezza&quot;,sig:&quot;12T&quot;,l:&quot;Temperato 12 mm&quot;,v:[12],sic:true,cl:&quot;1C1&quot;},
+  {k:&quot;33.1&quot;,t:&quot;stratificato&quot;,g:&quot;Stratificato di sicurezza&quot;,sig:&quot;33.1&quot;,l:&quot;33.1 — 3+3, PVB 0,38&quot;,v:[3,3],pvb:0.38,sic:true,cl:&quot;2B2&quot;},
+  {k:&quot;33.2&quot;,t:&quot;stratificato&quot;,g:&quot;Stratificato di sicurezza&quot;,sig:&quot;33.2&quot;,l:&quot;33.2 — 3+3, PVB 0,76&quot;,v:[3,3],pvb:0.76,sic:true,cl:&quot;1B1 · P2A&quot;},
+  {k:&quot;44.1&quot;,t:&quot;stratificato&quot;,g:&quot;Stratificato di sicurezza&quot;,sig:&quot;44.1&quot;,l:&quot;44.1 — 4+4, PVB 0,38&quot;,v:[4,4],pvb:0.38,sic:true,cl:&quot;2B2&quot;},
+  {k:&quot;44.2&quot;,t:&quot;stratificato&quot;,g:&quot;Stratificato di sicurezza&quot;,sig:&quot;44.2&quot;,l:&quot;44.2 — 4+4, PVB 0,76&quot;,v:[4,4],pvb:0.76,sic:true,cl:&quot;1B1 · P2A&quot;},
+  {k:&quot;55.1&quot;,t:&quot;stratificato&quot;,g:&quot;Stratificato di sicurezza&quot;,sig:&quot;55.1&quot;,l:&quot;55.1 — 5+5, PVB 0,38&quot;,v:[5,5],pvb:0.38,sic:true,cl:&quot;2B2&quot;},
+  {k:&quot;55.2&quot;,t:&quot;stratificato&quot;,g:&quot;Stratificato di sicurezza&quot;,sig:&quot;55.2&quot;,l:&quot;55.2 — 5+5, PVB 0,76&quot;,v:[5,5],pvb:0.76,sic:true,cl:&quot;1B1 · P2A&quot;},
+  {k:&quot;55.4&quot;,t:&quot;stratificato&quot;,g:&quot;Stratificato di sicurezza&quot;,sig:&quot;55.4&quot;,l:&quot;55.4 — 5+5, PVB 1,52&quot;,v:[5,5],pvb:1.52,sic:true,cl:&quot;1B1 · P4A · BR1-S&quot;},
+  {k:&quot;66.1&quot;,t:&quot;stratificato&quot;,g:&quot;Stratificato di sicurezza&quot;,sig:&quot;66.1&quot;,l:&quot;66.1 — 6+6, PVB 0,38&quot;,v:[6,6],pvb:0.38,sic:true,cl:&quot;1B1&quot;},
+  {k:&quot;66.2&quot;,t:&quot;stratificato&quot;,g:&quot;Stratificato di sicurezza&quot;,sig:&quot;66.2&quot;,l:&quot;66.2 — 6+6, PVB 0,76&quot;,v:[6,6],pvb:0.76,sic:true,cl:&quot;1B1 · P2A&quot;},
+  {k:&quot;18/19&quot;,t:&quot;blindato&quot;,g:&quot;Antieffrazione / blindato&quot;,sig:&quot;18/19&quot;,l:&quot;18/19 — 5+8+5, 2 PVB 0,38&quot;,v:[5,8,5],pvb:0.76,sic:true,cl:&quot;P2A&quot;},
+  {k:&quot;18/19R&quot;,t:&quot;blindato&quot;,g:&quot;Antieffrazione / blindato&quot;,sig:&quot;18/19R&quot;,l:&quot;18/19 R — 5+8+5, 2 PVB 0,76&quot;,v:[5,8,5],pvb:1.52,sic:true,cl:&quot;P6B · BR1-S&quot;},
+  {k:&quot;19/21&quot;,t:&quot;blindato&quot;,g:&quot;Antieffrazione / blindato&quot;,sig:&quot;19/21&quot;,l:&quot;19/21 — 8+8, PVB 4,56&quot;,v:[8,8],pvb:4.56,sic:true,cl:&quot;P5A · P6B · BR2-S&quot;},
+  {k:&quot;26/27&quot;,t:&quot;blindato&quot;,g:&quot;Antieffrazione / blindato&quot;,sig:&quot;26/27&quot;,l:&quot;26/27 — 8+10+8, 2 PVB 0,38&quot;,v:[8,10,8],pvb:0.76,sic:true,cl:&quot;1B1 · P3A&quot;},
+  {k:&quot;26/27R&quot;,t:&quot;blindato&quot;,g:&quot;Antieffrazione / blindato&quot;,sig:&quot;26/27R&quot;,l:&quot;26/27 R — 8+10+8, 2 PVB 0,76&quot;,v:[8,10,8],pvb:1.52,sic:true,cl:&quot;P6B · BR2-S&quot;},
+  {k:&quot;29/31&quot;,t:&quot;blindato&quot;,g:&quot;Antieffrazione / blindato&quot;,sig:&quot;29/31&quot;,l:&quot;29/31 — 8+10+8, PVB 0,76+3,04&quot;,v:[8,10,8],pvb:3.8,sic:true,cl:&quot;P7B · BR3-S&quot;},
+  {k:&quot;su_misura&quot;,t:&quot;blindato&quot;,g:&quot;Antieffrazione / blindato&quot;,sig:&quot;blindato&quot;,l:&quot;Blindato su scheda del fornitore (BR4…BR7)&quot;,v:[],sic:true,cl:&quot;&quot;,custom:true},
+];
+const VETRO_FINITURE=[&quot;trasparente&quot;,&quot;satinato&quot;,&quot;stampato&quot;,&quot;riflettente&quot;,&quot;basso emissivo&quot;,&quot;colorato&quot;];
+function ammetteVetro(p){return !!p&amp;&amp;p.tipo==='porta';}
+// Una lastra: spessore (mm) e peso (kg/m²) dalla composizione; &quot;su misura&quot; dai dati della scheda del fornitore
+function lastraInfo(p,k){
+  const d=VETRI.find(v=>v.k===k);if(!d)return null;
+  if(d.custom){
+    const sp=Math.max(0,numOk(p.vetro_su_sp,0)),kg=Math.max(0,numOk(p.vetro_su_kg,0)),cl=String(p.vetro_su_cl||&quot;&quot;).trim();
+    return Object.assign({},d,{sp,kgMq:kg,cl:cl||&quot;classe da scheda&quot;,sig:sp>0?&quot;blindato &quot;+fmtN(sp):&quot;blindato&quot;});
+  }
+  const sv=d.v.reduce((a,x)=>a+x,0),pvb=d.pvb||0;
+  return Object.assign({},d,{sp:Math.round((sv+pvb)*100)/100,kgMq:Math.round((sv*VETRO_KG_MM+pvb*PVB_KG_MM)*100)/100});
+}
+function lastraDesc(l){
+  if(!l)return &quot;&quot;;
+  if(l.t===&quot;float&quot;)return &quot;float &quot;+l.v[0]+&quot; mm&quot;;
+  if(l.t===&quot;temperato&quot;)return &quot;temperato &quot;+l.v[0]+&quot; mm (&quot;+l.cl+&quot;)&quot;;
+  if(l.custom)return &quot;blindato &quot;+(l.sp>0?fmtN(l.sp)+&quot; mm &quot;:&quot;&quot;)+&quot;(&quot;+l.cl+&quot;)&quot;;
+  return (l.t===&quot;blindato&quot;?&quot;stratificato antieffrazione &quot;:&quot;stratificato &quot;)+l.sig+&quot; (&quot;+l.cl+&quot;)&quot;;
+}
+// Composizione scelta: lastra singola oppure vetrocamera (lastra esterna + canalina + lastra interna)
+function vetroComp(p){
+  const l1=lastraInfo(p,p.vetro_l1||&quot;33.1&quot;)||lastraInfo(p,&quot;33.1&quot;);
+  const cam=Math.max(0,parseFloat(p.vetro_camera)||0);
+  const l2=cam>0?(lastraInfo(p,p.vetro_l2||&quot;33.1&quot;)||lastraInfo(p,&quot;33.1&quot;)):null;
+  const lastre=l2?[l1,l2]:[l1];
+  const sp=Math.round((lastre.reduce((a,l)=>a+l.sp,0)+cam)*100)/100;
+  const kgMq=Math.round(lastre.reduce((a,l)=>a+l.kgMq,0)*100)/100;
+  const argon=p.vetro_gas===&quot;argon&quot;;
+  const sigla=l2?`${l1.sig}/${cam}${argon?&quot;Ar&quot;:&quot;&quot;}/${l2.sig}`:l1.sig;
+  const fin=(p.vetro_finitura&amp;&amp;p.vetro_finitura!==&quot;trasparente&quot;)?p.vetro_finitura:&quot;&quot;;
+  let desc=l2?`vetrocamera ${sigla} sp. ${fmtN(sp)} mm: esterno ${lastraDesc(l1)}, canalina ${cam} mm ${p.vetro_canalina||&quot;alluminio&quot;}${argon?&quot; con argon&quot;:&quot;&quot;}, interno ${lastraDesc(l2)}`
+    :`vetro ${lastraDesc(l1)}, sp. ${fmtN(sp)} mm`;
+  if(fin)desc+=&quot;, &quot;+fin;
+  const avvisi=[];
+  if(lastre.some(l=>!l.sic))avvisi.push(&quot;Nelle porte la UNI 7697 chiede vetri di sicurezza (temperato o stratificato): il float semplice non va bene.&quot;);
+  if(lastre.some(l=>l.custom&amp;&amp;!(l.sp>0&amp;&amp;l.kgMq>0)))avvisi.push(&quot;Vetro blindato su misura: scrivi spessore e peso al m² dalla scheda del fornitore.&quot;);
+  return {l1,l2,cam,sp,kgMq,sigla,desc,lastre,avvisi,argon,fin};
+}
+function vetroGioco(p){
+  const v=p.vetro_gioco;
+  if(v!==undefined&amp;&amp;v!==null&amp;&amp;v!==&quot;&quot;&amp;&amp;isFinite(parseFloat(v)))return Math.max(0,parseFloat(v));
+  const luce=calcLuce(p),bm=luce.sx||luce.dx||luce.top||luce.bot,app=bm?battutaAppoggio(bm):0;
+  return app>0?app:VETRO_GIOCO_MM;
+}
+// Confine vetro/altro (mm dal basso della luce) nei modi &quot;sotto&quot;/&quot;sopra&quot;: con la lamiera nell'altra parte è lo stesso confine
+function vetroConfine(p,luciaV){
+  if(p.lamiera&amp;&amp;(p.lamiera_modo==='sotto'||p.lamiera_modo==='sopra'))return lamieraConfine(p,luciaV);
+  const modo=p.vetro_modo||'tutto';
+  const hMan=(p.vetro_h_mm!==undefined&amp;&amp;p.vetro_h_mm!==null&amp;&amp;p.vetro_h_mm!=='')?parseFloat(p.vetro_h_mm):null;
+  if(hMan!==null&amp;&amp;hMan>0)return modo==='sotto'?hMan:(luciaV-hMan);
+  const tr=(p.traverse||[]).filter(t=>t.mat&amp;&amp;(t.dir||'oriz')==='oriz'&amp;&amp;t.quota_mm>0&amp;&amp;t.quota_mm<luciaV).sort((a,b)=>a.quota_mm-b.quota_mm)[0];
+  if(tr){const ts=eLarg(tr.mat)||0;return modo==='sotto'?(tr.quota_mm-ts/2):(tr.quota_mm+ts/2);}
+  return luciaV/2;
+}
+function vetroBande(p,luciaV){return bandeLuce(p,luciaV,p.vetro_modo||'tutto',()=>vetroConfine(p,luciaV));}
+function calcVetro(p){
+  if(!p||!p.vetro||!ammetteVetro(p))return null;
+  const luce=calcLuce(p);
+  const luceSeg=luce.luciaHAnta,luciaV=luce.luciaV;
+  if(!(luceSeg>0)||!(luciaV>0))return null;
+  const moltSeg=luce.haAnte?(luce.nAnte||1):(luce.nCL||1);
+  const nPz=Math.max(1,parseInt(p.nPezziUguali)||1);
+  const G=vetroGioco(p),comp=vetroComp(p);
+  const lastre=[];
+  vetroBande(p,luciaV).forEach(bv=>{
+    const h=(bv.b-bv.a)-2*G;if(!(h>0))return;
+    barColumns(p,luceSeg,luciaV,bv.a,bv.b).forEach(ch=>{
+      const w=(ch.b-ch.a)-2*G;if(w>0)lastre.push({w,h,a:bv.a,b:bv.b,ca:ch.a,cb:ch.b});
+    });
+  });
+  if(!lastre.length)return null;
+  const q=moltSeg*nPz;
+  const areaTot=lastre.reduce((a,l)=>a+l.w*l.h/1e6,0)*q;
+  const perimTot=lastre.reduce((a,l)=>a+2*(l.w+l.h)/1000,0)*q;
+  const gm={};
+  lastre.forEach(l=>{const w=Math.round(l.w)/10,h=Math.round(l.h)/10,k=w+&quot;x&quot;+h;if(!gm[k])gm[k]={w_cm:w,h_cm:h,q:0};gm[k].q+=q;});
+  const gruppi=Object.keys(gm).map(k=>gm[k]).sort((a,b)=>b.w_cm*b.h_cm-a.w_cm*a.h_cm);
+  const prezzoMq=Math.max(0,numOk(p.vetro_prezzoMq,0));
+  const avvisi=comp.avvisi.slice();
+  if(arcoAttivo(p)&amp;&amp;lastre.some(l=>l.b>=luciaV-0.5))avvisi.push(&quot;Porta ad arco: la lastra in cima va sagomata. Qui trovi il rettangolo senza l'arco; per la sagoma serve la dima del vetraio.&quot;);
+  if(p.lamiera&amp;&amp;(p.lamiera_modo||'tutto')==='tutto'&amp;&amp;(p.vetro_modo||'tutto')==='tutto')avvisi.push(&quot;Lamiera e vetro riempiono la stessa luce: scegli lamiera sotto e vetro sopra (o il contrario).&quot;);
+  const latiFV=(parseInt(p.vetro_fvLati)||0)>0?parseInt(p.vetro_fvLati):((luce.sx&amp;&amp;battutaAppoggio(luce.sx)>0)?1:2);
+  return {G,comp,sigla:comp.sigla,lastre,gruppi,moltSeg,nPz,nLastre:lastre.length*q,areaTot,perimTot,
+    pesoTot:areaTot*comp.kgMq,prezzoMq,costo:areaTot*prezzoMq,guarnizioneM:perimTot*2,latiFV,modo:p.vetro_modo||'tutto',avvisi};
+}
+
+// ═══════ SOPPALCO — pilastri, travi principali, travetti, piano di calpestio e parapetto ═══════
+// Solo quantità, pesi e costi: carichi, sezioni e ancoraggi li verifica il tecnico (calcolo strutturale).
+// Schema: travi principali lungo la larghezza (fronte e retro, a campate fra i pilastri), travetti sopra
+// le travi lungo la profondità, piano sopra i travetti. Pilastro = altezza piano − piano − travetto − trave.
+const SOPP_PIANI=[[&quot;lamiera&quot;,&quot;Lamiera&quot;],[&quot;grigliato&quot;,&quot;Grigliato&quot;],[&quot;grecata&quot;,&quot;Lamiera grecata&quot;],[&quot;legno&quot;,&quot;Pannello / legno&quot;],[&quot;nessuno&quot;,&quot;Nessun piano&quot;]];
+const SOPP_LATI=[[&quot;fronte&quot;,&quot;Fronte&quot;],[&quot;sx&quot;,&quot;Lato sx&quot;],[&quot;dx&quot;,&quot;Lato dx&quot;],[&quot;retro&quot;,&quot;Retro&quot;]];
+function soppCalc(p){
+  const L=Math.max(0,(parseFloat(p.larg)||0)*1000),P=Math.max(0,(parseFloat(p.alt)||0)*1000),H=Math.max(0,numOk(p.sopH,2.4)*1000);
+  const nPz=Math.max(1,parseInt(p.nPezziUguali)||1),M=p.strMats||{};
+  const nCamp=Math.max(1,parseInt(p.sopCampate)||1),muro=p.sopMuro==='retro';
+  const nFile=muro?1:2,nPilFila=nCamp+1,nPil=nFile*nPilFila;
+  const hTrave=M.travi?eLarg(M.travi):0,hTrav=M.travetti?eLarg(M.travetti):0;
+  const piano=p.sopPiano||'lamiera';
+  const spPiano=piano==='nessuno'?0:Math.max(0,numOk(p.sopPianoSp,5));
+  const hPil=Math.max(0,H-spPiano-hTrav-hTrave);
+  const campL=L/nCamp;
+  const inter=Math.max(100,numOk(p.sopInterasse,50)*10);
+  const nTrav=L>0?Math.ceil(L/inter-1e-6)+1:0,passoTrav=nTrav>1?L/(nTrav-1):0;
+  const par=Object.assign({fronte:true,sx:true,dx:true,retro:false},p.sopPar||{});
+  const hPar=Math.max(0,numOk(p.sopParH,100)*10),passoPar=Math.max(200,numOk(p.sopParPasso,100)*10);
+  const nCorr=Math.max(0,Math.round(numOk(p.sopParNCorr,2)));
+  const varco=par.fronte?Math.min(L,Math.max(0,numOk(p.sopVarco,0)*10)):0;
+  const tratti=[];
+  if(par.fronte&amp;&amp;L-varco>0)tratti.push({lato:'fronte',len:L-varco});
+  if(par.retro&amp;&amp;L>0)tratti.push({lato:'retro',len:L});
+  if(par.sx&amp;&amp;P>0)tratti.push({lato:'sx',len:P});
+  if(par.dx&amp;&amp;P>0)tratti.push({lato:'dx',len:P});
+  let nMont=tratti.reduce((a,t)=>a+Math.ceil(t.len/passoPar-1e-6)+1,0);
+  const fr=par.fronte&amp;&amp;L-varco>0;
+  if(fr&amp;&amp;par.sx&amp;&amp;P>0)nMont--;             // montanti d'angolo condivisi
+  if(fr&amp;&amp;par.dx&amp;&amp;P>0&amp;&amp;varco===0)nMont--;
+  if(par.retro&amp;&amp;par.sx&amp;&amp;P>0&amp;&amp;L>0)nMont--;
+  if(par.retro&amp;&amp;par.dx&amp;&amp;P>0&amp;&amp;L>0)nMont--;
+  nMont=Math.max(0,nMont);
+  const lPar=tratti.reduce((a,t)=>a+t.len,0),lMont=hPar+spPiano;
+  const area=L*P/1e6*nPz;
+  let kgMq=0,acciaio=true,costo=0,unita=&quot;€/kg&quot;,prezzo=0;
+  if(piano==='lamiera'){kgMq=LAM_DENS*spPiano;prezzo=numOk(p.sopPianoPrezzoKg,UPG.lamPrezzoKg);costo=area*kgMq*prezzo;}
+  else if(piano!=='nessuno'){kgMq=Math.max(0,numOk(p.sopPianoKgMq,0));acciaio=piano!=='legno';unita=&quot;€/m²&quot;;prezzo=Math.max(0,numOk(p.sopPianoPrezzoMq,0));costo=area*prezzo;}
+  return {L,P,H,nPz,nCamp,muro,nFile,nPilFila,nPil,hTrave,hTrav,spPiano,hPil,campL,inter,nTrav,passoTrav,
+    par,hPar,passoPar,nCorr,varco,tratti,nMont,lPar,lMont,area,piano,pianoKgMq:kgMq,pianoKg:area*kgMq,pianoAcciaio:acciaio,
+    pianoPrezzo:prezzo,pianoUnita:unita,pianoCosto:costo,nPiastre:nPil*nPz,nAppMuro:muro?nPilFila*nPz:0};
+}
+function nomePianoSopp(p){
+  const s=p.sopPiano||'lamiera',n=(SOPP_PIANI.find(x=>x[0]===s)||[&quot;&quot;,&quot;&quot;])[1].toLowerCase();
+  return s==='lamiera'?&quot;lamiera &quot;+(p.sopPianoLam||&quot;mandorlata&quot;)+&quot; sp. &quot;+fmtN(numOk(p.sopPianoSp,5))+&quot; mm&quot;:n;
+}
+
+// Nomi e colori delle voci &quot;extra&quot; nel riepilogo e nelle stampe
+const EXTRA_NOMI={vetro:[&quot;🪟 Vetri&quot;,&quot;#6fb6e0&quot;],piano:[&quot;🏗️ Piani dei soppalchi&quot;,&quot;#c0a060&quot;],copertura:[&quot;🏠 Coperture&quot;,&quot;#90c060&quot;]};
+// Tutte le lastre di vetro del cantiere, raggruppate per manufatto, composizione e misura
+function vetriDaOrdinare(lista){
+  const out=[];
+  (lista||[]).forEach(p=>{
+    if(!p.vetro||!ammetteVetro(p))return;
+    const v=calcVetro(p);if(!v)return;
+    v.gruppi.forEach(g=>out.push({nome:p.nome||&quot;&quot;,sigla:v.sigla,desc:v.comp.desc,w_cm:g.w_cm,h_cm:g.h_cm,q:g.q,mq:g.w_cm*g.h_cm/1e4*g.q}));
+  });
+  return out;
+}
+// ═══════ PENSILINA / TETTOIA A SBALZO — mensole a muro, saette, trave frontale, arcarecci, copertura ═══════
+const PEN_COPERTURE=[[&quot;policarbonato&quot;,&quot;Policarbonato&quot;],[&quot;grecata&quot;,&quot;Lamiera grecata&quot;],[&quot;pannello&quot;,&quot;Pannello coibentato&quot;],[&quot;vetro&quot;,&quot;Vetro&quot;],[&quot;nessuna&quot;,&quot;Nessuna copertura&quot;]];
+function penCalc(p){
+  const L=Math.max(0,(parseFloat(p.larg)||0)*1000),S=Math.max(0,(parseFloat(p.alt)||0)*1000);
+  const nPz=Math.max(1,parseInt(p.nPezziUguali)||1);
+  const pend=Math.max(0,numOk(p.penPend,0)),k=Math.sqrt(1+Math.pow(pend/100,2));
+  const passo=Math.max(300,numOk(p.penPasso,150)*10);
+  const nMens=L>0?Math.max(2,Math.ceil(L/passo-1e-6)+1):0,passoMens=nMens>1?L/(nMens-1):0;
+  const lMens=S*k;
+  const saetta=p.penSaetta!==false;
+  const hS=Math.min(S,Math.max(0,numOk(p.penSaettaH,60)*10)),lSaet=saetta?hS*Math.SQRT2:0;
+  const inter=Math.max(200,numOk(p.penInterasse,60)*10);
+  const nArc=S>0?Math.max(0,Math.ceil(S/inter-1e-6)-1):0;
+  const traveMuro=!!p.penTraveMuro;
+  const cop=p.penCop||'policarbonato';
+  const area=cop==='nessuna'?0:L*S*k/1e6*nPz;
+  const kgMq=Math.max(0,numOk(p.penCopKgMq,0)),prezzo=Math.max(0,numOk(p.penCopPrezzoMq,0));
+  return {L,S,nPz,pend,k,passo,nMens,passoMens,lMens,saetta,hS,lSaet,inter,nArc,traveMuro,cop,area,
+    copKgMq:kgMq,copKg:area*kgMq,copAcciaio:cop==='grecata',copPrezzo:prezzo,copCosto:area*prezzo,nPiastre:nMens*(saetta?2:1)*nPz};
+}
+function tipoStruttura(ti){return !!(ti&amp;&amp;(ti.isSoppalco||ti.isPensilina));}
+
+// Materiali che non sono profili (vetri, piano del soppalco, copertura): costo, m² e kg per manufatto.
+// kgAcciaio entra nel peso della struttura (zincatura); il vetro e i materiali non in acciaio no.
+function extraPezzo(p){
+  const out={voci:[],costo:0,kgAcciaio:0,kgAltro:0};
+  const add=v=>{out.voci.push(v);out.costo+=v.costo||0;if(v.acciaio)out.kgAcciaio+=v.kg||0;else out.kgAltro+=v.kg||0;};
+  const ti=TIPI.find(t=>t.k===p.tipo)||TIPI[0];
+  if(p.vetro&amp;&amp;ammetteVetro(p)){const v=calcVetro(p);if(v)add({k:'vetro',label:'Vetri '+v.sigla,det:v.nLastre+&quot; lastr&quot;+(v.nLastre===1?&quot;a&quot;:&quot;e&quot;)+&quot; · &quot;+v.areaTot.toFixed(2)+&quot; m²&quot;,mq:v.areaTot,kg:v.pesoTot,acciaio:false,costo:v.costo,senzaPrezzo:!(v.prezzoMq>0)});}
+  if(ti.isSoppalco){const s=soppCalc(p);if(s.piano!=='nessuno'&amp;&amp;s.area>0)add({k:'piano',label:'Piano '+nomePianoSopp(p),det:s.area.toFixed(2)+&quot; m²&quot;,mq:s.area,kg:s.pianoKg,acciaio:s.pianoAcciaio,costo:s.pianoCosto,senzaPrezzo:!(s.pianoPrezzo>0)});}
+  if(ti.isPensilina){const c=penCalc(p);if(c.area>0)add({k:'copertura',label:'Copertura '+(PEN_COPERTURE.find(x=>x[0]===c.cop)||[&quot;&quot;,c.cop])[1].toLowerCase(),det:c.area.toFixed(2)+&quot; m²&quot;,mq:c.area,kg:c.copKg,acciaio:c.copAcciaio,costo:c.copCosto,senzaPrezzo:!(c.copPrezzo>0)});}
+  return out;
 }
 
 // Peso al metro (kg/m) del profilo scelto.
@@ -9058,6 +9811,7 @@ function calcolaPesoTotale(p){
   walkPezzoMateriali(p,(mat,ml)=>{kg+=calcolaPesoLineare(mat)*ml;sup+=perimetroSezioneMm(mat)/1000*ml;});
   if(p.lamiera){const ld=calcLamieraTot(p);if(ld)kg+=ld.pesoTot;} // la lamiera si zincata col telaio
   if(p.tipo==='scala'&amp;&amp;(p.scalaGradTipo||'tubo')==='lamiera')kg+=scalaCalc(p).lamPeso;
+  kg+=extraPezzo(p).kgAcciaio; // piano del soppalco / copertura in acciaio (il vetro no)
   _supTot=sup;
   return kg;
 }
@@ -9713,7 +10467,7 @@ const TIPI_VOCE=[
   {k:&quot;cancello_battente&quot;,l:&quot;Cancello Battente&quot;},{k:&quot;cancello_scorrevole&quot;,l:&quot;Cancello Scorrevole&quot;},
   {k:&quot;porta&quot;,l:&quot;Porta&quot;},{k:&quot;porta_cancellata&quot;,l:&quot;Porta Cancellata&quot;},
   {k:&quot;ringhiera&quot;,l:&quot;Ringhiera&quot;},{k:&quot;cancellata&quot;,l:&quot;Cancellata&quot;},{k:&quot;recinzione&quot;,l:&quot;Recinzione&quot;},
-  {k:&quot;pensilina&quot;,l:&quot;Pensilina&quot;},{k:&quot;scala&quot;,l:&quot;Scala&quot;},{k:&quot;parapetto&quot;,l:&quot;Parapetto&quot;},
+  {k:&quot;pensilina&quot;,l:&quot;Pensilina&quot;},{k:&quot;soppalco&quot;,l:&quot;Soppalco&quot;},{k:&quot;scala&quot;,l:&quot;Scala&quot;},{k:&quot;parapetto&quot;,l:&quot;Parapetto&quot;},
   {k:&quot;grata&quot;,l:&quot;Grata / Inferriata&quot;},{k:&quot;gazebo&quot;,l:&quot;Gazebo / Pergola&quot;},
   {k:&quot;posa&quot;,l:&quot;Posa in opera&quot;},{k:&quot;verniciatura&quot;,l:&quot;Verniciatura&quot;},
   {k:&quot;zincatura&quot;,l:&quot;Zincatura&quot;},{k:&quot;smontaggio&quot;,l:&quot;Smontaggio / Rimozione&quot;},
