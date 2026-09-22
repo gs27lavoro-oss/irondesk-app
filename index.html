@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.10.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.11.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.10.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.11.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -2498,44 +2498,101 @@ function setFacciaLarg(id,idx,val){
 // verso 'su' = colmo al centro (+f sopra l'altezza base ai lati);
 // verso 'giu' = ribassato (−f al centro, altezza base ai lati).
 // tipo 'unico' = un solo arco su tutte le ante; 'per_anta' = un arco per anta.
-function arcoAttivo(p){
-  return p.tipo==='cancello_battente'&amp;&amp;p.arco&amp;&amp;p.arco.attivo&amp;&amp;Math.abs(parseFloat(p.arco.freccia)||0)>0;
+// FORME DELLA CIMA: la parte alta del manufatto non è per forza dritta.
+//  - 'arco'        = arco di cerchio con corda C e freccia f (R=(C²/4+f²)/(2f))
+//  - 'tutto_sesto' = semicerchio: la freccia è metà della corda (f=C/2)
+//  - 'inclinata'   = taglio in pendenza (scale, terreni in salita): sale di f da un lato
+//  - 'cuspide'     = due falde che si incontrano al centro (a capanna)
+// verso 'su' = si alza sopra l'altezza scritta; 'giu' = scende sotto (ribassato / a V).
+// tipo 'unico' = una forma sola su tutto; 'per_anta' = una forma per ogni anta.
+const FORME_CIMA=[[&quot;arco&quot;,&quot;◠ Arco&quot;],[&quot;tutto_sesto&quot;,&quot;◜◝ Tutto sesto&quot;],[&quot;inclinata&quot;,&quot;◺ Inclinata&quot;],[&quot;cuspide&quot;,&quot;△ A cuspide&quot;]];
+function tipoAmmetteArco(p){
+  const ti=TIPI.find(t=>t.k===p.tipo)||TIPI[0];
+  if(ti.haAnte)return true;
+  if(p.tipo==='ringhiera')return !facceRinghiera(p); // a squadro la ringhiera ha la sua vista
+  return ['cancello_scorrevole','inferriata','recinzione'].indexOf(p.tipo)>=0;
 }
-function arcoY(p,x,C){ // quota dell'arco (mm, +su/−giu) alla posizione x sulla corda C
-  const f=Math.abs(parseFloat(p.arco.freccia)||0);if(f<=0||C<=0)return 0;
-  const R=(C*C/4+f*f)/(2*f);
-  const y=Math.sqrt(Math.max(0,R*R-(x-C/2)*(x-C/2)))-(R-f);
+function formaCima(p){return (p.arco&amp;&amp;p.arco.forma)||'arco';}
+function arcoAttivo(p){
+  if(!p||!p.arco||!p.arco.attivo||!tipoAmmetteArco(p))return false;
+  return formaCima(p)==='tutto_sesto'||Math.abs(parseFloat(p.arco.freccia)||0)>0;
+}
+// Freccia effettiva (mm): nel tutto sesto è metà corda, altrimenti quella scritta
+function frecciaCima(p,C){
+  if(formaCima(p)==='tutto_sesto')return Math.max(0,C/2);
+  return Math.abs(parseFloat(p.arco.freccia)||0);
+}
+function arcoY(p,x,C){ // quota della cima (mm, +su/−giu) alla posizione x sulla corda C
+  const f=frecciaCima(p,C);if(f<=0||C<=0)return 0;
+  const forma=formaCima(p);
+  let y;
+  if(forma==='inclinata')y=f*Math.max(0,Math.min(1,x/C));
+  else if(forma==='cuspide')y=f*Math.max(0,1-Math.abs(2*x/C-1));
+  else{const R=(C*C/4+f*f)/(2*f);y=Math.sqrt(Math.max(0,R*R-(x-C/2)*(x-C/2)))-(R-f);}
   return (p.arco.verso==='giu')?-y:y;
 }
-function arcoAreaSeg(p,C,xa,xb){ // area (mm²) tra la corda e l'arco nel tratto xa..xb — negativa se ribassato
-  const f=Math.abs(parseFloat(p.arco.freccia)||0);
+function arcoAreaSeg(p,C,xa,xb){ // area (mm²) tra la corda e la cima nel tratto xa..xb — negativa se ribassata
+  const f=frecciaCima(p,C);
   if(f<=0||C<=0||xb<=xa)return 0;
-  const R=(C*C/4+f*f)/(2*f);
-  const F=u=>(u/2)*Math.sqrt(Math.max(0,R*R-u*u))+(R*R/2)*Math.asin(Math.max(-1,Math.min(1,u/R)));
-  const area=(F(xb-C/2)-F(xa-C/2))-(R-f)*(xb-xa);
+  const forma=formaCima(p);
+  let area;
+  if(forma==='inclinata'||forma==='cuspide'){ // trapezio / triangolo: integrale numerico esatto a tratti
+    const N=64;let s=0;
+    for(let k=0;k<N;k++){const x0=xa+(xb-xa)*k/N,x1=xa+(xb-xa)*(k+1)/N;
+      s+=(Math.abs(arcoY(p,x0,C))+Math.abs(arcoY(p,x1,C)))/2*(x1-x0);}
+    area=s;
+  } else {
+    const R=(C*C/4+f*f)/(2*f);
+    const F=u=>(u/2)*Math.sqrt(Math.max(0,R*R-u*u))+(R*R/2)*Math.asin(Math.max(-1,Math.min(1,u/R)));
+    area=(F(xb-C/2)-F(xa-C/2))-(R-f)*(xb-xa);
+  }
   return (p.arco&amp;&amp;p.arco.verso==='giu')?-area:area;
 }
-function arcoSegLen(p,C,xa,xb){ // sviluppo del tratto d'arco tra xa e xb (corda C)
-  const f=Math.abs(parseFloat(p.arco.freccia)||0);
+function arcoSegLen(p,C,xa,xb){ // sviluppo del tratto di cima tra xa e xb (corda C)
+  const f=frecciaCima(p,C);
   if(f<=0||C<=0)return Math.max(0,xb-xa);
+  const forma=formaCima(p);
+  if(forma==='inclinata')return Math.hypot(xb-xa,Math.abs(arcoY(p,xb,C)-arcoY(p,xa,C)));
+  if(forma==='cuspide'){ // due tratti dritti: si spezza al colmo
+    const xm=Math.min(Math.max(C/2,xa),xb),L=(x0,x1)=>Math.hypot(x1-x0,Math.abs(arcoY(p,x1,C)-arcoY(p,x0,C)));
+    return L(xa,xm)+L(xm,xb);
+  }
   const R=(C*C/4+f*f)/(2*f);
   const th=x=>Math.asin(Math.max(-1,Math.min(1,(x-C/2)/R)));
   return R*(th(xb)-th(xa));
 }
-// Dati per anta ai (0-based) su nA ante: corda globale, intervallo, sviluppo top, delta montanti
-function arcoDatiAnta(p,luce,ai,nA){
+// Dati della cima per il segmento s (anta oppure manufatto intero): corda, sviluppo, delta ai montanti.
+// elDh(xLoc) = quanto si alza la cima alla posizione xLoc misurata dall'inizio del segmento.
+function arcoDatiSeg(p,luce,s,nSeg){
+  if(!arcoAttivo(p))return null;
+  if(!luce.haAnte){ // telai fissi: la forma corre su tutta la larghezza
+    const C=luce.Wmm||0;if(C<=0)return null;
+    const passo=(luce.luciaH||0)+(luce.wMid||0),xa=(nSeg>1?s*passo:0);
+    return {topLen:arcoSegLen(p,C,0,C),dhSx:arcoY(p,0,C),dhDx:arcoY(p,C,C),C,xa,
+      elDh:(xLoc)=>arcoY(p,xa+xLoc,C)};
+  }
   const A=luce.antaLargLorda||0,G=luce.gioco||0;
-  if(!arcoAttivo(p)||A<=0)return null;
+  if(A<=0)return null;
   if((p.arco.tipo||'unico')==='per_anta'){
     return {topLen:arcoSegLen(p,A,0,A),dhSx:0,dhDx:0,C:A,xa:0,
       elDh:(xLoc)=>arcoY(p,xLoc,A)}; // xLoc = posizione dentro l'anta
   }
-  const C=nA*A+(nA-1)*G;               // corda unica sull'insieme delle ante
-  const xa=ai*(A+G),xb=xa+A;
+  const C=nSeg*A+(nSeg-1)*G;           // corda unica sull'insieme delle ante
+  const xa=s*(A+G),xb=xa+A;
   return {topLen:arcoSegLen(p,C,xa,xb),dhSx:arcoY(p,xa,C),dhDx:arcoY(p,xb,C),C,xa,
     elDh:(xLoc)=>arcoY(p,xa+xLoc,C)};
 }
-// somma dei delta-altezza (mm) di TUTTI gli elementi verticali sotto l'arco (per peso/stampa)
+function arcoDatiAnta(p,luce,ai,nA){return arcoDatiSeg(p,luce,ai,nA);}
+// Quanto sale la cima sopra l'altezza scritta (mm): serve al disegno e alle quote
+function cimaAlzataMax(p,luce){
+  if(!arcoAttivo(p)||(p.arco.verso==='giu'))return 0;
+  const ad=arcoDatiSeg(p,luce,0,luce.haAnte?Math.max(1,luce.nAnte||1):Math.max(1,luce.nCL||1));
+  if(!ad)return 0;
+  return frecciaCima(p,ad.C);
+}
+// La cima curva/inclinata riguarda le ante, oppure il sopraluce quando c'è (porta ad arco con lunetta)
+function arcoSulleAnte(p){return arcoAttivo(p)&amp;&amp;!sopraluceAttivo(p);}
+// somma dei delta-altezza (mm) di TUTTI gli elementi verticali sotto la cima (per peso/stampa)
 function arcoExtraElMm(p,luce,el,nEl,nSeg){
   if(!arcoAttivo(p)||nEl<=0)return 0;
   const larg=eLarg(el.mat);
@@ -2543,17 +2600,59 @@ function arcoExtraElMm(p,luce,el,nEl,nSeg){
   const sp=el.modo===&quot;man&quot;?Math.max(0,(luceEl-nEl*larg)/(nEl+1)):(calcSc(luceEl,larg,el.spMin,el.spMax,el.pd||&quot;libero&quot;).sp||0);
   let tot=0;
   for(let s=0;s<nSeg;s++){
-    const ad=arcoDatiAnta(p,luce,s,nSeg);if(!ad)continue;
+    const ad=arcoDatiSeg(p,luce,s,nSeg);if(!ad)continue;
     for(let k=0;k<nEl;k++){
       tot+=ad.elDh((luce.aSx||0)+sp+larg/2+k*(larg+sp));
     }
   }
   return tot;
 }
+function setSopraluce(id,campo,val){
+  const p=pezzi.find(x=>x.id===id);if(!p)return;
+  p.sopraluce=Object.assign({attivo:false,h:40,mat:null,riemp:'vetro'},p.sopraluce||{});
+  if(campo==='attivo'&amp;&amp;val&amp;&amp;!(parseFloat(p.sopraluce.h)||0))p.sopraluce.h=40;
+  p.sopraluce[campo]=val;renderTutto();
+}
 function setArco(id,campo,val){
   const p=pezzi.find(x=>x.id===id);if(!p)return;
-  p.arco=p.arco||{attivo:false,freccia:150,tipo:&quot;unico&quot;,verso:&quot;su&quot;};
+  p.arco=p.arco||{attivo:false,freccia:150,tipo:&quot;unico&quot;,verso:&quot;su&quot;,forma:&quot;arco&quot;};
   p.arco[campo]=val;renderTutto();
+}
+
+// ═══════ SOPRALUCE: finestra fissa sopra la porta, nello stesso telaio ═══════
+// Sopra c'è la luce fissa (vetro, tondini o pannello), sotto le ante; in mezzo un traverso fisso.
+const SOPRALUCE_RIEMP=[[&quot;vetro&quot;,&quot;🪟 Vetro&quot;],[&quot;tondini&quot;,&quot;❘❘ Tondini&quot;],[&quot;lamiera&quot;,&quot;🪨 Lamiera&quot;],[&quot;vuoto&quot;,&quot;Vuoto&quot;]];
+// Corda della cima sul TELAIO esterno (tutta la larghezza): serve a traversa alta, montanti e sopraluce
+function cimaTelaio(p,luce){
+  if(!arcoAttivo(p))return null;
+  if(luce.haAnte&amp;&amp;(p.arco.tipo||'unico')==='per_anta')return null; // arco per anta: il telaio resta dritto
+  const C=luce.Wmm||0;if(C<=0)return null;
+  return {C,len:arcoSegLen(p,C,0,C),dh:(x)=>arcoY(p,x,C),dhSx:arcoY(p,0,C),dhDx:arcoY(p,C,C)};
+}
+// Il sopraluce: luce, traverso fisso e riempimento (vetro, tondini, lamiera o vuoto)
+function sopraluceCalc(p){
+  if(!sopraluceAttivo(p))return null;
+  const luce=calcLuce(p);
+  const h=luce.slH,w=luce.slW;
+  if(!(h>0)||!(w>0))return null;
+  const S=p.sopraluce||{},nPz=Math.max(1,parseInt(p.nPezziUguali)||1);
+  const riemp=S.riemp||'vetro';
+  const ct=cimaTelaio(p,luce);
+  const areaArco=ct?Math.max(0,arcoAreaSeg(p,ct.C,0,ct.C)):0; // la lunetta sopra la corda (arco)
+  const el=(p.elemList||[]).find(e=>e.attivo&amp;&amp;e.mat)||null;
+  let nTond=0,largT=0;
+  if(riemp==='tondini'&amp;&amp;el){largT=eLarg(el.mat);nTond=calcSc(w,largT,el.spMin,el.spMax,el.pd||'libero').N;}
+  const dhEl=x=>ct?Math.max(0,ct.dh(x+(luce.telWsx||0))):0; // x misurata dal bordo interno sinistro
+  return {h,w,riemp,trav:S.mat||null,travLen:w,nPz,el,nTond,largT,dhEl,ct,
+    areaMq:(w*h+areaArco)/1e6*nPz, arco:!!ct, hColmo:h+(ct?Math.max(0,ct.dh(ct.C/2)):0)};
+}
+function ammetteSopraluce(p){
+  const ti=TIPI.find(t=>t.k===p.tipo)||TIPI[0];
+  return !!(ti.haAnte&amp;&amp;!isSoloAnte(p,ti));
+}
+function sopraluceAttivo(p){
+  const s=p&amp;&amp;p.sopraluce;
+  return !!(s&amp;&amp;s.attivo&amp;&amp;ammetteSopraluce(p)&amp;&amp;(parseFloat(s.h)||0)>0);
 }
 
 function calcLamieraTot(p){
@@ -2655,6 +2754,8 @@ function calcolaSuperficiePezzo(p){
   if(p.lamiera){const ld=calcLamieraTot(p);if(ld&amp;&amp;ld.areaTot)s+=ld.areaTot*2;}          // lamiera: 2 facce
   if(p.tipo==='scala'&amp;&amp;(p.scalaGradTipo||'tubo')==='lamiera'){s+=scalaCalc(p).lamArea*2;} // gradini in lamiera: 2 facce
   if(p.tipo==='soppalco'&amp;&amp;(p.sopPiano||'lamiera')==='lamiera'){s+=soppCalc(p).area*2;}     // piano in lamiera: 2 facce
+  const _slS=sopraluceCalc(p);
+  if(_slS&amp;&amp;_slS.riemp==='lamiera'&amp;&amp;_slS.areaMq>0)s+=_slS.areaMq*2;                          // pannello del sopraluce: 2 facce
   return s; // m²
 }
 function costoVerniciatura(mq,tariffa){
@@ -3096,6 +3197,11 @@ function calcLuce(p){
     Hmm=HInput+telH+telHb;
   }
 
+  // Sopraluce: finestra fissa sopra le ante, dentro lo stesso telaio (altezza della sua luce + traverso fisso)
+  const slOn = !!(p.sopraluce&amp;&amp;p.sopraluce.attivo&amp;&amp;haAnteC&amp;&amp;!soloAnteC&amp;&amp;(parseFloat(p.sopraluce.h)||0)>0);
+  const slH = slOn ? Math.max(0,(parseFloat(p.sopraluce.h)||0)*10) : 0;
+  const slTrav = (slH>0&amp;&amp;p.sopraluce.mat) ? eLarg(p.sopraluce.mat) : 0;
+
   // Gioco/luce tra i corpi (telaio↔anta e montanti centrali) e sormonto delle battute
   const G = parseFloat(p.gioco_battuta); const Gv = isNaN(G)?8:G;
   const hasTelaio = !soloAnteC &amp;&amp; !!(telSx||telDx||telTop||telBot);
@@ -3141,8 +3247,8 @@ function calcLuce(p){
     // LUCE UTILE dell'anta: si sottrae la faccia interna d'APPOGGIO dei montanti, non la mostra.
     luciaHAnta = Math.max(0, antaLargLorda - aSx - aDx);
     luciaH = luciaHAnta * nAnteC;
-    // Altezza: luce interna netta + giunti telaio alto/basso.
-    const altInterna = Math.max(0, Hmm - telH - telHb);  // luce interna netta altezza
+    // Altezza: luce interna netta + giunti telaio alto/basso, meno il sopraluce (finestra fissa sopra)
+    const altInterna = Math.max(0, Hmm - telH - telHb - slH - slTrav);
     antaAltLorda = Math.max(0, altInterna + giuntoAlto + giuntoBasso);
     // Il traverso INFERIORE dell'anta è sempre un pezzo reale: occupa la luce anche
     // se il TELAIO è aperto sotto. &quot;Aperto sotto&quot; riguarda il telaio, non le ante.
@@ -3163,6 +3269,7 @@ function calcLuce(p){
   const campX0 = i => aSx + i*(luciaH + wMid); // la luce parte dalla faccia d'appoggio del montante
 
   return {luciaH, luciaHAnta, luciaV, luciaVF, correnti, wMid, hMid, campX0, hTop, hBot, wSx, wDx, WSpec, Wmm, Hmm, nCL, nCA,
+    slH, slTrav, slW: Math.max(0, Wmm - telWsx - telWdx), // sopraluce: luce, traverso fisso, larghezza interna
     aTop, aBot, aSx, aDx,  // facce d'appoggio (interna) dei lati anta
     nBattC:nAnteC, nAnte:nAnteC, numeroAnte:nAnteC, soloAnte:soloAnteC, haAnte:haAnteC,
     gioco:Gv, hasTelaio, antaLargLorda, antaAltLorda, telWsx, telWdx, telH, telHb,
@@ -3300,7 +3407,9 @@ function migraCampiPezzo(p){
   if(p.telaio_modo===undefined)p.telaio_modo=&quot;nessuno&quot;;
   if(p.facce===undefined)p.facce=[];
   if(p.ferr===undefined)p.ferr={};
-  if(p.arco===undefined)p.arco={attivo:false,freccia:150,tipo:&quot;unico&quot;,verso:&quot;su&quot;};
+  if(p.arco===undefined)p.arco={attivo:false,freccia:150,tipo:&quot;unico&quot;,verso:&quot;su&quot;,forma:&quot;arco&quot;};
+  if(p.arco&amp;&amp;!p.arco.forma)p.arco.forma=&quot;arco&quot;;
+  if(p.sopraluce===undefined)p.sopraluce={attivo:false,h:40,mat:null,riemp:'vetro'};
   if(p.angoloCondiviso===undefined)p.angoloCondiviso=true;
   if(p.vern_polvere===undefined)p.vern_polvere=false;
   if(p.vern_tariffa===undefined||p.vern_tariffa===null)p.vern_tariffa=UPG.vernTariffa;
@@ -3424,6 +3533,8 @@ function nuovoPezzo(id){
     vetro:false, vetro_modo:'tutto', vetro_h_mm:'', vetro_l1:'33.1', vetro_camera:0, vetro_l2:'33.1',
     vetro_canalina:'alluminio', vetro_gas:'aria', vetro_finitura:'trasparente', vetro_gioco:'',
     vetro_prezzoMq:'', vetro_fermavetro:null, vetro_fvLati:0, vetro_su_sp:'', vetro_su_kg:'', vetro_su_cl:'',
+    // Sopraluce: finestra fissa sopra le ante, nello stesso telaio
+    sopraluce:{attivo:false,h:40,mat:null,riemp:'vetro'},
     // Soppalco e pensilina: materiali per ruolo (pilastri, travi, travetti, parapetto, mensole…)
     strMats:{},
     sopH:2.4, sopCampate:1, sopMuro:'nessuno', sopInterasse:50,
@@ -4659,7 +4770,9 @@ function buildBodyCorrimano(p){
 // ═══════ VETRO NELLA PORTA (card) ═══════
 function buildVetroHtml(p){
   const on=!!p.vetro,col=&quot;#6fb6e0&quot;;
-  const v=on?calcVetro(p):null,comp=vetroComp(p);
+  const slVetro=sopraluceAttivo(p)&amp;&amp;((p.sopraluce||{}).riemp||'vetro')==='vetro';
+  const mostra=on||slVetro;
+  const v=mostra?calcVetro(p):null,comp=vetroComp(p);
   const modo=p.vetro_modo||'tutto';
   const lamMisto=p.lamiera&amp;&amp;(p.lamiera_modo==='sotto'||p.lamiera_modo==='sopra');
   const cam=parseFloat(p.vetro_camera)||0,l1=p.vetro_l1||'33.1',l2=p.vetro_l2||'33.1';
@@ -4674,12 +4787,13 @@ function buildVetroHtml(p){
   const sel=(campo,opts,cur,num)=>`<select class=&quot;fi&quot; onchange=&quot;setProp(${p.id},'${campo}',${num?&quot;parseFloat(this.value)&quot;:&quot;this.value&quot;})&quot;>${opts.map(o=>{const val=Array.isArray(o)?o[0]:o,lb=Array.isArray(o)?o[1]:o;return `<option value=&quot;${esc(val)}&quot;${String(val)===String(cur)?&quot; selected&quot;:&quot;&quot;}>${esc(lb)}</option>`;}).join(&quot;&quot;)}</select>`;
   const numIn=(campo,val,ph,step)=>`<input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;${step||1}&quot; value=&quot;${esc(val)}&quot; placeholder=&quot;${esc(ph)}&quot; style=&quot;border-color:${col}&quot; onchange=&quot;setProp(${p.id},'${campo}',this.value===''?'':Math.max(0,parseFloat(this.value)||0))&quot;>`;
   let body=&quot;&quot;;
-  if(on){
+  if(mostra){
     body=`
-    <div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Dove va il vetro</label><div style=&quot;display:flex;gap:6px;flex-wrap:wrap&quot;>
+    ${!on&amp;&amp;slVetro?`<div class=&quot;nota-info&quot; style=&quot;margin-bottom:8px&quot;>Qui scegli il vetro del <b>sopraluce</b>. Spunta la casella se vuoi vetro anche nelle ante.</div>`:&quot;&quot;}
+    ${on?`<div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Dove va il vetro</label><div style=&quot;display:flex;gap:6px;flex-wrap:wrap&quot;>
       ${btn('tutto','Tutta la luce')}${btn('sopra',p.lamiera&amp;&amp;p.lamiera_modo==='sotto'?'Vetro sopra (lamiera sotto)':'Vetro sopra')}${btn('sotto',p.lamiera&amp;&amp;p.lamiera_modo==='sopra'?'Vetro sotto (lamiera sopra)':'Vetro sotto')}
-    </div></div>
-    ${(modo!=='tutto'&amp;&amp;!lamMisto)?`<div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Altezza del vetro nella luce (mm) — vuoto = dalla prima traversa o metà luce</label>
+    </div></div>`:&quot;&quot;}
+    ${(on&amp;&amp;modo!=='tutto'&amp;&amp;!lamMisto)?`<div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Altezza del vetro nella luce (mm) — vuoto = dalla prima traversa o metà luce</label>
       <div style=&quot;max-width:160px&quot;>${numIn('vetro_h_mm',p.vetro_h_mm,'auto',10)}</div></div>`:&quot;&quot;}
     <div class=&quot;mb8&quot;><label class=&quot;fl&quot;>${cam>0?&quot;Lastra esterna&quot;:&quot;Tipo di vetro&quot;}</label>
       <select class=&quot;fi&quot; style=&quot;border-color:${col}&quot; onchange=&quot;setProp(${p.id},'vetro_l1',this.value)&quot;>${optVetri(l1)}</select></div>
@@ -4723,8 +4837,8 @@ function buildVetroHtml(p){
   return `<div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${on?col:'#172438'}&quot;>
     <label style=&quot;display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:${on?'10px':'0'}&quot;>
       <input type=&quot;checkbox&quot; ${on?'checked':''} onchange=&quot;setProp(${p.id},'vetro',this.checked)&quot; style=&quot;width:18px;height:18px;cursor:pointer&quot;>
-      <span style=&quot;font-size:13px;font-weight:700;color:${on?col:'#91a2bb'}&quot;>🪟 Vetro nella porta</span>
-      ${on?'':'<span style=&quot;font-size:11px;color:#273851&quot;>— stratificato, temperato, vetrocamera, blindato</span>'}
+      <span style=&quot;font-size:13px;font-weight:700;color:${mostra?col:'#91a2bb'}&quot;>🪟 Vetro ${on?&quot;nelle ante&quot;:(slVetro?&quot;del sopraluce&quot;:&quot;nella porta&quot;)}</span>
+      ${mostra?'':'<span style=&quot;font-size:11px;color:#273851&quot;>— stratificato, temperato, vetrocamera, blindato</span>'}
     </label>${body}</div>`;
 }
 
@@ -5002,40 +5116,82 @@ function buildBody(p){
   </div>`:&quot;&quot;;
   const isPiantoni = p.tipo==='cancello_battente' &amp;&amp; _tm==='piantoni';
 
-  // ── Cancello ad arco ──
-  const _ar=p.arco||{attivo:false,freccia:150,tipo:&quot;unico&quot;,verso:&quot;su&quot;};
+  // ── Forma della cima (arco, tutto sesto, inclinata, cuspide) ──
+  const _ar=p.arco||{attivo:false,freccia:150,tipo:&quot;unico&quot;,verso:&quot;su&quot;,forma:&quot;arco&quot;};
+  const _forma=_ar.forma||'arco';
   const _arBtn=(campo,val,lbl)=>`<button onclick=&quot;setArco(${p.id},'${campo}','${val}')&quot;
     style=&quot;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;
-      border:1.5px solid ${_ar[campo]===val?'#f08a3c':'#252e50'};
-      background:${_ar[campo]===val?'#1a1205':'#0d1322'};color:${_ar[campo]===val?'#f08a3c':'#91a2bb'}&quot;>${lbl}</button>`;
-  const arcoHtml = p.tipo==='cancello_battente' ? `
+      border:1.5px solid ${(_ar[campo]||(campo==='forma'?'arco':''))===val?'#f08a3c':'#252e50'};
+      background:${(_ar[campo]||(campo==='forma'?'arco':''))===val?'#1a1205':'#0d1322'};color:${(_ar[campo]||(campo==='forma'?'arco':''))===val?'#f08a3c':'#91a2bb'}&quot;>${lbl}</button>`;
+  const _versoLbl=_forma==='inclinata'?[['su','◺ Alta a destra'],['giu','◹ Alta a sinistra']]
+    :_forma==='cuspide'?[['su','△ Colmo in alto'],['giu','▽ A V']]
+    :[['su','◠ Colmo su'],['giu','◡ Ribassato']];
+  const _luceCima=calcLuce(p);
+  const _adCima=arcoAttivo(p)?arcoDatiSeg(p,_luceCima,0,_luceCima.haAnte?Math.max(1,(p.ante||[]).length):Math.max(1,_luceCima.nCL||1)):null;
+  const _fCima=_adCima?frecciaCima(p,_adCima.C):(parseFloat(_ar.freccia)||150);
+  const arcoHtml = tipoAmmetteArco(p) ? `
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${_ar.attivo?'#f08a3c':'#172438'};margin-bottom:8px&quot;>
     <div style=&quot;display:flex;align-items:center;gap:10px;margin-bottom:${_ar.attivo?'10px':'0'}&quot;>
       <input type=&quot;checkbox&quot; ${_ar.attivo?'checked':''} style=&quot;width:18px;height:18px;cursor:pointer&quot;
         onchange=&quot;setArco(${p.id},'attivo',this.checked)&quot;>
-      <label style=&quot;cursor:pointer;font-size:13px;font-weight:700;color:${_ar.attivo?'#f08a3c':'#91a2bb'}&quot;>◠ Cancello ad arco</label>
-      ${_ar.attivo?'':'<span style=&quot;font-size:11px;color:#273851&quot;>— traversa superiore curva</span>'}
+      <label style=&quot;cursor:pointer;font-size:13px;font-weight:700;color:${_ar.attivo?'#f08a3c':'#91a2bb'}&quot;>◠ Cima sagomata</label>
+      ${_ar.attivo?'':'<span style=&quot;font-size:11px;color:#273851&quot;>— arco, tutto sesto, inclinata o a cuspide</span>'}
     </div>
     ${_ar.attivo?`
+    <div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Forma</label>
+      <div style=&quot;display:flex;gap:5px;flex-wrap:wrap&quot;>${FORME_CIMA.map(f=>_arBtn('forma',f[0],f[1])).join(&quot;&quot;)}</div></div>
     <div class=&quot;g3 mb8&quot;>
-      <div>
-        <label class=&quot;fl&quot;>Freccia al colmo (cm)</label>
-        <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;2&quot; max=&quot;100&quot; step=&quot;1&quot; value=&quot;${cmv(parseFloat(_ar.freccia)||150)}&quot;
+      ${_forma==='tutto_sesto'?`<div><label class=&quot;fl&quot;>Freccia</label>
+        <div style=&quot;font-size:12px;color:#f08a3c;font-weight:700;padding:8px 0&quot;>${cmU(_fCima)} (metà della corda)</div></div>`
+      :`<div>
+        <label class=&quot;fl&quot;>${_forma==='inclinata'?'Dislivello (cm)':_forma==='cuspide'?'Altezza del colmo (cm)':'Freccia al colmo (cm)'}</label>
+        <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;1&quot; max=&quot;500&quot; step=&quot;1&quot; value=&quot;${cmv(parseFloat(_ar.freccia)||150)}&quot;
           onchange=&quot;setArco(${p.id},'freccia',(parseFloat(this.value)||15)*10)&quot; style=&quot;border-color:#f08a3c&quot;>
-      </div>
-      <div>
-        <label class=&quot;fl&quot;>Arco</label>
-        <div style=&quot;display:flex;gap:5px&quot;>${_arBtn('tipo','unico','⌒ Unico')}${_arBtn('tipo','per_anta','⌒⌒ Per anta')}</div>
-      </div>
+      </div>`}
+      ${_luceCima.haAnte?`<div>
+        <label class=&quot;fl&quot;>Come</label>
+        <div style=&quot;display:flex;gap:5px&quot;>${_arBtn('tipo','unico','⌒ Unica')}${_arBtn('tipo','per_anta','⌒⌒ Per anta')}</div>
+      </div>`:'<div></div>'}
       <div>
         <label class=&quot;fl&quot;>Verso</label>
-        <div style=&quot;display:flex;gap:5px&quot;>${_arBtn('verso','su','◠ Colmo su')}${_arBtn('verso','giu','◡ Ribassato')}</div>
+        <div style=&quot;display:flex;gap:5px&quot;>${_versoLbl.map(v=>_arBtn('verso',v[0],v[1])).join(&quot;&quot;)}</div>
       </div>
     </div>
     <div style=&quot;font-size:10px;color:#91a2bb;line-height:1.6&quot;>
-      L'<b>Altezza totale</b> resta quella ai lati${_ar.verso!=='giu'?`; al colmo si aggiunge la freccia (+${cmU(parseFloat(_ar.freccia)||150)})`:`; il centro scende della freccia (−${cmU(parseFloat(_ar.freccia)||150)})`}.
-      La traversa superiore va curvata: in distinta trovi lo <b>sviluppo dell'arco</b>; montanti e verticali escono con le <b>lunghezze reali una per una</b> nel piano di taglio.
+      L'<b>Altezza totale</b> resta quella del lato basso${_ar.verso!=='giu'?`; il punto alto sale di ${cmU(_fCima)}`:`; il punto basso scende di ${cmU(_fCima)}`}.
+      La traversa superiore esce in distinta con lo <b>sviluppo reale</b>${_forma==='cuspide'?' (i due tratti della falda)':''}; montanti e verticali con le <b>lunghezze una per una</b> nel piano di taglio.
+      ${sopraluceAttivo(p)?'<br>Con il sopraluce acceso la forma riguarda la finestra sopra: le ante restano dritte.':''}
     </div>`:''}
+  </div>`:&quot;&quot;;
+
+  // ── Sopraluce: finestra fissa sopra le ante, stesso telaio ──
+  const _sl=p.sopraluce||{attivo:false,h:0,mat:null,riemp:'vetro'};
+  const _slC=sopraluceCalc(p);
+  const _slBtn=(val,lbl)=>{const att=(_sl.riemp||'vetro')===val;
+    return `<button onclick=&quot;setSopraluce(${p.id},'riemp','${val}')&quot; style=&quot;flex:1;min-width:86px;padding:7px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1.5px solid ${att?'#64a8ff':'#172438'};color:${att?'#64a8ff':'#91a2bb'};background:${att?'#0a1628':'transparent'}&quot;>${lbl}</button>`;};
+  const sopraluceHtml = ammetteSopraluce(p) ? `
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${_sl.attivo?'#64a8ff':'#172438'};margin-bottom:8px&quot;>
+    <div style=&quot;display:flex;align-items:center;gap:10px;margin-bottom:${_sl.attivo?'10px':'0'}&quot;>
+      <input type=&quot;checkbox&quot; ${_sl.attivo?'checked':''} style=&quot;width:18px;height:18px;cursor:pointer&quot;
+        onchange=&quot;setSopraluce(${p.id},'attivo',this.checked)&quot;>
+      <label style=&quot;cursor:pointer;font-size:13px;font-weight:700;color:${_sl.attivo?'#64a8ff':'#91a2bb'}&quot;>🪟 Sopraluce (finestra fissa sopra)</label>
+      ${_sl.attivo?'':'<span style=&quot;font-size:11px;color:#273851&quot;>— finestra sopra, traverso fisso, porta sotto</span>'}
+    </div>
+    ${_sl.attivo?`
+    <div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Altezza della finestra (cm)</label>
+        <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;5&quot; step=&quot;1&quot; value=&quot;${fmtN(parseFloat(_sl.h)||0)}&quot; style=&quot;border-color:#64a8ff&quot;
+          onchange=&quot;setSopraluce(${p.id},'h',Math.max(0,parseFloat(this.value)||0))&quot;></div>
+      <div><label class=&quot;fl&quot;>Cosa c'è dentro</label>
+        <div style=&quot;display:flex;gap:5px;flex-wrap:wrap&quot;>${SOPRALUCE_RIEMP.map(r=>_slBtn(r[0],r[1])).join(&quot;&quot;)}</div></div>
+    </div>
+    ${latoBtn(p.id,`slt-${p.id}`,&quot;Traverso fisso&quot;,_sl.mat,&quot;#64a8ff&quot;)}
+    ${_slC?`<div class=&quot;costi-riga&quot;><span>Luce della finestra</span><b>${cmv(_slC.w)} × ${cmv(_slC.h)} cm${_slC.arco?&quot; (sagomata: &quot;+cmv(_slC.hColmo)+&quot; cm al colmo)&quot;:&quot;&quot;}</b></div>
+    ${_slC.riemp==='tondini'?`<div class=&quot;costi-riga&quot;><span>Tondini del sopraluce</span><b>${_slC.nTond} × ${cmv(_slC.h)} cm</b></div>`:&quot;&quot;}
+    ${_slC.riemp==='vetro'?`<div class=&quot;nota-info&quot;>Il vetro del sopraluce usa la composizione e il prezzo della sezione 🪟 Vetro qui sotto (anche se le ante non sono vetrate).</div>`:&quot;&quot;}
+    ${_slC.riemp==='lamiera'?`<div class=&quot;nota-info&quot;>Il pannello usa tipo, spessore e prezzo della lamiera impostati qui sotto.</div>`:&quot;&quot;}`
+    :'<div style=&quot;font-size:11px;color:#e0a050&quot;>Scrivi l’altezza della finestra e scegli il traverso fisso.</div>'}
+    <div class=&quot;nota-info&quot;>L'altezza delle ante si riduce da sola: altezza totale − telaio − finestra − traverso.</div>`:''}
   </div>`:&quot;&quot;;
 
   // ── Ringhiera a squadro: gestione facce (balconi) ──
@@ -5499,6 +5655,7 @@ function buildBody(p){
   ${facceHtml}
   ${telaioModoHtml}
   ${arcoHtml}
+  ${sopraluceHtml}
   ${soloAnte?`
   <!-- SOLO BATTENTI: nessun telaio fisso esterno (cancello battente) -->
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#9060e0&quot;>
@@ -5729,11 +5886,14 @@ function layoutDisegno(p,luce,tiD){
   const gC=nA>1?(luce.giuntoCentro||0)/(nA-1):0;       // sormonto tra due ante affiancate
   const x0=telSx-(conTel?(luce.giuntoSx||0):0);           // la prima anta copre il telaio del suo sormonto
   const antaX=i=>x0+i*(A-gC);
-  const antaY=telTop-(conTel?(luce.giuntoAlto||0):0);
+  const slH=luce.slH||0,slTrav=luce.slTrav||0;            // sopraluce: luce + traverso fisso
+  const antaY=telTop+slH+slTrav-(conTel?(luce.giuntoAlto||0):0);
   const aSx=luce.aSx||0,aTop=luce.aTop||0;
   const yLuce0=haAnte?antaY+aTop:aTop;
   const segX0=s=>haAnte?(antaX(s)+aSx):luce.campX0(s);
-  return {conTel,telTop,telBot,telSx,telDx,nA,W_in,H_in,A,AH,antaX,antaY,yLuce0,
+  const passoC=(luce.luciaH||0)+(luce.wMid||0);
+  const segOrig=s=>haAnte?antaX(s):s*passoC;              // origine del segmento per la forma della cima
+  return {conTel,telTop,telBot,telSx,telDx,nA,W_in,H_in,A,AH,antaX,antaY,yLuce0,slH,slTrav,segOrig,
     nSeg:haAnte?nA:luce.nCL,segW:luce.luciaHAnta,segX0,luciaV:luce.luciaV};
 }
 // Disegna il pattern della lamiera (liscia/striata/mandorlata/forata/ondulata) dentro un rettangolo del canvas
@@ -5909,6 +6069,20 @@ function disegnaGazebo(p,cvs,ctx,leg){
   }
 }
 
+// Barra che segue la cima sagomata (arco, tutto sesto, inclinata, cuspide): banda di spessore sp
+function barraCima(ctx,tx,ty,sc,ct,xa,xb,yTop,sp,rgb){
+  const N=40;
+  ctx.save();
+  ctx.beginPath();
+  for(let k=0;k<=N;k++){const x=xa+(xb-xa)*k/N;const y=yTop-ct.dh(x);if(!k)ctx.moveTo(tx(x),ty(y));else ctx.lineTo(tx(x),ty(y));}
+  for(let k=N;k>=0;k--){const x=xa+(xb-xa)*k/N;ctx.lineTo(tx(x),ty(yTop-ct.dh(x)+sp));}
+  ctx.closePath();
+  if(cvTec())ctx.fillStyle=CV_TEC.profilo;
+  else{const g=ctx.createLinearGradient(0,ty(yTop-sp),0,ty(yTop+sp*2));g.addColorStop(0,_cvShade(rgb,1.35));g.addColorStop(1,_cvShade(rgb,0.6));ctx.fillStyle=g;}
+  ctx.fill();
+  ctx.strokeStyle=cvTec()?CV_TEC.contorno:&quot;rgba(4,8,16,.5)&quot;;ctx.lineWidth=1;ctx.stroke();
+  ctx.restore();
+}
 // Simbolo del vetro nei disegni tecnici: brevi tratti obliqui (riflessi) in un angolo della lastra
 function riflessiVetro(ctx,x,y,w,h){
   const m=Math.min(w,h);if(!(m>=12))return;
@@ -6105,7 +6279,7 @@ function _disegnaSu(p,cvs,leg){
   const padL=16, padR=48, padT=42, padB=38;
   const codaMax=(p.tipo==='cancello_scorrevole')?Math.max(parseFloat(p.coda_sup)||0,parseFloat(p.coda_inf)||0):0;
   const effW=Wmm+codaMax; // spazio extra a sinistra per la coda
-  const _arcoUp=(arcoAttivo(p)&amp;&amp;(p.arco.verso!=='giu'))?Math.abs(parseFloat(p.arco.freccia)||0):0; // spazio per il colmo
+  const _arcoUp=cimaAlzataMax(p,luce); // spazio sopra per colmo / cuspide / lato alto
   const sc=Math.min((cW-padL-padR)/effW,(cH-padT-padB)/(Hmm+_arcoUp));
   const ox=padL+(cW-padL-padR-effW*sc)/2+codaMax*sc;
   const oy=padT+(cH-padT-padB-(Hmm+_arcoUp)*sc)/2;
@@ -6115,17 +6289,18 @@ function _disegnaSu(p,cvs,leg){
   const LY=layoutDisegno(p,luce,tiD);
   const telExtTop=LY.telTop, H_in_=LY.H_in, A_=LY.A, AH_=LY.AH, antaX_=LY.antaX, antaY_=LY.antaY;
   const yLuce0=LY.yLuce0, nSeg=LY.nSeg, segW=LY.segW, segX0=LY.segX0;
-  const arcoTop = arcoAttivo(p)&amp;&amp;tiD.haAnte&amp;&amp;(!p.lamiera||p.lamiera_modo==='sotto');
+  const arcoTop = arcoSulleAnte(p)&amp;&amp;(!p.lamiera||p.lamiera_modo==='sotto');
+  const _ctD=cimaTelaio(p,luce); // forma della cima sul telaio esterno
 
   // Tavola: la luce (il vano) in azzurro, come nei modelli del catalogo IronDesk
   if(cvTec()&amp;&amp;luciaV>0&amp;&amp;segW>0){
     ctx.save();ctx.fillStyle=CV_TEC.luce;
     for(let s=0;s<nSeg;s++){
       const x0=segX0(s);
-      const ad=(arcoAttivo(p)&amp;&amp;tiD.haAnte)?arcoDatiAnta(p,luce,s,nSeg):null;
+      const ad=arcoSulleAnte(p)?arcoDatiSeg(p,luce,s,nSeg):null;
       if(ad){
         ctx.beginPath();const N=24;
-        for(let k=0;k<=N;k++){const x=x0+segW*k/N,y=yLuce0-ad.elDh(x-antaX_(s));if(!k)ctx.moveTo(tx(x),ty(y));else ctx.lineTo(tx(x),ty(y));}
+        for(let k=0;k<=N;k++){const x=x0+segW*k/N,y=yLuce0-ad.elDh(x-LY.segOrig(s));if(!k)ctx.moveTo(tx(x),ty(y));else ctx.lineTo(tx(x),ty(y));}
         ctx.lineTo(tx(x0+segW),ty(yLuce0+luciaV));ctx.lineTo(tx(x0),ty(yLuce0+luciaV));ctx.closePath();ctx.fill();
       } else ctx.fillRect(tx(x0),ty(yLuce0),segW*sc,luciaV*sc);
     }
@@ -6149,13 +6324,13 @@ function _disegnaSu(p,cvs,leg){
           if(lw<=0)return;
           const _X=tx(baseX+ch.a+exMm),_Y=ty(yTopMm),_W=lw*sc,_H=lh*sc;
           // [ARCO] la banda in cima segue l'intradosso: bordo superiore curvo
-          const adL=(arcoAttivo(p)&amp;&amp;tiD.haAnte&amp;&amp;bv.b>=luciaV-0.5&amp;&amp;(p.lamiera_modo||'tutto')!=='sotto')?arcoDatiAnta(p,luce,s,nSeg):null;
+          const adL=(arcoSulleAnte(p)&amp;&amp;bv.b>=luciaV-0.5&amp;&amp;(p.lamiera_modo||'tutto')!=='sotto')?arcoDatiSeg(p,luce,s,nSeg):null;
           if(adL){
             const xsL=baseX+ch.a+exMm,xeL=xsL+lw,yBotMm=yLuce0+(luciaV-bv.a)-exMm;
             const NN=22;let yMinCv=Infinity;
             ctx.beginPath();
             for(let k=0;k<=NN;k++){
-              const xg=xsL+lw*k/NN,yCv=ty(yLuce0-adL.elDh(xg-antaX_(s))+exMm);
+              const xg=xsL+lw*k/NN,yCv=ty(yLuce0-adL.elDh(xg-LY.segOrig(s))+exMm);
               if(yCv<yMinCv)yMinCv=yCv;
               if(k===0)ctx.moveTo(tx(xg),yCv);else ctx.lineTo(tx(xg),yCv);
             }
@@ -6171,6 +6346,43 @@ function _disegnaSu(p,cvs,leg){
         });
       });
     }
+  }
+
+  // ── Sopraluce: finestra fissa sopra le ante (vetro, tondini o pannello) col suo traverso ──
+  const _slD=sopraluceCalc(p);
+  if(_slD){
+    const xIn=LY.telSx,wIn=_slD.w,yTop=LY.telTop,yBot=yTop+_slD.h;
+    const dhx=x=>_ctD?Math.max(0,_ctD.dh(x)):0;
+    const bordo=(azione)=>{ // contorno del sopraluce: sopra segue la cima
+      ctx.beginPath();const N=28;
+      for(let k=0;k<=N;k++){const x=xIn+wIn*k/N;const y=yTop-dhx(x);if(!k)ctx.moveTo(tx(x),ty(y));else ctx.lineTo(tx(x),ty(y));}
+      ctx.lineTo(tx(xIn+wIn),ty(yBot));ctx.lineTo(tx(xIn),ty(yBot));ctx.closePath();azione();
+    };
+    if(cvTec()){ctx.fillStyle=CV_TEC.luce;bordo(()=>ctx.fill());}
+    if(_slD.riemp==='vetro'){
+      const G=vetroGioco(p);
+      ctx.save();bordo(()=>ctx.clip());
+      const X=tx(xIn+G),Y=ty(yTop-dhx(xIn+wIn/2)+G),W=(wIn-2*G)*sc,H=(yBot-G-(yTop-dhx(xIn+wIn/2)+G))*sc;
+      ctx.fillStyle=CVC('vetro');ctx.fillRect(X,Y,W,H);riflessiVetro(ctx,X,Y,W,H);
+      ctx.restore();
+      ctx.strokeStyle=CVC('contorno');ctx.lineWidth=1;bordo(()=>ctx.stroke());
+    } else if(_slD.riemp==='lamiera'){
+      ctx.save();bordo(()=>ctx.clip());
+      const X=tx(xIn+20),Y=ty(yTop-dhx(xIn+wIn/2)+20),W=(wIn-40)*sc,H=(yBot-20-(yTop-dhx(xIn+wIn/2)+20))*sc;
+      ctx.fillStyle=CVC('lamiera');ctx.fillRect(X,Y,W,H);drawLamPattern(ctx,X,Y,W,H,p.lamiera_tipo||'liscia',p.lamiera_foro);
+      ctx.restore();
+      ctx.strokeStyle=CVC('contorno');ctx.lineWidth=1;bordo(()=>ctx.stroke());
+    } else if(_slD.riemp==='tondini'&amp;&amp;_slD.el&amp;&amp;_slD.nTond>0){
+      const larg=_slD.largT,sp=(wIn-_slD.nTond*larg)/(_slD.nTond+1);
+      const rgbS=_cvHexRgb(EL_C[0]);
+      for(let k=0;k<_slD.nTond;k++){
+        const xl=sp+larg/2+k*(larg+sp),xc=xIn+xl,dh=_slD.dhEl(xl);
+        if(String(_slD.el.mat.profilo).startsWith(&quot;Ø&quot;))tondo3D(ctx,tx(xc),ty((yTop-dh+yBot)/2),Math.max(larg*sc/2,1.5),(yBot-yTop+dh)*sc/2,rgbS);
+        else barra3D(ctx,tx(xc-larg/2),ty(yTop-dh),Math.max(larg*sc,1.5),(yBot-yTop+dh)*sc,rgbS,1);
+      }
+    }
+    if(_slD.trav)barra3D(ctx,tx(xIn),ty(yBot),wIn*sc,Math.max(_slD.h?LY.slTrav*sc:0,2),[80,192,144],1.5);
+    cvLabelQ(&quot;sopraluce &quot;+cmU(_slD.h),tx(xIn+wIn/2),ty(yBot)-6,&quot;#64a8ff&quot;,&quot;center&quot;,11);
   }
 
   // ── Vetro (porte): lastre per anta con il gioco per lato; simbolo del vetro (riflessi) ──
@@ -6236,13 +6448,13 @@ function _disegnaSu(p,cvs,leg){
       const cells=elemCelle(p,el,segW,luciaV,barRegion(p,el,luciaV));
       for(let s=0;s<nSeg;s++){
         const x0=segX0(s);
-        const ad=arcoTop?arcoDatiAnta(p,luce,s,nSeg):null;
+        const ad=arcoTop?arcoDatiSeg(p,luce,s,nSeg):null;
         cells.forEach(c=>{
           const yTopC=yLuce0+(luciaV-c.by1),hC=c.by1-c.by0;
           if(!(hC>0))return;
           c.pos.forEach((pos,ip)=>{
             const xc=x0+pos;
-            const dh=(ad&amp;&amp;c.by1>=luciaV-0.5)?ad.elDh(xc-antaX_(s)):0;
+            const dh=(ad&amp;&amp;c.by1>=luciaV-0.5)?ad.elDh(xc-LY.segOrig(s)):0;
             const yT=yTopC-dh,len=hC+dh;
             if(!(len>0))return;
             nTot++;
@@ -6293,12 +6505,14 @@ function _disegnaSu(p,cvs,leg){
   const fSx  = tiD.haAnte ? wSxTel(p)  : wSx;
   const fDx  = tiD.haAnte ? wDxTel(p)  : wDx;
   if(!soloAnteD){
-    if(fTop>0)barra3D(ctx,tx(0),ty(0),Wmm*sc,fTop*sc,RGB_TEL,2);
+    if(fTop>0&amp;&amp;_ctD)barraCima(ctx,tx,ty,sc,_ctD,0,Wmm,0,fTop,RGB_TEL);
+    else if(fTop>0)barra3D(ctx,tx(0),ty(0),Wmm*sc,fTop*sc,RGB_TEL,2);
     if(!p.aperto_sotto&amp;&amp;fBot>0)barra3D(ctx,tx(0),ty(Hmm-fBot),Wmm*sc,fBot*sc,RGB_TEL,2);
-    if(fSx>0)barra3D(ctx,tx(0),ty(0),fSx*sc,Hmm*sc,RGB_TEL,2);
-    if(fDx>0)barra3D(ctx,tx(Wmm-fDx),ty(0),fDx*sc,Hmm*sc,RGB_TEL,2);
+    const _dSx=_ctD?_ctD.dhSx:0,_dDx=_ctD?_ctD.dhDx:0;
+    if(fSx>0)barra3D(ctx,tx(0),ty(-_dSx),fSx*sc,(Hmm+_dSx)*sc,RGB_TEL,2);
+    if(fDx>0)barra3D(ctx,tx(Wmm-fDx),ty(-_dDx),fDx*sc,(Hmm+_dDx)*sc,RGB_TEL,2);
     const isPiant=p.tipo==='cancello_battente'&amp;&amp;(p.telaio_modo||'nessuno')==='piantoni';
-    if(!isPiant)giunti45(ctx,tx(0),ty(0),Wmm*sc,Hmm*sc,fTop*sc,(!p.aperto_sotto&amp;&amp;fBot>0)?fBot*sc:0,fSx*sc,fDx*sc);
+    if(!isPiant&amp;&amp;!_ctD)giunti45(ctx,tx(0),ty(0),Wmm*sc,Hmm*sc,fTop*sc,(!p.aperto_sotto&amp;&amp;fBot>0)?fBot*sc:0,fSx*sc,fDx*sc);
     // Telaio chiuso sotto ma traversa bassa senza profilo: il calcolo la considera uguale a quella alta
     if(tiD.haAnte&amp;&amp;!p.aperto_sotto&amp;&amp;!(fBot>0)&amp;&amp;LY.telBot>0){
       ctx.save();ctx.setLineDash([5,4]);ctx.strokeStyle=CVC('quota');ctx.lineWidth=1;
@@ -6315,8 +6529,11 @@ function _disegnaSu(p,cvs,leg){
   // Montanti intermedi (campate) e correnti intermedi (fasce), col loro profilo
   const RGB_MID=[58,120,175];
   if(!tiD.haAnte&amp;&amp;nCL>1&amp;&amp;luce.wMid>0){
-    const yT=fTop,yB=Hmm-(p.aperto_sotto?0:fBot);
-    for(let i=1;i<nCL;i++)barra3D(ctx,tx(luce.campX0(i)-luce.wMid),ty(yT),luce.wMid*sc,(yB-yT)*sc,RGB_MID,1);
+    const yB=Hmm-(p.aperto_sotto?0:fBot);
+    for(let i=1;i<nCL;i++){
+      const xm=luce.campX0(i)-luce.wMid,dh=_ctD?_ctD.dh(xm+luce.wMid/2):0;
+      barra3D(ctx,tx(xm),ty(fTop-dh),luce.wMid*sc,(yB-fTop+dh)*sc,RGB_MID,1);
+    }
   }
   if(!tiD.haAnte&amp;&amp;nCA>1&amp;&amp;luce.hMid>0){
     (luce.correnti||[]).forEach(c=>{
@@ -6336,7 +6553,7 @@ function _disegnaSu(p,cvs,leg){
       const xA=antaX_(ai);
       const mTop=a.top&amp;&amp;a.top.mat,mBot=a.bot&amp;&amp;a.bot.mat,mSx=a.sx&amp;&amp;a.sx.mat,mDx=a.dx&amp;&amp;a.dx.mat;
       const pT=mTop?eLarg(mTop):wSx,pB=mBot?eLarg(mBot):wSx,pS=mSx?eLarg(mSx):wSx,pD=mDx?eLarg(mDx):wSx;
-      const _adD=arcoDatiAnta(p,luce,ai,_nAd);
+      const _adD=arcoSulleAnte(p)?arcoDatiSeg(p,luce,ai,_nAd):null;
       if(_adD){
         const N=26;
         const gArc=ctx.createLinearGradient(0,ty(yA-Math.max(_adD.dhSx,_adD.dhDx,0)),0,ty(yA+pT));
@@ -6381,13 +6598,17 @@ function _disegnaSu(p,cvs,leg){
       // larghezza della prima anta, sopra a tutto (anche sopra il colmo dell'arco)
       if(tiD.haAnte&amp;&amp;nBattD>1&amp;&amp;A_>0)drawQuotaCv(ctx,tx(antaX_(0)+A_),ty(antaY_-_arcoUp),tx(antaX_(0)),ty(antaY_-_arcoUp),cmU(A_),12);
       if(!tiD.haAnte&amp;&amp;nCL>1&amp;&amp;segW>0)drawQuotaCv(ctx,tx(segX0(0)+segW),ty(0),tx(segX0(0)),ty(0),&quot;luce &quot;+cmU(segW),12);
-      if(arcoAttivo(p)&amp;&amp;tiD.haAnte){
-        const _f=Math.abs(parseFloat(p.arco.freccia)||0);
-        const _adQ=arcoDatiAnta(p,luce,0,Math.max(1,p.ante.length));
+      if(arcoAttivo(p)){
+        const _adQ=arcoDatiSeg(p,luce,0,nSeg);
+        const _f=_adQ?frecciaCima(p,_adQ.C):0;
         if(_adQ&amp;&amp;_f>0){
-          const _xc=(p.arco.tipo==='per_anta')?(antaX_(0)+A_/2):(antaX_(0)+_adQ.C/2);
-          const _yArc=(p.arco.verso==='giu')?antaY_+_f:antaY_-_f;
-          cvLabelQ(&quot;freccia &quot;+cmU(_f),tx(_xc),ty(_yArc)+32,&quot;#ffb340&quot;,&quot;center&quot;,12);
+          const _forma=(FORME_CIMA.find(f=>f[0]===formaCima(p))||[&quot;&quot;,&quot;forma&quot;])[1].replace(/^\S+\s/,&quot;&quot;).toLowerCase();
+          const _giu=p.arco.verso==='giu';
+          const _xc=tiD.haAnte?(LY.segOrig(0)+((p.arco.tipo==='per_anta')?A_/2:_adQ.C/2)):(_adQ.C/2);
+          const _yTop=tiD.haAnte?antaY_:0;
+          const _yArc=_giu?_yTop+_f:_yTop-_f;
+          const _hEstrema=_giu?Math.max(0,Hmm-_f):Hmm+_f;
+          cvLabelQ(_forma+&quot; &quot;+cmU(_f)+&quot; · h &quot;+(_giu?&quot;min &quot;:&quot;max &quot;)+cmU(_hEstrema),tx(_xc),ty(_yArc)+32,&quot;#ffb340&quot;,&quot;center&quot;,12);
         }
       }
     }catch(e){}
@@ -7011,6 +7232,10 @@ function applicaMat(mat){
     // str-{pid}-{ruolo} — soppalco / pensilina (pilastri, travi, travetti, parapetto, mensole…)
     const pidS=parseInt(parts[1]),ruolo=parts[2];
     pezzi=pezzi.map(p=>p.id!==pidS?p:{...p,strMats:{...(p.strMats||{}),[ruolo]:mat}});
+  } else if(mTarget.startsWith(&quot;slt-&quot;)){
+    // slt-{pid} — traverso fisso del sopraluce
+    const pidL=parseInt(parts[1]);
+    pezzi=pezzi.map(p=>p.id!==pidL?p:{...p,sopraluce:Object.assign({attivo:true,h:40,riemp:'vetro'},p.sopraluce||{},{mat})});
   } else if(mTarget.startsWith(&quot;vfv-&quot;)){
     // vfv-{pid} — fermavetro del vetro della porta
     const pidV=parseInt(parts[1]);
@@ -7152,7 +7377,19 @@ function inviaPREV(snapId){
     let desc=tiInfo.isGazebo?`${tiLabel} ${cmv((parseFloat(p.larg)||0)*1000)}×${cmv((parseFloat(p.alt)||0)*1000)} cm in pianta, altezza ${cmv((parseFloat(p.alt_montante)||2.5)*1000)} cm`
       :`${tiLabel} ${cmv((parseFloat(p.larg)||0)*1000)}×${cmv((parseFloat(p.alt)||0)*1000)} cm`;
     if(tiInfo.haAnte)desc+=`, ${nB} ${nB>1?(tiInfo.nomeAnte===&quot;battente&quot;?&quot;battenti&quot;:&quot;ante&quot;):(tiInfo.nomeAnte||&quot;anta&quot;)}`;
-    if(arcoAttivo(p))desc+=`, ad arco (${p.arco.verso==='giu'?'ribassato':'colmo'} ${cmv(Math.abs(parseFloat(p.arco.freccia)||0))} cm)`;
+    if(arcoAttivo(p)){
+      const _luP=calcLuce(p);
+      const _adP=arcoDatiSeg(p,_luP,0,_luP.haAnte?Math.max(1,(p.ante||[]).length):Math.max(1,_luP.nCL||1));
+      const _fP=_adP?frecciaCima(p,_adP.C):0;
+      const _nf=(FORME_CIMA.find(f=>f[0]===formaCima(p))||[&quot;&quot;,&quot;arco&quot;])[1].replace(/^\S+\s/,&quot;&quot;).toLowerCase();
+      desc+=`, cima ${_nf} (${p.arco.verso==='giu'?'ribassata':'alzata'} ${cmv(_fP)} cm)`;
+    }
+    const _slP=sopraluceCalc(p);
+    if(_slP){
+      const _rl=(SOPRALUCE_RIEMP.find(r=>r[0]===_slP.riemp)||[&quot;&quot;,_slP.riemp])[1].replace(/^\S+\s/,&quot;&quot;).toLowerCase();
+      desc+=`, con sopraluce fisso ${cmv(_slP.h)} cm in ${_rl}`;
+      if(_slP.riemp==='lamiera')righe.push({ruolo:'',testo:'pannello del sopraluce in lamiera sp.'+fmtN(parseFloat(p.lamiera_sp)||2)+'mm'});
+    }
     if(_ld)desc+=_ld.modo==='sotto'?', con pannellatura in lamiera (parte bassa)':(_ld.modo==='sopra'?', con pannellatura in lamiera (parte alta)':', con pannellatura in lamiera');
     if(_vd)desc+=', con vetro '+_vd.sigla+(_vd.modo==='sopra'?' (parte alta)':(_vd.modo==='sotto'?' (parte bassa)':''));
     if(p.zinc_caldo)desc+=', zincato a caldo';
@@ -7383,13 +7620,16 @@ function walkPezzoMateriali(p,addG){
     const t45=isPiant?&quot;&quot;:&quot; 45°&quot;;
     const isScorr=p.tipo==='cancello_scorrevole';
     const cs=isScorr?(parseFloat(p.coda_sup)||0):0,ci=isScorr?(parseFloat(p.coda_inf)||0):0;
-    A(tm('top'),Wmm+cs,nPz,&quot;traversa alta&quot;+(cs>0?&quot; + coda &quot;+cmv(cs)+&quot; cm&quot;:t45));
+    const ct=cimaTelaio(p,luce); // cima sagomata (arco, tutto sesto, inclinata, cuspide)
+    const nomeCima=ct?(&quot; &quot;+(FORME_CIMA.find(f=>f[0]===formaCima(p))||[&quot;&quot;,&quot;&quot;])[1].replace(/^\S+\s/,&quot;&quot;).toLowerCase()+&quot; (sviluppo)&quot;):t45;
+    A(tm('top'),(ct?ct.len:Wmm)+cs,nPz,&quot;traversa alta&quot;+(cs>0?&quot; + coda &quot;+cmv(cs)+&quot; cm&quot;:nomeCima));
     if(!p.aperto_sotto)A(tm('bot'),Wmm+ci,nPz,&quot;traversa bassa&quot;+(ci>0?&quot; + coda &quot;+cmv(ci)+&quot; cm&quot;:t45));
-    if(!p._skipSx)A(tm('sx'),Hmm,nPz,(isPiant?&quot;piantone&quot;:&quot;montante&quot;)+&quot; sx&quot;+t45);
-    A(tm('dx'),Hmm,nPz,(isPiant?&quot;piantone&quot;:&quot;montante&quot;)+&quot; dx&quot;+t45);
-    if(nCL>1){ // montanti intermedi: tra traversa alta e bassa, taglio dritto
+    if(!p._skipSx)A(tm('sx'),Math.max(0,Hmm+(ct?ct.dhSx:0)),nPz,(isPiant?&quot;piantone&quot;:&quot;montante&quot;)+&quot; sx&quot;+(ct&amp;&amp;ct.dhSx?&quot; (cima)&quot;:t45));
+    A(tm('dx'),Math.max(0,Hmm+(ct?ct.dhDx:0)),nPz,(isPiant?&quot;piantone&quot;:&quot;montante&quot;)+&quot; dx&quot;+(ct&amp;&amp;ct.dhDx?&quot; (cima)&quot;:t45));
+    if(nCL>1){ // montanti intermedi: tra traversa alta e bassa, taglio dritto (con la cima seguono la forma)
       const hT=tm('top')?eLarg(tm('top')):0,hB=(!p.aperto_sotto&amp;&amp;tm('bot'))?eLarg(tm('bot')):0;
-      A(matMidV(p),Hmm-hT-hB,(nCL-1)*nPz,&quot;montante intermedio&quot;);
+      if(ct)for(let i=1;i<nCL;i++){const x=luce.campX0(i)-luce.wMid/2;A(matMidV(p),Math.max(0,Hmm-hT-hB+ct.dh(x)),nPz,&quot;montante intermedio &quot;+i+&quot; (cima)&quot;);}
+      else A(matMidV(p),Hmm-hT-hB,(nCL-1)*nPz,&quot;montante intermedio&quot;);
     }
     if(nCA>1)A(matMidH(p),luciaH,(nCA-1)*nCL*nPz,&quot;corrente intermedio&quot;);
     (T.intermedi||[]).forEach((im,ii)=>{ // vecchi intermedi a sola distinta (porte/ante)
@@ -7407,7 +7647,7 @@ function walkPezzoMateriali(p,addG){
     const nomeA=nomeAnte(p.tipo);
     p.ante.forEach((a,ai)=>{
       const la=nomeA+&quot; &quot;+(ai+1);
-      const ad=arcoDatiAnta(p,luce,ai,nA);
+      const ad=arcoSulleAnte(p)?arcoDatiSeg(p,luce,ai,nA):null;
       const m=l=>(a[l]&amp;&amp;a[l].mat)||null;
       if(ad){
         A(m('top'),ad.topLen,nPz,la+&quot; traversa alta AD ARCO (sviluppo)&quot;);
@@ -7426,7 +7666,7 @@ function walkPezzoMateriali(p,addG){
   // ── Riempimento: ogni anta (manufatti ad ante) oppure ogni campata ──
   const nSeg=haAnte?Math.max(1,nA):nCL;
   const segLuce=luce.luciaHAnta;
-  const arcoTop=arcoAttivo(p)&amp;&amp;haAnte&amp;&amp;(!p.lamiera||p.lamiera_modo==='sotto');
+  const arcoTop=arcoSulleAnte(p)&amp;&amp;(!p.lamiera||p.lamiera_modo==='sotto');
   (p.elemList||[]).filter(e=>e.attivo&amp;&amp;e.mat).forEach((el,gi)=>{
     const isV=el.dir!==&quot;oriz&quot;;
     const larg=eLarg(el.mat);
@@ -7460,8 +7700,21 @@ function walkPezzoMateriali(p,addG){
     if((tr.dir||&quot;oriz&quot;)===&quot;oriz&quot;)A(tr.mat,segLuce,nSeg*nPz,&quot;traversa ↔ &quot;+(i+1)+&quot; a &quot;+cmv(tr.quota_mm)+&quot; cm&quot;);
     else{const ex=travExtent(p,tr,luciaV);A(tr.mat,ex.y1-ex.y0,nSeg*nPz,&quot;traversa ↕ &quot;+(i+1)+&quot; a &quot;+cmv(tr.quota_mm)+&quot; cm&quot;);}
   });
+  // ── Sopraluce: traverso fisso e, se scelto, i tondini della finestra ──
+  const _sl=sopraluceCalc(p);
+  if(_sl){
+    A(_sl.trav,_sl.travLen,nPz,&quot;traverso fisso del sopraluce&quot;);
+    if(_sl.riemp==='tondini'&amp;&amp;_sl.el&amp;&amp;_sl.nTond>0){
+      const sp=(_sl.w-_sl.nTond*_sl.largT)/(_sl.nTond+1);
+      for(let k=0;k<_sl.nTond;k++){
+        const x=sp+_sl.largT/2+k*(_sl.largT+sp);
+        A(_sl.el.mat,_sl.h+_sl.dhEl(x),nPz,&quot;tondino del sopraluce&quot;);
+      }
+    }
+  }
+
   // ── Fermavetro: 4 pezzi per lastra (per ogni lato fermato), alla misura della lastra ──
-  if(p.vetro&amp;&amp;p.vetro_fermavetro&amp;&amp;ammetteVetro(p)){
+  if(p.vetro_fermavetro&amp;&amp;ammetteVetro(p)&amp;&amp;(p.vetro||(_sl&amp;&amp;_sl.riemp==='vetro'))){
     const vd=calcVetro(p);
     if(vd){const q=vd.moltSeg*nPz*vd.latiFV;vd.lastre.forEach(l=>{A(p.vetro_fermavetro,l.w,2*q,&quot;fermavetro orizzontale&quot;);A(p.vetro_fermavetro,l.h,2*q,&quot;fermavetro verticale&quot;);});}
   }
@@ -9453,18 +9706,15 @@ function calcLamiera(p){
   areaTot*=nPz*moltSeg;
   // [ARCO] i pannelli che arrivano in cima seguono l'intradosso: area reale = rettangolo + spicchio
   let areaArcoM2=0;
-  if(arcoAttivo(p)&amp;&amp;luce.haAnte&amp;&amp;modo!=='sotto'){
-    const A_l=luce.antaLargLorda||0,G_l=luce.gioco||0,nA_l=moltSeg;
+  if(arcoSulleAnte(p)&amp;&amp;modo!=='sotto'){
     let topBand=null;bandeV.forEach(b=>{if(b.b>=luciaV_mm-0.5)topBand=b;});
-    if(topBand&amp;&amp;A_l>0){
+    if(topBand){
       const colsTop=barColumns(p,luceSeg,luciaV_mm,topBand.a,topBand.b);
-      for(let ai=0;ai<nA_l;ai++){
+      for(let s=0;s<moltSeg;s++){
+        const ad=arcoDatiSeg(p,luce,s,moltSeg);if(!ad)continue;
         colsTop.forEach(ch=>{
           const x0=ch.a+EX_mm,x1=ch.b-EX_mm;if(x1<=x0)return;
-          let extra;
-          if((p.arco.tipo||'unico')==='per_anta')extra=arcoAreaSeg(p,A_l,wSx+x0,wSx+x1);
-          else{const C2=nA_l*A_l+(nA_l-1)*G_l,st2=ai*(A_l+G_l);extra=arcoAreaSeg(p,C2,st2+wSx+x0,st2+wSx+x1);}
-          areaArcoM2+=extra/1e6;
+          areaArcoM2+=arcoAreaSeg(p,ad.C,ad.xa+wSx+x0,ad.xa+wSx+x1)/1e6;
         });
       }
       areaArcoM2*=nPz;
@@ -9596,7 +9846,8 @@ function vetroConfine(p,luciaV){
 }
 function vetroBande(p,luciaV){return bandeLuce(p,luciaV,p.vetro_modo||'tutto',()=>vetroConfine(p,luciaV));}
 function calcVetro(p){
-  if(!p||!p.vetro||!ammetteVetro(p))return null;
+  if(!p||!ammetteVetro(p))return null;
+  if(!p.vetro&amp;&amp;!(p.sopraluce&amp;&amp;p.sopraluce.attivo&amp;&amp;(p.sopraluce.riemp||'vetro')==='vetro'))return null;
   const luce=calcLuce(p);
   const luceSeg=luce.luciaHAnta,luciaV=luce.luciaV;
   if(!(luceSeg>0)||!(luciaV>0))return null;
@@ -9604,22 +9855,35 @@ function calcVetro(p){
   const nPz=Math.max(1,parseInt(p.nPezziUguali)||1);
   const G=vetroGioco(p),comp=vetroComp(p);
   const lastre=[];
-  vetroBande(p,luciaV).forEach(bv=>{
+  if(p.vetro)vetroBande(p,luciaV).forEach(bv=>{
     const h=(bv.b-bv.a)-2*G;if(!(h>0))return;
     barColumns(p,luceSeg,luciaV,bv.a,bv.b).forEach(ch=>{
       const w=(ch.b-ch.a)-2*G;if(w>0)lastre.push({w,h,a:bv.a,b:bv.b,ca:ch.a,cb:ch.b});
     });
   });
-  if(!lastre.length)return null;
+  // Lastra del sopraluce (una sola, su tutta la larghezza interna del telaio)
+  const sl=sopraluceCalc(p),slVetro=!!(sl&amp;&amp;sl.riemp==='vetro');
+  if(!lastre.length&amp;&amp;!slVetro)return null;
   const q=moltSeg*nPz;
-  const areaTot=lastre.reduce((a,l)=>a+l.w*l.h/1e6,0)*q;
-  const perimTot=lastre.reduce((a,l)=>a+2*(l.w+l.h)/1000,0)*q;
+  let areaTot=lastre.reduce((a,l)=>a+l.w*l.h/1e6,0)*q;
+  let perimTot=lastre.reduce((a,l)=>a+2*(l.w+l.h)/1000,0)*q;
   const gm={};
   lastre.forEach(l=>{const w=Math.round(l.w)/10,h=Math.round(l.h)/10,k=w+&quot;x&quot;+h;if(!gm[k])gm[k]={w_cm:w,h_cm:h,q:0};gm[k].q+=q;});
+  if(slVetro){
+    const wS=sl.w-2*G,hS=sl.h-2*G;
+    if(wS>0&amp;&amp;hS>0){
+      const wc=Math.round(wS)/10,hc=Math.round(hS)/10,k=wc+&quot;x&quot;+hc;
+      areaTot+=(sl.arco?(sl.areaMq/Math.max(1,nPz)):(wS*hS/1e6))*nPz;
+      perimTot+=2*(wS+hS)/1000*nPz;
+      if(!gm[k])gm[k]={w_cm:wc,h_cm:hc,q:0,sopraluce:true};
+      gm[k].q+=nPz;gm[k].sopraluce=true;
+      lastre.push({w:wS,h:hS,a:0,b:0,ca:0,cb:wS,sopraluce:true});
+    }
+  }
   const gruppi=Object.keys(gm).map(k=>gm[k]).sort((a,b)=>b.w_cm*b.h_cm-a.w_cm*a.h_cm);
   const prezzoMq=Math.max(0,numOk(p.vetro_prezzoMq,0));
   const avvisi=comp.avvisi.slice();
-  if(arcoAttivo(p)&amp;&amp;lastre.some(l=>l.b>=luciaV-0.5))avvisi.push(&quot;Porta ad arco: la lastra in cima va sagomata. Qui trovi il rettangolo senza l'arco; per la sagoma serve la dima del vetraio.&quot;);
+  if(arcoAttivo(p)&amp;&amp;lastre.some(l=>l.sopraluce||l.b>=luciaV-0.5))avvisi.push(&quot;Porta ad arco: la lastra in cima va sagomata. Qui trovi il rettangolo senza l'arco; per la sagoma serve la dima del vetraio.&quot;);
   if(p.lamiera&amp;&amp;(p.lamiera_modo||'tutto')==='tutto'&amp;&amp;(p.vetro_modo||'tutto')==='tutto')avvisi.push(&quot;Lamiera e vetro riempiono la stessa luce: scegli lamiera sotto e vetro sopra (o il contrario).&quot;);
   const latiFV=(parseInt(p.vetro_fvLati)||0)>0?parseInt(p.vetro_fvLati):((luce.sx&amp;&amp;battutaAppoggio(luce.sx)>0)?1:2);
   return {G,comp,sigla:comp.sigla,lastre,gruppi,moltSeg,nPz,nLastre:lastre.length*q,areaTot,perimTot,
@@ -9714,7 +9978,13 @@ function extraPezzo(p){
   const out={voci:[],costo:0,kgAcciaio:0,kgAltro:0};
   const add=v=>{out.voci.push(v);out.costo+=v.costo||0;if(v.acciaio)out.kgAcciaio+=v.kg||0;else out.kgAltro+=v.kg||0;};
   const ti=TIPI.find(t=>t.k===p.tipo)||TIPI[0];
-  if(p.vetro&amp;&amp;ammetteVetro(p)){const v=calcVetro(p);if(v)add({k:'vetro',label:'Vetri '+v.sigla,det:v.nLastre+&quot; lastr&quot;+(v.nLastre===1?&quot;a&quot;:&quot;e&quot;)+&quot; · &quot;+v.areaTot.toFixed(2)+&quot; m²&quot;,mq:v.areaTot,kg:v.pesoTot,acciaio:false,costo:v.costo,senzaPrezzo:!(v.prezzoMq>0)});}
+  const _sl=sopraluceCalc(p);
+  if(_sl&amp;&amp;_sl.riemp==='lamiera'&amp;&amp;_sl.areaMq>0){
+    const kgMq=LAM_DENS*(parseFloat(p.lamiera_sp)||2);
+    add({k:'sopraluce',label:'Pannello del sopraluce (lamiera sp. '+fmtN(parseFloat(p.lamiera_sp)||2)+' mm)',det:_sl.areaMq.toFixed(2)+&quot; m²&quot;,
+      mq:_sl.areaMq,kg:_sl.areaMq*kgMq,acciaio:true,costo:_sl.areaMq*kgMq*numOk(p.lamiera_prezzoKg,UPG.lamPrezzoKg),senzaPrezzo:!(numOk(p.lamiera_prezzoKg,UPG.lamPrezzoKg)>0)});
+  }
+  if((p.vetro||(_sl&amp;&amp;_sl.riemp==='vetro'))&amp;&amp;ammetteVetro(p)){const v=calcVetro(p);if(v)add({k:'vetro',label:'Vetri '+v.sigla,det:v.nLastre+&quot; lastr&quot;+(v.nLastre===1?&quot;a&quot;:&quot;e&quot;)+&quot; · &quot;+v.areaTot.toFixed(2)+&quot; m²&quot;,mq:v.areaTot,kg:v.pesoTot,acciaio:false,costo:v.costo,senzaPrezzo:!(v.prezzoMq>0)});}
   if(ti.isSoppalco){const s=soppCalc(p);if(s.piano!=='nessuno'&amp;&amp;s.area>0)add({k:'piano',label:'Piano '+nomePianoSopp(p),det:s.area.toFixed(2)+&quot; m²&quot;,mq:s.area,kg:s.pianoKg,acciaio:s.pianoAcciaio,costo:s.pianoCosto,senzaPrezzo:!(s.pianoPrezzo>0)});}
   if(ti.isPensilina){const c=penCalc(p);if(c.area>0)add({k:'copertura',label:'Copertura '+(PEN_COPERTURE.find(x=>x[0]===c.cop)||[&quot;&quot;,c.cop])[1].toLowerCase(),det:c.area.toFixed(2)+&quot; m²&quot;,mq:c.area,kg:c.copKg,acciaio:c.copAcciaio,costo:c.copCosto,senzaPrezzo:!(c.copPrezzo>0)});}
   return out;
