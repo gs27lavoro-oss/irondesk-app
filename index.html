@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.12.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.13.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.12.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.13.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -4923,6 +4923,8 @@ function _notaTecnico(){return `<div style=&quot;margin-top:8px;background:#1a12
 function buildBodySoppalco(p){
   const s=soppCalc(p),M=p.strMats||{},col=&quot;#c0a060&quot;;
   const piano=s.piano;
+  const qPar=parapettoPezzi(p)[0]||null;              // ringhiera virtuale: geometria del parapetto
+  const qParLuce=qPar?calcLuce(qPar):{luciaH:0,luciaV:0,nCL:1};
   return `
   ${_testaStruttura(p,&quot;N° soppalchi uguali&quot;)}
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${col}&quot;>
@@ -4977,6 +4979,21 @@ function buildBodySoppalco(p){
     <div class=&quot;nota-info&quot;>Il varco (a destra sul fronte) lascia il passaggio per la scala: la scala la aggiungi come manufatto 🪜 Scala.</div>
   </div>
 
+  ${qPar?`
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#9060e0&quot;>
+    <div class=&quot;st&quot; style=&quot;color:#9060e0&quot;>⬆️ ➡️ Stile del parapetto — come una ringhiera</div>
+    <p style=&quot;font-size:11px;color:#91a2bb;margin-bottom:9px;line-height:1.4&quot;>
+      Il parapetto è una ringhiera vera: tondini verticali o orizzontali, rombi, collari, riccioli e traverse.
+      Luce di una campata: <b style=&quot;color:#f08a3c&quot;>${cmv(qParLuce.luciaH)} × ${cmv(qParLuce.luciaV)} cm</b>
+      ${qParLuce.nCL>1?` · ${qParLuce.nCL} campate per lato`:&quot;&quot;}
+    </p>
+    ${buildElemHtml(p,qPar)}
+    <button class=&quot;btn-add&quot; style=&quot;border-color:#9060e0;color:#9060e0;background:#0c0618;padding:7px&quot; onclick=&quot;aggiungiEl(${p.id})&quot;>+ Aggiungi elemento</button>
+    <div class=&quot;st&quot; style=&quot;color:#55d39b;margin-top:10px&quot;>➖ Traverse del parapetto</div>
+    ${buildTravHtml(p,qPar)}
+    <button class=&quot;btn-add&quot; style=&quot;border-color:#55d39b;color:#55d39b;background:#061208;padding:7px&quot; onclick=&quot;aggiungiTraversa(${p.id})&quot;>+ Aggiungi traversa</button>
+  </div>`:&quot;&quot;}
+
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${col}&quot;>
     <div class=&quot;st&quot; style=&quot;color:${col}&quot;>📐 Disegno e quantità</div>
     <div id=&quot;dis-${p.id}&quot; class=&quot;tavola-dis&quot; data-h=&quot;300&quot; style=&quot;margin-top:4px&quot;></div>
@@ -4985,6 +5002,7 @@ function buildBodySoppalco(p){
     ${_rigaInfo(&quot;Pilastri&quot;,s.nPil*s.nPz+&quot; × &quot;+cmv(s.hPil)+&quot; cm&quot;)}
     ${_rigaInfo(&quot;Travetti&quot;,s.nTrav*s.nPz+&quot; (uno ogni &quot;+cmv(s.passoTrav)+&quot; cm)&quot;)}
     ${s.tratti.length?_rigaInfo(&quot;Montanti parapetto&quot;,s.nMont*s.nPz+&quot; × &quot;+cmv(s.lMont)+&quot; cm&quot;):&quot;&quot;}
+    ${s.tratti.length?_rigaInfo(&quot;Campate del parapetto&quot;,s.tratti.map(t=>t.lato+&quot; &quot;+t.nCamp).join(&quot; · &quot;)):&quot;&quot;}
     ${_rigaInfo(&quot;Piastre di base&quot;,s.nPiastre+&quot; pz&quot;)}
     ${s.muro?_rigaInfo(&quot;Appoggi a muro (piastre / tasselli)&quot;,s.nAppMuro+&quot; pz&quot;):&quot;&quot;}
     <div class=&quot;nota-info&quot;>Pilastro = altezza del piano − piano (${fmtN(s.spPiano)} mm) − travetto (${fmtN(s.hTrav)} mm) − trave (${fmtN(s.hTrave)} mm). Piastre, tasselli e bulloni: aggiungili nella ferramenta per averne il costo.</div>
@@ -5123,6 +5141,196 @@ function buildLavorazioniHtml(p){
         <span>Totale ferramenta${nPzF>1?` (×${nPzF} pezzi uguali)`:''}</span><b style=&quot;color:#f08a3c&quot;>€ ${fmtP(totF)}</b></div>`:&quot;&quot;)}
   </div>`;
   return zinc+vern+ferr;
+}
+
+// ═══════ EDITOR DEGLI ELEMENTI E DELLE TRAVERSE ═══════
+// Usato dai manufatti normali e dal parapetto del soppalco: &quot;pg&quot; è il pezzo da cui si prende
+// la geometria (per il parapetto è la ringhiera virtuale), &quot;p&quot; è il manufatto vero (i pulsanti).
+function buildElemHtml(p,pg){
+  pg=pg||p;
+  const luceG=calcLuce(pg);
+  const luciaHAnta=luceG.luciaHAnta,luciaV=luceG.luciaV,nCA=luceG.nCA,nCL=luceG.nCL,haAnte=!!luceG.haAnte;
+  return (p.elemList||[]).map((el,gi)=>{
+    const col=EL_C[gi%EL_C.length];
+    const isR=el.dir===&quot;rombi&quot;;
+    const isV=el.dir!==&quot;oriz&quot;;
+    const luceEl=isV?luciaHAnta:(nCA>1?luceG.luciaVF:luciaV);
+    const dec=el.decoro||&quot;nessuno&quot;;
+    const elW=el.mat?eLarg(el.mat):0;
+    // Conteggio dalla STESSA logica di distinta e disegno (celle tagliate da traverse e correnti)
+    const nSegE=haAnte?Math.max(1,(pg.ante||[]).length):nCL;
+    const dove=haAnte?&quot; per &quot;+nomeAnte(pg.tipo):(nCL>1?&quot; per campata&quot;:&quot;&quot;);
+    let resHtml=&quot;&quot;;
+    if(el.attivo&amp;&amp;el.mat&amp;&amp;luceEl>0){
+      let nPer=0,dett=&quot;&quot;;
+      if(isR){
+        const reg=barRegion(pg,el,luciaV);
+        barCells(pg,luciaHAnta,luciaV,reg.regY0,reg.regY1,elW,el.spMin,el.spMax,el.pd||&quot;libero&quot;).forEach(c=>{nPer+=rombiSegmenti(c.b-c.a,c.by1-c.by0,passoRombi(el,elW),elW).length;});
+        dett=&quot;diagonali a 45°, passo &quot;+cmU(passoRombi(el,elW))+&quot; — ogni diagonale è un pezzo a sé&quot;;
+      } else if(isV){
+        const cells=elemCelle(pg,el,luciaHAnta,luciaV,barRegion(pg,el,luciaV));
+        nPer=cells.reduce((a,c)=>a+c.pos.length,0);
+        if(cells.length>1)dett=cells.map((c,i)=>&quot;scomparto &quot;+(i+1)+&quot;: &quot;+c.pos.length+(el.modo!==&quot;man&quot;?&quot; (spazio &quot;+cmv(c.sp)+&quot; cm)&quot;:&quot;&quot;)).join(&quot; · &quot;);
+        else if(cells.length===1&amp;&amp;el.modo!==&quot;man&quot;)dett=&quot;spazio tra gli elementi &quot;+cmU(cells[0].sp);
+      } else {
+        const fs_=fasceLuce(luceG);
+        nPer=fs_.reduce((a,x)=>a+elemPosizioni(el,x.y1-x.y0,elW).length,0);
+        if(el.modo!==&quot;man&quot;&amp;&amp;fs_.length){const s0=calcSc(fs_[0].y1-fs_[0].y0,elW,el.spMin,el.spMax,el.pd||&quot;libero&quot;);dett=&quot;spazio tra gli elementi &quot;+cmU(s0.sp)+(fs_.length>1?&quot; · in &quot;+fs_.length+&quot; fasce&quot;:&quot;&quot;);}
+      }
+      resHtml=nPer>0
+        ?`<div style=&quot;background:#06120e;border:1px solid ${col};border-radius:6px;padding:5px 9px;font-size:11px;margin-top:6px;line-height:1.6&quot;>
+            <span>N°${dove}: <b style=&quot;color:${col}&quot;>${nPer}</b></span>${nSegE>1?` · totale <b style=&quot;color:${col}&quot;>${nPer*nSegE}</b>`:&quot;&quot;}
+            <span style=&quot;color:#91a2bb&quot;> · luce ${cmU(luceEl)}</span>
+            ${dett?`<div style=&quot;color:#8a96b0&quot;>${dett}</div>`:&quot;&quot;}
+          </div>`
+        :`<div style=&quot;background:#120606;border:1px solid #f06b6b;border-radius:6px;padding:5px 9px;font-size:11px;margin-top:6px;color:#f06b6b&quot;>⚠️ Nessun elemento: la luce è troppo piccola per questo spazio</div>`;
+    }
+
+    const pdBtns=[&quot;libero&quot;,&quot;pari&quot;,&quot;dispari&quot;].map(v=>`
+      <button onclick=&quot;setElProp(${p.id},${el.id},'pd','${v}')&quot;
+        style=&quot;padding:3px 7px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
+          border:1.5px solid ${(el.pd||&quot;libero&quot;)===v?col:&quot;#172438&quot;};
+          color:${(el.pd||&quot;libero&quot;)===v?col:&quot;#91a2bb&quot;};background:${(el.pd||&quot;libero&quot;)===v?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>
+        ${v===&quot;libero&quot;?&quot;Libero&quot;:v===&quot;pari&quot;?&quot;Pari&quot;:&quot;Dispari&quot;}</button>`).join(&quot;&quot;);
+
+    return `<div class=&quot;el-card&quot; style=&quot;border-color:${el.attivo?col:&quot;#172438&quot;}&quot;>
+      <div style=&quot;display:flex;align-items:center;gap:6px;margin-bottom:8px&quot;>
+        <div style=&quot;width:11px;height:11px;border-radius:50%;background:${col};flex-shrink:0&quot;></div>
+        <div style=&quot;font-weight:700;font-size:11px;color:${col};flex:1&quot;>Elemento ${gi+1}</div>
+        <button onclick=&quot;setElProp(${p.id},${el.id},'dir','vert')&quot;
+          style=&quot;padding:3px 7px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
+            border:1.5px solid ${isV&amp;&amp;!isR?col:&quot;#172438&quot;};color:${isV&amp;&amp;!isR?col:&quot;#91a2bb&quot;};background:${isV&amp;&amp;!isR?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>↕ Vert.</button>
+        <button onclick=&quot;setElProp(${p.id},${el.id},'dir','oriz')&quot;
+          style=&quot;padding:3px 7px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
+            border:1.5px solid ${!isV?col:&quot;#172438&quot;};color:${!isV?col:&quot;#91a2bb&quot;};background:${!isV?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>↔ Oriz.</button>
+        <button onclick=&quot;setElProp(${p.id},${el.id},'dir','rombi')&quot; title=&quot;Grata a rombi: diagonali a 45°&quot;
+          style=&quot;padding:3px 7px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
+            border:1.5px solid ${isR?col:&quot;#172438&quot;};color:${isR?col:&quot;#91a2bb&quot;};background:${isR?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>◇ Rombi</button>
+        <button class=&quot;btn&quot; onclick=&quot;toggleElV(${p.id},${el.id})&quot;
+          style=&quot;border-color:${el.attivo?col:&quot;#172438&quot;};color:${el.attivo?col:&quot;#91a2bb&quot;};padding:3px 7px;font-size:10px&quot;>
+          ${el.attivo?&quot;✓&quot;:&quot;Off&quot;}</button>
+        ${(p.elemList||[]).length>1?`<button class=&quot;btn-x&quot; onclick=&quot;rimuoviEl(${p.id},${el.id})&quot; style=&quot;width:24px;height:24px;font-size:12px&quot;>✕</button>`:&quot;&quot;}
+      </div>
+      ${el.attivo?`
+        <div class=&quot;lato-row&quot; style=&quot;margin-bottom:7px&quot;>
+          <span class=&quot;lato-lbl&quot;>Materiale</span>
+          <span class=&quot;lato-mat ${el.mat?&quot;mat-ok&quot;:&quot;mat-no&quot;}&quot;>${el.mat?matShort(el.mat):&quot;Nessun materiale&quot;}</span>
+          <button class=&quot;btn&quot; onclick=&quot;aprireMat('el-${p.id}-${el.id}')&quot;
+            style=&quot;border-color:${col};color:${col};padding:4px 9px;font-size:10px;flex-shrink:0&quot;>
+            ${el.mat?&quot;Cambia&quot;:&quot;Scegli&quot;}</button>
+        </div>
+        <div style=&quot;display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px&quot;>
+          <button onclick=&quot;setElProp(${p.id},${el.id},'modo','sc')&quot;
+            style=&quot;padding:3px 9px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
+              border:1.5px solid ${(el.modo||&quot;sc&quot;)===&quot;sc&quot;?col:&quot;#172438&quot;};
+              color:${(el.modo||&quot;sc&quot;)===&quot;sc&quot;?col:&quot;#91a2bb&quot;};background:${(el.modo||&quot;sc&quot;)===&quot;sc&quot;?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>
+            📐 Scompartimento</button>
+          <button onclick=&quot;setElProp(${p.id},${el.id},'modo','man')&quot;
+            style=&quot;padding:3px 9px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
+              border:1.5px solid ${el.modo===&quot;man&quot;?col:&quot;#172438&quot;};
+              color:${el.modo===&quot;man&quot;?col:&quot;#91a2bb&quot;};background:${el.modo===&quot;man&quot;?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>
+            🔢 Manuale</button>
+        </div>
+        ${(el.modo||&quot;sc&quot;)===&quot;sc&quot;?`
+          <div class=&quot;g2 mb6&quot;>
+            <div><label class=&quot;fl&quot;>Spazio min (cm)</label>
+              <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${cmv(el.spMin)}&quot; min=&quot;0&quot; step=&quot;0.5&quot; inputmode=&quot;decimal&quot;
+                onchange=&quot;setElProp(${p.id},${el.id},'spMin',(parseFloat(this.value)||0)*10)&quot;></div>
+            <div><label class=&quot;fl&quot;>Spazio max (cm)</label>
+              <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${cmv(el.spMax)}&quot; min=&quot;0&quot; step=&quot;0.5&quot; inputmode=&quot;decimal&quot;
+                onchange=&quot;setElProp(${p.id},${el.id},'spMax',(parseFloat(this.value)||0)*10)&quot;></div>
+          </div>
+          <div style=&quot;display:flex;gap:5px;flex-wrap:wrap;align-items:center&quot;>
+            <span style=&quot;font-size:10px;color:#91a2bb&quot;>N°:</span>${pdBtns}
+          </div>`:`
+          <div class=&quot;g2 mb6&quot;>
+            <div><label class=&quot;fl&quot;>N° elementi</label>
+              <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${el.nMan||3}&quot; min=&quot;1&quot; step=&quot;1&quot; inputmode=&quot;decimal&quot;
+                onchange=&quot;setElProp(${p.id},${el.id},'nMan',this.value)&quot;></div>
+            <div><label class=&quot;fl&quot;>Posizioni dal bordo (cm) — facoltative</label>
+              <input class=&quot;fi&quot; type=&quot;text&quot; value=&quot;${esc(quoteMmToCm(el.quote))}&quot; placeholder=&quot;es. 20, 50, 80&quot;
+                onchange=&quot;setElProp(${p.id},${el.id},'quote',quoteCmToMm(this.value))&quot;></div>
+          </div>
+          <div style=&quot;font-size:10px;color:#91a2bb&quot;>Luce ${cmU(luceEl)} — lascia vuoto per distribuzione uniforme</div>`}
+        ${!isR?`<div style=&quot;display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-top:7px&quot;>
+          <span style=&quot;font-size:10px;color:#91a2bb&quot;>Decoro:</span>
+          ${[[&quot;nessuno&quot;,&quot;Nessuno&quot;],[&quot;collari&quot;,&quot;● Collari&quot;]].concat(isV?[[&quot;fuso&quot;,&quot;◆ A fuso&quot;],[&quot;riccioli&quot;,&quot;§ Riccioli&quot;]]:[]).map(d=>`<button onclick=&quot;setElProp(${p.id},${el.id},'decoro','${d[0]}')&quot;
+            style=&quot;padding:3px 8px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;border:1.5px solid ${dec===d[0]?col:&quot;#172438&quot;};color:${dec===d[0]?col:&quot;#91a2bb&quot;};background:${dec===d[0]?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>${d[1]}</button>`).join(&quot;&quot;)}
+          ${(dec===&quot;collari&quot;||dec===&quot;riccioli&quot;)?`<span style=&quot;font-size:10px;color:#91a2bb&quot;>${dec===&quot;collari&quot;?&quot;per barra&quot;:&quot;file&quot;}</span>
+            <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;1&quot; max=&quot;6&quot; step=&quot;1&quot; value=&quot;${Math.max(1,parseInt(el.nDecori)||2)}&quot; style=&quot;width:56px;padding:4px&quot; onchange=&quot;setElProp(${p.id},${el.id},'nDecori',Math.max(1,parseInt(this.value)||1))&quot;>`:&quot;&quot;}
+        </div>`:&quot;&quot;}
+        ${resHtml}
+      `:&quot;&quot;}
+    </div>`;
+  }).join(&quot;&quot;);
+}
+
+function buildTravHtml(p,pg){
+  pg=pg||p;
+  const luceG=calcLuce(pg);
+  const luciaHAnta=luceG.luciaHAnta,luciaV=luceG.luciaV,nCL=luceG.nCL,haAnte=!!luceG.haAnte;
+  return (p.traverse||[]).map((tr,ti2)=>{
+    const isO=(tr.dir||&quot;oriz&quot;)===&quot;oriz&quot;;
+    // Una traversa per ogni anta (o campata): quota misurata dentro la luce di ognuna
+    const lucePerp=isO?luciaV:luciaHAnta;  // luce nella direzione di posizionamento
+    const luceLung=isO?luciaHAnta:travExtent(pg,tr,luciaV).y1-travExtent(pg,tr,luciaV).y0;  // lunghezza di un pezzo
+    const nSegT=haAnte?Math.max(1,(pg.ante||[]).length):nCL;
+    const dentro=traversaValida(tr,luceG);
+    const quotaLabel=isO?&quot;dal basso&quot;:(haAnte?&quot;da sinistra, in ogni &quot;+nomeAnte(pg.tipo):(nCL>1?&quot;da sinistra, in ogni campata&quot;:&quot;da sinistra&quot;));
+    var estHtml='';
+    if(!isO){
+      var _estOpts=[['tutta','Tutta la luce'],['sotto','Fino a trav. oriz.'],['sopra','Dalla trav. oriz. su'],['man','Manuale']];
+      var _btns=_estOpts.map(function(e){var att=(tr.est||'tutta')===e[0];
+        return '<button onclick=&quot;setTravProp('+p.id+',\''+tr.id+'\',\'est\',\''+e[0]+'\')&quot; style=&quot;padding:3px 8px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;margin:1px;border:1.5px solid '+(att?'#55d39b':'#172438')+';color:'+(att?'#55d39b':'#91a2bb')+';background:'+(att?'#061208':'transparent')+'&quot;>'+e[1]+'</button>';
+      }).join('');
+      var _man='';
+      if((tr.est||'tutta')==='man'){
+        _man='<div style=&quot;display:flex;gap:8px;margin-top:5px&quot;>'+
+          '<div style=&quot;display:flex;align-items:center;gap:4px&quot;><span style=&quot;font-size:10px;color:#91a2bb&quot;>da</span><input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;'+(tr.est_da||'')+'&quot; min=&quot;0&quot; step=&quot;1&quot; style=&quot;max-width:90px&quot; onchange=&quot;setTravProp('+p.id+',\''+tr.id+'\',\'est_da\',this.value)&quot;><span style=&quot;font-size:10px;color:#91a2bb&quot;>mm dal basso</span></div>'+
+          '<div style=&quot;display:flex;align-items:center;gap:4px&quot;><span style=&quot;font-size:10px;color:#91a2bb&quot;>a</span><input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;'+(tr.est_a||'')+'&quot; min=&quot;0&quot; step=&quot;1&quot; style=&quot;max-width:90px&quot; onchange=&quot;setTravProp('+p.id+',\''+tr.id+'\',\'est_a\',this.value)&quot;><span style=&quot;font-size:10px;color:#91a2bb&quot;>mm</span></div>'+
+          '</div>';
+      }
+      estHtml='<div style=&quot;margin-top:6px&quot;><label class=&quot;fl&quot;>Estensione (altezza traversa verticale)</label><div style=&quot;display:flex;flex-wrap:wrap;gap:3px&quot;>'+_btns+'</div>'+_man+'</div>';
+    }
+    return `
+    <div class=&quot;el-card&quot; style=&quot;border-color:#55d39b80&quot;>
+      <div style=&quot;display:flex;align-items:center;gap:7px;margin-bottom:8px&quot;>
+        <div style=&quot;width:11px;height:11px;border-radius:50%;background:#55d39b;flex-shrink:0&quot;></div>
+        <span style=&quot;font-weight:700;font-size:11px;color:#55d39b;flex:1&quot;>Traversa ${ti2+1}</span>
+        <!-- Selezione direzione -->
+        <button onclick=&quot;setTravProp(${p.id},'${tr.id}','dir','oriz')&quot;
+          style=&quot;padding:3px 8px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
+            border:1.5px solid ${isO?&quot;#55d39b&quot;:&quot;#172438&quot;};color:${isO?&quot;#55d39b&quot;:&quot;#91a2bb&quot;};background:${isO?&quot;#061208&quot;:&quot;transparent&quot;}&quot;>
+          ↔ Oriz.</button>
+        <button onclick=&quot;setTravProp(${p.id},'${tr.id}','dir','vert')&quot;
+          style=&quot;padding:3px 8px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
+            border:1.5px solid ${!isO?&quot;#55d39b&quot;:&quot;#172438&quot;};color:${!isO?&quot;#55d39b&quot;:&quot;#91a2bb&quot;};background:${!isO?&quot;#061208&quot;:&quot;transparent&quot;}&quot;>
+          ↕ Vert.</button>
+        <button class=&quot;btn-x&quot; onclick=&quot;rimuoviTraversa(${p.id},'${tr.id}')&quot; style=&quot;width:24px;height:24px;font-size:12px&quot;>✕</button>
+      </div>
+      <div class=&quot;g2 mb6&quot;>
+        <div>
+          <label class=&quot;fl&quot;>Quota ${quotaLabel} (cm)</label>
+          <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${cmv(tr.quota_mm)}&quot; min=&quot;0&quot; max=&quot;${Math.round(lucePerp/10)}&quot; step=&quot;0.5&quot; inputmode=&quot;decimal&quot;
+            style=&quot;border-color:#55d39b&quot;
+            onchange=&quot;setTravProp(${p.id},'${tr.id}','quota_mm',(parseFloat(this.value)||0)*10)&quot;>
+          <div style=&quot;font-size:10px;color:#91a2bb;margin-top:2px&quot;>
+            Luce ${cmU(lucePerp)} · pezzo da ${cmU(luceLung)}${nSegT>1?&quot; × &quot;+nSegT:&quot;&quot;}
+          </div>
+          ${(tr.mat&amp;&amp;!dentro)?`<div style=&quot;font-size:10px;color:#f06b6b;margin-top:2px&quot;>⚠️ Quota fuori dalla luce: la traversa non è disegnata né conteggiata</div>`:&quot;&quot;}
+        </div>
+        <div>
+          <label class=&quot;fl&quot;>Materiale</label>
+          <div class=&quot;lato-row&quot; style=&quot;margin-bottom:0&quot;>
+            <span class=&quot;lato-mat ${tr.mat?&quot;mat-ok&quot;:&quot;mat-no&quot;}&quot; style=&quot;font-size:11px&quot;>${tr.mat?matShort(tr.mat):&quot;—&quot;}</span>
+            <button class=&quot;btn&quot; onclick=&quot;aprireMat('trav-${p.id}-${tr.id}')&quot;
+              style=&quot;border-color:#55d39b;color:#55d39b;padding:4px 8px;font-size:10px;flex-shrink:0&quot;>Scegli</button>
+          </div>
+        </div>
+      </div>
+      ${estHtml}
+    </div>`;
+  }).join(&quot;&quot;);
 }
 
 function buildBody(p){
@@ -5295,183 +5503,10 @@ function buildBody(p){
     </div>`).join(&quot;&quot;);
 
   // ── Elementi interni ──
-  const elemHtml=(p.elemList||[]).map((el,gi)=>{
-    const col=EL_C[gi%EL_C.length];
-    const isR=el.dir===&quot;rombi&quot;;
-    const isV=el.dir!==&quot;oriz&quot;;
-    const luceEl=isV?luciaHAnta:(nCA>1?luce.luciaVF:luciaV);
-    const dec=el.decoro||&quot;nessuno&quot;;
-    const elW=el.mat?eLarg(el.mat):0;
-    // Conteggio dalla STESSA logica di distinta e disegno (celle tagliate da traverse e correnti)
-    const nSegE=haAnte?Math.max(1,p.ante.length):nCL;
-    const dove=haAnte?&quot; per &quot;+nomeAnte(p.tipo):(nCL>1?&quot; per campata&quot;:&quot;&quot;);
-    let resHtml=&quot;&quot;;
-    if(el.attivo&amp;&amp;el.mat&amp;&amp;luceEl>0){
-      let nPer=0,dett=&quot;&quot;;
-      if(isR){
-        const reg=barRegion(p,el,luciaV);
-        barCells(p,luciaHAnta,luciaV,reg.regY0,reg.regY1,elW,el.spMin,el.spMax,el.pd||&quot;libero&quot;).forEach(c=>{nPer+=rombiSegmenti(c.b-c.a,c.by1-c.by0,passoRombi(el,elW),elW).length;});
-        dett=&quot;diagonali a 45°, passo &quot;+cmU(passoRombi(el,elW))+&quot; — ogni diagonale è un pezzo a sé&quot;;
-      } else if(isV){
-        const cells=elemCelle(p,el,luciaHAnta,luciaV,barRegion(p,el,luciaV));
-        nPer=cells.reduce((a,c)=>a+c.pos.length,0);
-        if(cells.length>1)dett=cells.map((c,i)=>&quot;scomparto &quot;+(i+1)+&quot;: &quot;+c.pos.length+(el.modo!==&quot;man&quot;?&quot; (spazio &quot;+cmv(c.sp)+&quot; cm)&quot;:&quot;&quot;)).join(&quot; · &quot;);
-        else if(cells.length===1&amp;&amp;el.modo!==&quot;man&quot;)dett=&quot;spazio tra gli elementi &quot;+cmU(cells[0].sp);
-      } else {
-        const fs_=fasceLuce(luce);
-        nPer=fs_.reduce((a,x)=>a+elemPosizioni(el,x.y1-x.y0,elW).length,0);
-        if(el.modo!==&quot;man&quot;&amp;&amp;fs_.length){const s0=calcSc(fs_[0].y1-fs_[0].y0,elW,el.spMin,el.spMax,el.pd||&quot;libero&quot;);dett=&quot;spazio tra gli elementi &quot;+cmU(s0.sp)+(fs_.length>1?&quot; · in &quot;+fs_.length+&quot; fasce&quot;:&quot;&quot;);}
-      }
-      resHtml=nPer>0
-        ?`<div style=&quot;background:#06120e;border:1px solid ${col};border-radius:6px;padding:5px 9px;font-size:11px;margin-top:6px;line-height:1.6&quot;>
-            <span>N°${dove}: <b style=&quot;color:${col}&quot;>${nPer}</b></span>${nSegE>1?` · totale <b style=&quot;color:${col}&quot;>${nPer*nSegE}</b>`:&quot;&quot;}
-            <span style=&quot;color:#91a2bb&quot;> · luce ${cmU(luceEl)}</span>
-            ${dett?`<div style=&quot;color:#8a96b0&quot;>${dett}</div>`:&quot;&quot;}
-          </div>`
-        :`<div style=&quot;background:#120606;border:1px solid #f06b6b;border-radius:6px;padding:5px 9px;font-size:11px;margin-top:6px;color:#f06b6b&quot;>⚠️ Nessun elemento: la luce è troppo piccola per questo spazio</div>`;
-    }
-
-    const pdBtns=[&quot;libero&quot;,&quot;pari&quot;,&quot;dispari&quot;].map(v=>`
-      <button onclick=&quot;setElProp(${p.id},${el.id},'pd','${v}')&quot;
-        style=&quot;padding:3px 7px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
-          border:1.5px solid ${(el.pd||&quot;libero&quot;)===v?col:&quot;#172438&quot;};
-          color:${(el.pd||&quot;libero&quot;)===v?col:&quot;#91a2bb&quot;};background:${(el.pd||&quot;libero&quot;)===v?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>
-        ${v===&quot;libero&quot;?&quot;Libero&quot;:v===&quot;pari&quot;?&quot;Pari&quot;:&quot;Dispari&quot;}</button>`).join(&quot;&quot;);
-
-    return `<div class=&quot;el-card&quot; style=&quot;border-color:${el.attivo?col:&quot;#172438&quot;}&quot;>
-      <div style=&quot;display:flex;align-items:center;gap:6px;margin-bottom:8px&quot;>
-        <div style=&quot;width:11px;height:11px;border-radius:50%;background:${col};flex-shrink:0&quot;></div>
-        <div style=&quot;font-weight:700;font-size:11px;color:${col};flex:1&quot;>Elemento ${gi+1}</div>
-        <button onclick=&quot;setElProp(${p.id},${el.id},'dir','vert')&quot;
-          style=&quot;padding:3px 7px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
-            border:1.5px solid ${isV&amp;&amp;!isR?col:&quot;#172438&quot;};color:${isV&amp;&amp;!isR?col:&quot;#91a2bb&quot;};background:${isV&amp;&amp;!isR?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>↕ Vert.</button>
-        <button onclick=&quot;setElProp(${p.id},${el.id},'dir','oriz')&quot;
-          style=&quot;padding:3px 7px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
-            border:1.5px solid ${!isV?col:&quot;#172438&quot;};color:${!isV?col:&quot;#91a2bb&quot;};background:${!isV?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>↔ Oriz.</button>
-        <button onclick=&quot;setElProp(${p.id},${el.id},'dir','rombi')&quot; title=&quot;Grata a rombi: diagonali a 45°&quot;
-          style=&quot;padding:3px 7px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
-            border:1.5px solid ${isR?col:&quot;#172438&quot;};color:${isR?col:&quot;#91a2bb&quot;};background:${isR?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>◇ Rombi</button>
-        <button class=&quot;btn&quot; onclick=&quot;toggleElV(${p.id},${el.id})&quot;
-          style=&quot;border-color:${el.attivo?col:&quot;#172438&quot;};color:${el.attivo?col:&quot;#91a2bb&quot;};padding:3px 7px;font-size:10px&quot;>
-          ${el.attivo?&quot;✓&quot;:&quot;Off&quot;}</button>
-        ${(p.elemList||[]).length>1?`<button class=&quot;btn-x&quot; onclick=&quot;rimuoviEl(${p.id},${el.id})&quot; style=&quot;width:24px;height:24px;font-size:12px&quot;>✕</button>`:&quot;&quot;}
-      </div>
-      ${el.attivo?`
-        <div class=&quot;lato-row&quot; style=&quot;margin-bottom:7px&quot;>
-          <span class=&quot;lato-lbl&quot;>Materiale</span>
-          <span class=&quot;lato-mat ${el.mat?&quot;mat-ok&quot;:&quot;mat-no&quot;}&quot;>${el.mat?matShort(el.mat):&quot;Nessun materiale&quot;}</span>
-          <button class=&quot;btn&quot; onclick=&quot;aprireMat('el-${p.id}-${el.id}')&quot;
-            style=&quot;border-color:${col};color:${col};padding:4px 9px;font-size:10px;flex-shrink:0&quot;>
-            ${el.mat?&quot;Cambia&quot;:&quot;Scegli&quot;}</button>
-        </div>
-        <div style=&quot;display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px&quot;>
-          <button onclick=&quot;setElProp(${p.id},${el.id},'modo','sc')&quot;
-            style=&quot;padding:3px 9px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
-              border:1.5px solid ${(el.modo||&quot;sc&quot;)===&quot;sc&quot;?col:&quot;#172438&quot;};
-              color:${(el.modo||&quot;sc&quot;)===&quot;sc&quot;?col:&quot;#91a2bb&quot;};background:${(el.modo||&quot;sc&quot;)===&quot;sc&quot;?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>
-            📐 Scompartimento</button>
-          <button onclick=&quot;setElProp(${p.id},${el.id},'modo','man')&quot;
-            style=&quot;padding:3px 9px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
-              border:1.5px solid ${el.modo===&quot;man&quot;?col:&quot;#172438&quot;};
-              color:${el.modo===&quot;man&quot;?col:&quot;#91a2bb&quot;};background:${el.modo===&quot;man&quot;?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>
-            🔢 Manuale</button>
-        </div>
-        ${(el.modo||&quot;sc&quot;)===&quot;sc&quot;?`
-          <div class=&quot;g2 mb6&quot;>
-            <div><label class=&quot;fl&quot;>Spazio min (cm)</label>
-              <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${cmv(el.spMin)}&quot; min=&quot;0&quot; step=&quot;0.5&quot; inputmode=&quot;decimal&quot;
-                onchange=&quot;setElProp(${p.id},${el.id},'spMin',(parseFloat(this.value)||0)*10)&quot;></div>
-            <div><label class=&quot;fl&quot;>Spazio max (cm)</label>
-              <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${cmv(el.spMax)}&quot; min=&quot;0&quot; step=&quot;0.5&quot; inputmode=&quot;decimal&quot;
-                onchange=&quot;setElProp(${p.id},${el.id},'spMax',(parseFloat(this.value)||0)*10)&quot;></div>
-          </div>
-          <div style=&quot;display:flex;gap:5px;flex-wrap:wrap;align-items:center&quot;>
-            <span style=&quot;font-size:10px;color:#91a2bb&quot;>N°:</span>${pdBtns}
-          </div>`:`
-          <div class=&quot;g2 mb6&quot;>
-            <div><label class=&quot;fl&quot;>N° elementi</label>
-              <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${el.nMan||3}&quot; min=&quot;1&quot; step=&quot;1&quot; inputmode=&quot;decimal&quot;
-                onchange=&quot;setElProp(${p.id},${el.id},'nMan',this.value)&quot;></div>
-            <div><label class=&quot;fl&quot;>Posizioni dal bordo (cm) — facoltative</label>
-              <input class=&quot;fi&quot; type=&quot;text&quot; value=&quot;${esc(quoteMmToCm(el.quote))}&quot; placeholder=&quot;es. 20, 50, 80&quot;
-                onchange=&quot;setElProp(${p.id},${el.id},'quote',quoteCmToMm(this.value))&quot;></div>
-          </div>
-          <div style=&quot;font-size:10px;color:#91a2bb&quot;>Luce ${cmU(luceEl)} — lascia vuoto per distribuzione uniforme</div>`}
-        ${!isR?`<div style=&quot;display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-top:7px&quot;>
-          <span style=&quot;font-size:10px;color:#91a2bb&quot;>Decoro:</span>
-          ${[[&quot;nessuno&quot;,&quot;Nessuno&quot;],[&quot;collari&quot;,&quot;● Collari&quot;]].concat(isV?[[&quot;fuso&quot;,&quot;◆ A fuso&quot;],[&quot;riccioli&quot;,&quot;§ Riccioli&quot;]]:[]).map(d=>`<button onclick=&quot;setElProp(${p.id},${el.id},'decoro','${d[0]}')&quot;
-            style=&quot;padding:3px 8px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;border:1.5px solid ${dec===d[0]?col:&quot;#172438&quot;};color:${dec===d[0]?col:&quot;#91a2bb&quot;};background:${dec===d[0]?&quot;#0c0618&quot;:&quot;transparent&quot;}&quot;>${d[1]}</button>`).join(&quot;&quot;)}
-          ${(dec===&quot;collari&quot;||dec===&quot;riccioli&quot;)?`<span style=&quot;font-size:10px;color:#91a2bb&quot;>${dec===&quot;collari&quot;?&quot;per barra&quot;:&quot;file&quot;}</span>
-            <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;1&quot; max=&quot;6&quot; step=&quot;1&quot; value=&quot;${Math.max(1,parseInt(el.nDecori)||2)}&quot; style=&quot;width:56px;padding:4px&quot; onchange=&quot;setElProp(${p.id},${el.id},'nDecori',Math.max(1,parseInt(this.value)||1))&quot;>`:&quot;&quot;}
-        </div>`:&quot;&quot;}
-        ${resHtml}
-      `:&quot;&quot;}
-    </div>`;
-  }).join(&quot;&quot;);
+  const elemHtml=buildElemHtml(p,p);
 
   // ── Traverse ──
-  const travHtml=(p.traverse||[]).map((tr,ti2)=>{
-    const isO=(tr.dir||&quot;oriz&quot;)===&quot;oriz&quot;;
-    // Una traversa per ogni anta (o campata): quota misurata dentro la luce di ognuna
-    const lucePerp=isO?luciaV:luciaHAnta;  // luce nella direzione di posizionamento
-    const luceLung=isO?luciaHAnta:travExtent(p,tr,luciaV).y1-travExtent(p,tr,luciaV).y0;  // lunghezza di un pezzo
-    const nSegT=haAnte?Math.max(1,p.ante.length):nCL;
-    const dentro=traversaValida(tr,luce);
-    const quotaLabel=isO?&quot;dal basso&quot;:(haAnte?&quot;da sinistra, in ogni &quot;+nomeAnte(p.tipo):(nCL>1?&quot;da sinistra, in ogni campata&quot;:&quot;da sinistra&quot;));
-    var estHtml='';
-    if(!isO){
-      var _estOpts=[['tutta','Tutta la luce'],['sotto','Fino a trav. oriz.'],['sopra','Dalla trav. oriz. su'],['man','Manuale']];
-      var _btns=_estOpts.map(function(e){var att=(tr.est||'tutta')===e[0];
-        return '<button onclick=&quot;setTravProp('+p.id+',\''+tr.id+'\',\'est\',\''+e[0]+'\')&quot; style=&quot;padding:3px 8px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;margin:1px;border:1.5px solid '+(att?'#55d39b':'#172438')+';color:'+(att?'#55d39b':'#91a2bb')+';background:'+(att?'#061208':'transparent')+'&quot;>'+e[1]+'</button>';
-      }).join('');
-      var _man='';
-      if((tr.est||'tutta')==='man'){
-        _man='<div style=&quot;display:flex;gap:8px;margin-top:5px&quot;>'+
-          '<div style=&quot;display:flex;align-items:center;gap:4px&quot;><span style=&quot;font-size:10px;color:#91a2bb&quot;>da</span><input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;'+(tr.est_da||'')+'&quot; min=&quot;0&quot; step=&quot;1&quot; style=&quot;max-width:90px&quot; onchange=&quot;setTravProp('+p.id+',\''+tr.id+'\',\'est_da\',this.value)&quot;><span style=&quot;font-size:10px;color:#91a2bb&quot;>mm dal basso</span></div>'+
-          '<div style=&quot;display:flex;align-items:center;gap:4px&quot;><span style=&quot;font-size:10px;color:#91a2bb&quot;>a</span><input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;'+(tr.est_a||'')+'&quot; min=&quot;0&quot; step=&quot;1&quot; style=&quot;max-width:90px&quot; onchange=&quot;setTravProp('+p.id+',\''+tr.id+'\',\'est_a\',this.value)&quot;><span style=&quot;font-size:10px;color:#91a2bb&quot;>mm</span></div>'+
-          '</div>';
-      }
-      estHtml='<div style=&quot;margin-top:6px&quot;><label class=&quot;fl&quot;>Estensione (altezza traversa verticale)</label><div style=&quot;display:flex;flex-wrap:wrap;gap:3px&quot;>'+_btns+'</div>'+_man+'</div>';
-    }
-    return `
-    <div class=&quot;el-card&quot; style=&quot;border-color:#55d39b80&quot;>
-      <div style=&quot;display:flex;align-items:center;gap:7px;margin-bottom:8px&quot;>
-        <div style=&quot;width:11px;height:11px;border-radius:50%;background:#55d39b;flex-shrink:0&quot;></div>
-        <span style=&quot;font-weight:700;font-size:11px;color:#55d39b;flex:1&quot;>Traversa ${ti2+1}</span>
-        <!-- Selezione direzione -->
-        <button onclick=&quot;setTravProp(${p.id},'${tr.id}','dir','oriz')&quot;
-          style=&quot;padding:3px 8px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
-            border:1.5px solid ${isO?&quot;#55d39b&quot;:&quot;#172438&quot;};color:${isO?&quot;#55d39b&quot;:&quot;#91a2bb&quot;};background:${isO?&quot;#061208&quot;:&quot;transparent&quot;}&quot;>
-          ↔ Oriz.</button>
-        <button onclick=&quot;setTravProp(${p.id},'${tr.id}','dir','vert')&quot;
-          style=&quot;padding:3px 8px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;
-            border:1.5px solid ${!isO?&quot;#55d39b&quot;:&quot;#172438&quot;};color:${!isO?&quot;#55d39b&quot;:&quot;#91a2bb&quot;};background:${!isO?&quot;#061208&quot;:&quot;transparent&quot;}&quot;>
-          ↕ Vert.</button>
-        <button class=&quot;btn-x&quot; onclick=&quot;rimuoviTraversa(${p.id},'${tr.id}')&quot; style=&quot;width:24px;height:24px;font-size:12px&quot;>✕</button>
-      </div>
-      <div class=&quot;g2 mb6&quot;>
-        <div>
-          <label class=&quot;fl&quot;>Quota ${quotaLabel} (cm)</label>
-          <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${cmv(tr.quota_mm)}&quot; min=&quot;0&quot; max=&quot;${Math.round(lucePerp/10)}&quot; step=&quot;0.5&quot; inputmode=&quot;decimal&quot;
-            style=&quot;border-color:#55d39b&quot;
-            onchange=&quot;setTravProp(${p.id},'${tr.id}','quota_mm',(parseFloat(this.value)||0)*10)&quot;>
-          <div style=&quot;font-size:10px;color:#91a2bb;margin-top:2px&quot;>
-            Luce ${cmU(lucePerp)} · pezzo da ${cmU(luceLung)}${nSegT>1?&quot; × &quot;+nSegT:&quot;&quot;}
-          </div>
-          ${(tr.mat&amp;&amp;!dentro)?`<div style=&quot;font-size:10px;color:#f06b6b;margin-top:2px&quot;>⚠️ Quota fuori dalla luce: la traversa non è disegnata né conteggiata</div>`:&quot;&quot;}
-        </div>
-        <div>
-          <label class=&quot;fl&quot;>Materiale</label>
-          <div class=&quot;lato-row&quot; style=&quot;margin-bottom:0&quot;>
-            <span class=&quot;lato-mat ${tr.mat?&quot;mat-ok&quot;:&quot;mat-no&quot;}&quot; style=&quot;font-size:11px&quot;>${tr.mat?matShort(tr.mat):&quot;—&quot;}</span>
-            <button class=&quot;btn&quot; onclick=&quot;aprireMat('trav-${p.id}-${tr.id}')&quot;
-              style=&quot;border-color:#55d39b;color:#55d39b;padding:4px 8px;font-size:10px;flex-shrink:0&quot;>Scegli</button>
-          </div>
-        </div>
-      </div>
-      ${estHtml}
-    </div>`;
-  }).join(&quot;&quot;);
+  const travHtml=buildTravHtml(p,p);
 
     // ── Pannello lamiera ──
   const _lam=calcLamiera(p);
@@ -6225,14 +6260,59 @@ function disegnaSoppalco(p,cvs,ctx,leg){
   barra3D(ctx,FX(0),FY(yTr),s.L*scF,Math.max(s.hTrave*scF,2),RGB_T,1);
   const wPil=Math.max((M.pilastri?eLarg(M.pilastri):80)*scF,3);
   for(let i=0;i<=s.nCamp;i++){const x=i*s.campL;const xx=Math.min(Math.max(FX(x)-wPil/2,FX(0)),FX(s.L)-wPil);barra3D(ctx,xx,FY(yTv),wPil,Math.max((yG-yTv)*scF,1),RGB_P,1);}
+  // Parapetto del fronte: si disegna dalla ringhiera virtuale, così è uguale alla distinta
   const fr=s.tratti.find(t=>t.lato==='fronte');
-  if(fr){
-    const nM=Math.ceil(fr.len/s.passoPar-1e-6)+1,dM=nM>1?fr.len/(nM-1):0;
-    const wM=Math.max((M.parMont?eLarg(M.parMont):40)*scF,1.5),hC=Math.max((M.parCorrimano?eLarg(M.parCorrimano):40)*scF,2);
-    for(let k=0;k<nM;k++){const x=Math.min(k*dM,fr.len);barra3D(ctx,Math.min(FX(x)-wM/2,FX(fr.len)-wM),FY(0),wM,(yP-0)*scF,RGB_PAR,1);}
-    barra3D(ctx,FX(0),FY(0),fr.len*scF,hC,RGB_PAR,1);
-    const hK=Math.max((M.parCorrenti?eLarg(M.parCorrenti):30)*scF,1.5);
-    for(let k=1;k<=s.nCorr;k++){const y=s.hPar*k/(s.nCorr+1);barra3D(ctx,FX(0),FY(y)-hK/2,fr.len*scF,hK,RGB_PAR,1);}
+  const qFr=fr?parapettoPezzi(p).find(x=>x._lato==='fronte'):null;
+  if(qFr){
+    const lu=calcLuce(qFr),Hpar=s.hPar+s.spPiano;
+    const wM=Math.max((lu.wSx||40)*scF,1.5),hCor=Math.max((lu.hTop||40)*scF,2);
+    const luceH=lu.luciaH,luciaVp=lu.luciaV;
+    if(lu.hTop>0)barra3D(ctx,FX(0),FY(0),fr.len*scF,hCor,RGB_PAR,1);          // corrimano
+    barra3D(ctx,FX(0),FY(0),wM,Hpar*scF,RGB_PAR,1);                            // montanti d'estremità
+    barra3D(ctx,FX(fr.len)-wM,FY(0),wM,Hpar*scF,RGB_PAR,1);
+    for(let i=1;i<lu.nCL;i++){const xm=lu.campX0(i)-lu.wMid;barra3D(ctx,FX(xm),FY(0),Math.max(lu.wMid*scF,1.5),Hpar*scF,RGB_PAR,1);}
+    (lu.correnti||[]).forEach(c=>{const y=lu.hTop+luciaVp-c.q;
+      for(let sI=0;sI<lu.nCL;sI++)barra3D(ctx,FX(lu.campX0(sI)),FY(y-c.sp/2),luceH*scF,Math.max(c.sp*scF,1.5),RGB_PAR,1);});
+    // elementi del parapetto: tondini, orizzontali o rombi, come in una ringhiera
+    (qFr.elemList||[]).filter(e=>e.attivo&amp;&amp;e.mat).forEach((el,gi)=>{
+      const rgbEl=_cvHexRgb(EL_C[gi%EL_C.length]),larg=eLarg(el.mat);
+      const isTondo=String(el.mat.profilo).startsWith(&quot;Ø&quot;),isR=el.dir==='rombi',isV=el.dir!=='oriz';
+      for(let sI=0;sI<lu.nCL;sI++){
+        const x0=lu.campX0(sI);
+        if(isR){
+          barCells(qFr,luceH,luciaVp,0,luciaVp,larg,el.spMin,el.spMax,el.pd||'libero').forEach(c=>{
+            const w=c.b-c.a,h=c.by1-c.by0;if(!(w>0&amp;&amp;h>0))return;
+            const ox=x0+c.a,oyB=lu.hTop+(luciaVp-c.by0);
+            rombiSegmenti(w,h,passoRombi(el,larg),larg).forEach(g=>barraObliqua(ctx,FX(ox+g.x1),FY(oyB-g.y1),FX(ox+g.x2),FY(oyB-g.y2),Math.max(larg*scF,1.2)));
+          });
+        } else if(isV){
+          elemCelle(qFr,el,luceH,luciaVp,barRegion(qFr,el,luciaVp)).forEach(c=>{
+            const yTopC=lu.hTop+(luciaVp-c.by1),hC=c.by1-c.by0;if(!(hC>0))return;
+            c.pos.forEach(pos=>{
+              const xc=x0+pos;
+              if(isTondo)tondo3D(ctx,FX(xc),FY(yTopC+hC/2),Math.max(larg*scF/2,1.2),hC*scF/2,rgbEl);
+              else barra3D(ctx,FX(xc-larg/2),FY(yTopC),Math.max(larg*scF,1.2),hC*scF,rgbEl,1);
+            });
+          });
+        } else {
+          fasceLuce(lu).forEach(fa=>elemPosizioni(el,fa.y1-fa.y0,larg).forEach(pos=>{
+            const yc=lu.hTop+(luciaVp-(fa.y0+pos));
+            barra3D(ctx,FX(x0),FY(yc-larg/2),luceH*scF,Math.max(larg*scF,1.2),rgbEl,1);
+          }));
+        }
+      }
+    });
+    (qFr.traverse||[]).forEach(tr=>{
+      if(!traversaValida(tr,lu))return;
+      const sp2=eLarg(tr.mat);
+      if((tr.dir||'oriz')==='oriz'){
+        const yQ=lu.hTop+luciaVp-tr.quota_mm;
+        for(let sI=0;sI<lu.nCL;sI++)barra3D(ctx,FX(lu.campX0(sI)),FY(yQ-sp2/2),luceH*scF,Math.max(sp2*scF,1.5),[80,192,144],1);
+      } else {
+        const ex=travExtent(qFr,tr,luciaVp);
+        for(let sI=0;sI<lu.nCL;sI++)barra3D(ctx,FX(lu.campX0(sI)+tr.quota_mm-sp2/2),FY(lu.hTop+(luciaVp-ex.y1)),Math.max(sp2*scF,1.5),Math.max(0,ex.y1-ex.y0)*scF,[80,192,144],1);
+      }
+    });
   }
   cvLabelQ(&quot;VISTA FRONTALE&quot;,FX(0),FY(0)-14,&quot;#8fa3c8&quot;,&quot;left&quot;,12);
   if(UPG.quote){try{
@@ -7627,6 +7707,10 @@ const DECORO_MIN_MM=150;
 function decoriPezzo(p){
   const out={collari:0,riccioli:0};
   const ti=TIPI.find(t=>t.k===p.tipo)||TIPI[0];
+  if(ti.isSoppalco){ // i decori stanno nel parapetto, che è una ringhiera
+    parapettoPezzi(p).forEach(q=>{const d=decoriPezzo(q);out.collari+=d.collari;out.riccioli+=d.riccioli;});
+    return out;
+  }
   if(ti.isScala||ti.isCorrimano||ti.isAlluminio||ti.isGazebo||tipoStruttura(ti))return out;
   const fp=faccePezzi(p);if(fp){fp.forEach(pf=>{const d=decoriPezzo(pf);out.collari+=d.collari;out.riccioli+=d.riccioli;});return out;}
   const luce=calcLuce(p),nPz=Math.max(1,parseInt(p.nPezziUguali)||1);
@@ -7668,13 +7752,12 @@ function walkPezzoMateriali(p,addG){
     A(M.travi,s.campL,s.nCamp*nPz,&quot;trave principale fronte&quot;);
     A(M.travi,s.campL,s.nCamp*nPz,s.muro?&quot;trave a muro (retro)&quot;:&quot;trave principale retro&quot;);
     A(M.travetti,s.P,s.nTrav*nPz,&quot;travetto&quot;);
-    if(s.tratti.length){
-      A(M.parMont,s.lMont,s.nMont*nPz,&quot;montante parapetto&quot;);
-      s.tratti.forEach(t=>{
-        A(M.parCorrimano,t.len,nPz,&quot;corrimano parapetto &quot;+t.lato);
-        if(s.nCorr>0)A(M.parCorrenti,t.len,s.nCorr*nPz,&quot;corrente parapetto &quot;+t.lato);
-      });
-    }
+    // il parapetto è una ringhiera per ogni lato: stessa distinta degli altri manufatti
+    parapettoPezzi(p).forEach(q=>walkPezzoMateriali(q,(mat,ml,mm,qty,lbl)=>{
+      const t=String(lbl).replace(/traversa alta 45°/,&quot;corrimano&quot;).replace(/ 45°/g,&quot;&quot;)
+        .replace(/montante intermedio/,&quot;montante&quot;).replace(/corrente intermedio/,&quot;corrente&quot;);
+      addG(mat,ml,mm,qty,t);
+    }));
     return;
   }
   if(ti.isPensilina){
@@ -7728,7 +7811,7 @@ function walkPezzoMateriali(p,addG){
     A(tm('top'),(ct?ct.len:Wmm)+cs,nPz,&quot;traversa alta&quot;+(cs>0?&quot; + coda &quot;+cmv(cs)+&quot; cm&quot;:nomeCima));
     if(!p.aperto_sotto)A(tm('bot'),Wmm+ci,nPz,&quot;traversa bassa&quot;+(ci>0?&quot; + coda &quot;+cmv(ci)+&quot; cm&quot;:t45));
     if(!p._skipSx)A(tm('sx'),Math.max(0,Hmm+(ct?ct.dhSx:0)),nPz,(isPiant?&quot;piantone&quot;:&quot;montante&quot;)+&quot; sx&quot;+(ct&amp;&amp;ct.dhSx?&quot; (cima)&quot;:t45));
-    A(tm('dx'),Math.max(0,Hmm+(ct?ct.dhDx:0)),nPz,(isPiant?&quot;piantone&quot;:&quot;montante&quot;)+&quot; dx&quot;+(ct&amp;&amp;ct.dhDx?&quot; (cima)&quot;:t45));
+    if(!p._skipDx)A(tm('dx'),Math.max(0,Hmm+(ct?ct.dhDx:0)),nPz,(isPiant?&quot;piantone&quot;:&quot;montante&quot;)+&quot; dx&quot;+(ct&amp;&amp;ct.dhDx?&quot; (cima)&quot;:t45));
     if(nCL>1){ // montanti intermedi: tra traversa alta e bassa, taglio dritto (con la cima seguono la forma)
       const hT=tm('top')?eLarg(tm('top')):0,hB=(!p.aperto_sotto&amp;&amp;tm('bot'))?eLarg(tm('bot')):0;
       if(ct)for(let i=1;i<nCL;i++){const x=luce.campX0(i)-luce.wMid/2;A(matMidV(p),Math.max(0,Hmm-hT-hB+ct.dh(x)),nPz,&quot;montante intermedio &quot;+i+&quot; (cima)&quot;);}
@@ -10015,18 +10098,21 @@ function soppCalc(p){
   const hPar=Math.max(0,numOk(p.sopParH,100)*10),passoPar=Math.max(200,numOk(p.sopParPasso,100)*10);
   const nCorr=Math.max(0,Math.round(numOk(p.sopParNCorr,2)));
   const varco=par.fronte?Math.min(L,Math.max(0,numOk(p.sopVarco,0)*10)):0;
-  const tratti=[];
-  if(par.fronte&amp;&amp;L-varco>0)tratti.push({lato:'fronte',len:L-varco});
-  if(par.retro&amp;&amp;L>0)tratti.push({lato:'retro',len:L});
-  if(par.sx&amp;&amp;P>0)tratti.push({lato:'sx',len:P});
-  if(par.dx&amp;&amp;P>0)tratti.push({lato:'dx',len:P});
-  let nMont=tratti.reduce((a,t)=>a+Math.ceil(t.len/passoPar-1e-6)+1,0);
-  const fr=par.fronte&amp;&amp;L-varco>0;
-  if(fr&amp;&amp;par.sx&amp;&amp;P>0)nMont--;             // montanti d'angolo condivisi
-  if(fr&amp;&amp;par.dx&amp;&amp;P>0&amp;&amp;varco===0)nMont--;
-  if(par.retro&amp;&amp;par.sx&amp;&amp;P>0&amp;&amp;L>0)nMont--;
-  if(par.retro&amp;&amp;par.dx&amp;&amp;P>0&amp;&amp;L>0)nMont--;
-  nMont=Math.max(0,nMont);
+  // I lati si leggono girando intorno al soppalco: fronte → dx → retro → sx. Due lati vicini
+  // hanno il montante d'angolo in comune (si conta una volta sola), come nella ringhiera a squadro.
+  const giro=[['fronte',L-varco],['dx',P],['retro',L],['sx',P]];
+  const tratti=giro.filter(g=>par[g[0]]&amp;&amp;g[1]>0).map(g=>({lato:g[0],len:g[1]}));
+  const vicini={'fronte|dx':varco===0,'dx|retro':true,'retro|sx':true,'sx|fronte':true};
+  tratti.forEach((t,i)=>{
+    const prec=tratti[(i-1+tratti.length)%tratti.length];
+    t.nCamp=Math.max(1,Math.ceil(t.len/passoPar-1e-6));
+    t.skipSx=i>0&amp;&amp;!!vicini[prec.lato+'|'+t.lato];
+  });
+  if(tratti.length>2){ // il giro si chiude: l'ultimo angolo è già contato dal primo lato
+    const ult=tratti[tratti.length-1];
+    if(vicini[ult.lato+'|'+tratti[0].lato]&amp;&amp;tratti[0].skipSx===false)ult.skipDx=true;
+  }
+  const nMont=Math.max(0,tratti.reduce((a,t)=>a+t.nCamp+1-(t.skipSx?1:0)-(t.skipDx?1:0),0));
   const lPar=tratti.reduce((a,t)=>a+t.len,0),lMont=hPar+spPiano;
   const area=L*P/1e6*nPz;
   let kgMq=0,acciaio=true,costo=0,unita=&quot;€/kg&quot;,prezzo=0;
@@ -10035,6 +10121,30 @@ function soppCalc(p){
   return {L,P,H,nPz,nCamp,muro,nFile,nPilFila,nPil,hTrave,hTrav,spPiano,hPil,campL,inter,nTrav,passoTrav,
     par,hPar,passoPar,nCorr,varco,tratti,nMont,lPar,lMont,area,piano,pianoKgMq:kgMq,pianoKg:area*kgMq,pianoAcciaio:acciaio,
     pianoPrezzo:prezzo,pianoUnita:unita,pianoCosto:costo,nPiastre:nPil*nPz,nAppMuro:muro?nPilFila*nPz:0};
+}
+// Il parapetto è una RINGHIERA vera: un pezzo virtuale per ogni lato, con gli stessi montanti,
+// corrimano, correnti, elementi (tondini, rombi, decori) e traverse degli altri manufatti.
+// Così puoi fare il parapetto con lo stile che vuoi, e distinta/disegno restano coerenti.
+function parapettoPezzi(p){
+  const s=soppCalc(p),M=p.strMats||{};
+  if(!s.tratti.length||!(s.hPar>0))return [];
+  return s.tratti.map(t=>{
+    const q=migraCampiPezzo({
+      id:p.id,nome:(p.nome||&quot;Soppalco&quot;)+&quot; · parapetto &quot;+t.lato,tipo:'ringhiera',
+      larg:String(t.len/1000),alt:String((s.hPar+s.spPiano)/1000),
+      nBattenti:1,aperto_sotto:true,nPzLarg:Math.max(0,t.nCamp-1),nPzAlt:Math.max(0,s.nCorr),
+      nPezziUguali:s.nPz,
+      telaio:{top:{mat:M.parCorrimano||null,battuta:'senza'},bot:{mat:null,battuta:'senza'},
+        sx:{mat:M.parMont||null,battuta:'senza'},dx:{mat:M.parMont||null,battuta:'senza'},
+        midV:{mat:M.parMont||null},midH:{mat:M.parCorrenti||null},intermedi:[]},
+      elemList:p.elemList||[],traverse:p.traverse||[],ante:[],facce:[],
+      zinc_caldo:false,vern_polvere:false,ferr:{},lamiera:false,vetro:false,
+      arco:{attivo:false,freccia:150,tipo:'unico',verso:'su',forma:'arco'},
+      sopraluce:{attivo:false,h:0,mat:null,riemp:'vetro'},
+    });
+    q._skipSx=!!t.skipSx;q._skipDx=!!t.skipDx;q._lato=t.lato;
+    return q;
+  });
 }
 function nomePianoSopp(p){
   const s=p.sopPiano||'lamiera',n=(SOPP_PIANI.find(x=>x[0]===s)||[&quot;&quot;,&quot;&quot;])[1].toLowerCase();
