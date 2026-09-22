@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.11.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.12.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.11.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.12.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -2930,7 +2930,8 @@ function drawQuotaCv(ctx,x1,y1,x2,y2,testo,off){
 //    chi arriva dopo si sposta finché non trova spazio libero. ──
 let _cvOcc=[];
 let _cvLabQ=[]; // coda etichette: si disegnano per ULTIME, sopra le barre
-function cvOccReset(){_cvOcc=[];_cvLabQ=[];}
+let _boxDisegno=null; // riquadro del manufatto: serve a controllare che le misure restino fuori
+function cvOccReset(){_cvOcc=[];_cvLabQ=[];_boxDisegno=null;}
 let _cvMuto=false; // true = disegno senza scritte (miniature)
 function cvLabelQ(testo,x,y,colore,align,fontPx){if(!_cvMuto)_cvLabQ.push([testo,x,y,colore,align,fontPx]);}
 function cvLabelFlush(ctx){_cvLabQ.forEach(a=>cvLabel(ctx,a[0],a[1],a[2],a[3],a[4],a[5]));_cvLabQ=[];}
@@ -2939,6 +2940,49 @@ function _cvLibero(r){
 }
 function _cvPrenota(r){_cvOcc.push(r);}
 // Etichetta su fondino, che NON si sovrappone mai alle altre
+// ═══════ QUOTE FUORI DAL DISEGNO ═══════
+// Le misure non si scrivono sopra al manufatto: stanno nei margini, collegate al pezzo
+// da una linea di richiamo (come le legende dei disegni di officina).
+// Etichetta ferma dove la mettiamo (niente spostamento anti-sovrapposizione: la posizione è già calcolata)
+function cvLabelFisso(ctx,testo,x,y,colore,align,fontPx){
+  const tec=cvTec(),fs=fontPx||12;
+  ctx.save();
+  ctx.font=&quot;700 &quot;+fs+&quot;px &quot;+(tec?&quot;Arial&quot;:&quot;system-ui&quot;);
+  ctx.textAlign=align||&quot;left&quot;;ctx.textBaseline=&quot;bottom&quot;;
+  const w=ctx.measureText(testo).width;
+  const x0=align===&quot;center&quot;?x-w/2-4:(align===&quot;right&quot;?x-w-4:x-4);
+  const rr={x:x0,y:y-fs-4,w:w+8,h:fs+6};
+  _cvPrenota(rr);
+  ctx.fillStyle=tec?CV_TEC.fondoTesto:&quot;rgba(6,12,22,.82)&quot;;
+  ctx.fillRect(rr.x,rr.y,rr.w,rr.h);
+  ctx.fillStyle=tec?_cvShade(_cvHexRgb(colore||&quot;#1d2733&quot;),0.45):(colore||&quot;#8fa3c8&quot;);
+  ctx.fillText(testo,x,y);
+  ctx.restore();
+  return rr;
+}
+// Linea di richiamo: dal punto sul pezzo esce fuori dal disegno e lì c'è la misura
+function richiamoLab(ctx,xP,yP,xL,yL,testo,colore,verso){
+  const col=colore||CVC('quota');
+  ctx.save();
+  ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=cvTec()?0.9:1.1;
+  ctx.beginPath();
+  if(verso==='giu'){ctx.moveTo(xP,yP);ctx.lineTo(xP,yL-13);ctx.lineTo(xL,yL-6);}
+  else{const xm=verso==='dx'?xL-8:xL+8;ctx.moveTo(xP,yP);ctx.lineTo(xm,yP);ctx.lineTo(xL,yL-4);}
+  ctx.stroke();
+  ctx.beginPath();ctx.arc(xP,yP,2.2,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+  cvLabelFisso(ctx,testo,xL,yL,col,verso==='dx'?'left':(verso==='giu'?'center':'right'),12);
+}
+// Posizioni delle etichette impilate lungo un asse: partono dal punto e si distanziano di hMin
+function impilaEtichette(items,hMin,vMin,vMax){
+  const arr=items.slice().sort((a,b)=>a.v-b.v);
+  let prev=-1e9;
+  arr.forEach(it=>{it.vLab=Math.max(it.v,prev+hMin,vMin);prev=it.vLab;});
+  const over=arr.length?arr[arr.length-1].vLab-vMax:0;
+  if(over>0){let next=1e9;for(let i=arr.length-1;i>=0;i--){arr[i].vLab=Math.min(arr[i].vLab-over,next-hMin);next=arr[i].vLab;}}
+  arr.forEach(it=>{if(it.vLab<vMin)it.vLab=vMin;});
+  return arr;
+}
 function cvLabel(ctx,testo,x,y,colore,align,fontPx){
   const tec=cvTec();
   ctx.save();
@@ -4466,7 +4510,6 @@ function disegnaScala(p,cvs,ctx,leg){
     ctx.fillStyle=cvTec()?CV_TEC.profilo:g;ctx.beginPath();
     ctx.moveTo(X(0),Y(0));ctx.lineTo(X(Lmm),Y(Hmm));ctx.lineTo(X(Lmm),Y(Math.max(0,Hmm-dv)));ctx.lineTo(X(x0),Y(0));ctx.closePath();
     ctx.fill();ctx.strokeStyle=CVC(&quot;contorno&quot;);ctx.lineWidth=1;ctx.stroke();
-    cvLabelQ(`cosciale ${esc(sm.correnti.profilo)} · ${cmv(sc.D*1000)} cm × ${sc.nCorr}`,X(Lmm*0.40),Y(Hmm*0.40-dv*1.2)+4,&quot;#b090f0&quot;,&quot;left&quot;,12);
   } else {
     ctx.strokeStyle=cvTec()?CV_TEC.tenue:&quot;#9060e0&quot;;ctx.setLineDash([6,4]);ctx.lineWidth=2;
     ctx.beginPath();ctx.moveTo(X(0),Y(0));ctx.lineTo(X(Lmm),Y(Hmm));ctx.stroke();ctx.setLineDash([]);
@@ -4486,7 +4529,6 @@ function disegnaScala(p,cvs,ctx,leg){
     const off=Hmm*0.12; // solo schematico: nessuna quota di altezza
     ctx.strokeStyle=CVC(&quot;manc&quot;);ctx.setLineDash([8,5]);ctx.lineWidth=2;
     ctx.beginPath();ctx.moveTo(X(0),Y(a+off));ctx.lineTo(X(Lmm),Y(Hmm+off));ctx.stroke();ctx.setLineDash([]);
-    cvLabelQ(&quot;mancorrente &quot;+esc(sm.mancorrente.profilo),X(Lmm*0.2),Y(a+off+Lmm*0.2*tanA)-8,&quot;#64a8ff&quot;,&quot;left&quot;,11);
   }
   // quote
   if(UPG.quote){
@@ -4499,8 +4541,9 @@ function disegnaScala(p,cvs,ctx,leg){
   cvLabelFlush(ctx);
   if(leg){
     leg.innerHTML=`<span><span style=&quot;color:#f08a3c&quot;>■</span> ${n} gradini da ${cmv(a)} × ${cmv(pd)} cm</span>`+
-      `<span><span style=&quot;color:#b090f0&quot;>■</span> ${sc.nCorr} coscial${sc.nCorr>1?&quot;i&quot;:&quot;e&quot;}</span>`+
-      `<span><span style=&quot;color:#64a8ff&quot;>■</span> larghezza ${cmv(sc.W*1000)} cm</span>`;
+      `<span><span style=&quot;color:#b090f0&quot;>■</span> ${sc.nCorr} coscial${sc.nCorr>1?&quot;i&quot;:&quot;e&quot;} ${sm.correnti?esc(sm.correnti.profilo)+&quot; · &quot;+cmv(sc.D*1000)+&quot; cm&quot;:&quot;—&quot;}</span>`+
+      `<span><span style=&quot;color:#64a8ff&quot;>■</span> larghezza ${cmv(sc.W*1000)} cm</span>`+
+      (p.scalaHaMancorrente&amp;&amp;sm.mancorrente?`<span><span style=&quot;color:#64a8ff&quot;>■</span> mancorrente ${esc(sm.mancorrente.profilo)}</span>`:&quot;&quot;);
   }
 }
 
@@ -5924,45 +5967,84 @@ function drawLamPattern(ctx,x,y,w,h,tipo,foro){
   }
   ctx.restore();
 }
-// ═══════ UPGRADE: sviluppo in piano della ringhiera a squadro ═══════
+// ═══════ RINGHIERA A SQUADRO (balconi): pianta a C + facce separate ═══════
+// Le facce non si disegnano in fila: sopra c'è la vista dall'alto (il giro a 90°, a L o a C),
+// sotto ogni faccia con la sua misura, come si costruiscono in officina.
 function disegnaFacceSviluppo(p,ws,cvs,ctx,leg){
-  const cW=cvs.width,cH=cvs.height,pad=26;
+  const cW=cvs.width,cH=cvs.height;
   const Hmm=(parseFloat(p.alt)||0)*1000;
-  const totW=ws.reduce((a,b)=>a+b,0)*1000;
+  const L=ws.map(w=>w*1000),totW=L.reduce((a,b)=>a+b,0);
   if(!totW||!Hmm){ctx.fillStyle=CVC(&quot;tenue&quot;);ctx.font=&quot;600 18px Arial&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci larghezza e altezza&quot;,cW/2,cH/2);return;}
-  const sc=Math.min((cW-pad*2)/totW,(cH-pad*2)/Hmm);
-  const ox=pad+(cW-pad*2-totW*sc)/2, oy=pad+(cH-pad*2-Hmm*sc)/2;
-  const tx=x=>ox+x*sc, ty=y=>oy+y*sc;
   const fp=faccePezzi(p)||[];
-  let x0=0;
+
+  // ── PIANTA: il percorso gira di 90° a ogni faccia (2 facce = L, 3 = C) ──
+  const hP=Math.max(76,Math.min(cH*0.32,132));
+  const DIRS=[[1,0],[0,1],[-1,0],[0,-1]];
+  const pts=[{x:0,y:0}];
+  L.forEach((len,i)=>{const d=DIRS[i%4],q=pts[pts.length-1];pts.push({x:q.x+d[0]*len,y:q.y+d[1]*len});});
+  const xs=pts.map(q=>q.x),ys=pts.map(q=>q.y);
+  const minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs),minY=Math.min.apply(null,ys),maxY=Math.max.apply(null,ys);
+  const wP=Math.max(1,maxX-minX),dP=Math.max(1,maxY-minY);
+  const scP=Math.min((cW-150)/wP,(hP-34)/dP);
+  const px0=(cW-wP*scP)/2,py0=24+(hP-34-dP*scP)/2;
+  const PX=x=>px0+(x-minX)*scP,PY=y=>py0+(y-minY)*scP;
+  ctx.save();
+  ctx.strokeStyle=cvTec()?CV_TEC.profiloScuro:&quot;#7896d2&quot;;
+  ctx.lineWidth=Math.max(5,Math.min(9,scP*60));ctx.lineCap=&quot;butt&quot;;ctx.lineJoin=&quot;miter&quot;;
+  ctx.beginPath();ctx.moveTo(PX(pts[0].x),PY(pts[0].y));
+  for(let i=1;i<pts.length;i++)ctx.lineTo(PX(pts[i].x),PY(pts[i].y));
+  ctx.stroke();
+  ctx.strokeStyle=cvTec()?CV_TEC.contorno:&quot;rgba(4,8,16,.6)&quot;;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(PX(pts[0].x),PY(pts[0].y));
+  for(let i=1;i<pts.length;i++)ctx.lineTo(PX(pts[i].x),PY(pts[i].y));
+  ctx.stroke();
+  ctx.restore();
+  // angoli a 90° e numero di ogni faccia
+  for(let i=1;i<pts.length-1;i++){
+    const q=pts[i];
+    ctx.save();ctx.strokeStyle=CVC(&quot;accento&quot;);ctx.lineWidth=1.2;
+    ctx.strokeRect(PX(q.x)-7,PY(q.y)-7,14,14);ctx.restore();
+    cvLabelQ(&quot;90°&quot;,PX(q.x)+16,PY(q.y)-6,&quot;#b0620c&quot;,&quot;left&quot;,11);
+  }
+  pts.slice(0,-1).forEach((q,i)=>{
+    const q2=pts[i+1],mx=(PX(q.x)+PX(q2.x))/2,my=(PY(q.y)+PY(q2.y))/2;
+    const oriz=Math.abs(q2.y-q.y)<0.01;
+    cvLabelQ(&quot;F&quot;+(i+1)+&quot; · &quot;+cmU(L[i]),mx,oriz?my-12:my-4,&quot;#1d3a6e&quot;,&quot;center&quot;,11);
+  });
+  cvLabelQ(&quot;PIANTA — &quot;+ws.length+&quot; facce a squadro&quot;,8,20,&quot;#8fa3c8&quot;,&quot;left&quot;,12);
+
+  // ── FACCE SEPARATE: una accanto all'altra, staccate, ognuna con la sua misura ──
+  const gap=26,padB=44,padL=18,padR=52;
+  const scF=Math.min((cW-padL-padR-gap*(L.length-1))/totW,(cH-hP-padB-16)/Hmm);
+  const oxF=padL+(cW-padL-padR-gap*(L.length-1)-totW*scF)/2;
+  const oyF=hP+14+(cH-hP-padB-16-Hmm*scF)/2;
+  const ty=y=>oyF+y*scF;
+  let cur=oxF;
   fp.forEach((pf,i)=>{
-    const Lf=(parseFloat(pf.larg)||0)*1000;
-    const luce=calcLuce(pf);
+    const Lf=L[i],luce=calcLuce(pf);
     const hTop=luce.hTop,hBot=luce.hBot,wSx=luce.wSx,wDx=luce.wDx,luciaH=luce.luciaH,luciaV=luce.luciaV,aSxF=luce.aSx,aTopF=luce.aTop;
-    const X=v=>tx(x0+v);
-    if(cvTec()&amp;&amp;luciaH>0&amp;&amp;luciaV>0){ctx.fillStyle=CV_TEC.luce;ctx.fillRect(X(aSxF),ty(aTopF),luciaH*sc,luciaV*sc);} // luce azzurra
-    // Telaio della faccia
-    if(hTop>0)barra3D(ctx,X(0),ty(0),Lf*sc,Math.max(hTop*sc,2),[120,150,210],1);
-    if(!p.aperto_sotto&amp;&amp;hBot>0)barra3D(ctx,X(0),ty(Hmm-hBot),Lf*sc,Math.max(hBot*sc,2),[120,150,210],1);
-    if(!(i>0&amp;&amp;p.angoloCondiviso!==false)&amp;&amp;wSx>0)barra3D(ctx,X(0),ty(0),Math.max(wSx*sc,2),Hmm*sc,[120,150,210],1);
-    if(wDx>0)barra3D(ctx,X(Lf-wDx),ty(0),Math.max(wDx*sc,2),Hmm*sc,[120,150,210],1);
-    // Giunzioni a 45° agli angoli della faccia
-    giunti45(ctx,X(0),ty(0),Lf*sc,Hmm*sc,hTop*sc,(!p.aperto_sotto&amp;&amp;hBot>0)?hBot*sc:0,(!(i>0&amp;&amp;p.angoloCondiviso!==false)&amp;&amp;wSx>0)?wSx*sc:0,wDx*sc);
-    // Elementi (schematici, stessa logica scomparti per faccia)
+    const X=v=>cur+v*scF;
+    if(cvTec()&amp;&amp;luciaH>0&amp;&amp;luciaV>0){ctx.fillStyle=CV_TEC.luce;ctx.fillRect(X(aSxF),ty(aTopF),luciaH*scF,luciaV*scF);}
+    if(hTop>0)barra3D(ctx,X(0),ty(0),Lf*scF,Math.max(hTop*scF,2),[120,150,210],1);
+    if(!p.aperto_sotto&amp;&amp;hBot>0)barra3D(ctx,X(0),ty(Hmm-hBot),Lf*scF,Math.max(hBot*scF,2),[120,150,210],1);
+    if(wSx>0)barra3D(ctx,X(0),ty(0),Math.max(wSx*scF,2),Hmm*scF,[120,150,210],1);
+    if(wDx>0)barra3D(ctx,X(Lf-wDx),ty(0),Math.max(wDx*scF,2),Hmm*scF,[120,150,210],1);
+    giunti45(ctx,X(0),ty(0),Lf*scF,Hmm*scF,hTop*scF,(!p.aperto_sotto&amp;&amp;hBot>0)?hBot*scF:0,wSx>0?wSx*scF:0,wDx*scF);
+    // Elementi (stessa logica di scomparti della faccia)
     (p.elemList||[]).filter(e=>e.attivo&amp;&amp;e.mat).forEach((el,gi)=>{
-      const isV=el.dir!==&quot;oriz&quot;;const larg=eLarg(el.mat);
+      const isV=el.dir!==&quot;oriz&quot;,larg=eLarg(el.mat);
       const rgbEl2=_cvHexRgb(EL_C[gi%EL_C.length]);
-      let N=0,SP=0,luceEl=isV?luciaH:luciaV;
+      let N=0,SP=0;const luceEl=isV?luciaH:luciaV;
       if(el.modo===&quot;man&quot;){N=parseInt(el.nMan)||1;SP=Math.max(0,(luceEl-N*larg)/(N+1));}
-      else{const s=calcSc(luceEl,larg,el.spMin,el.spMax,el.pd||&quot;libero&quot;);N=s.N;SP=s.sp;}
+      else{const s2=calcSc(luceEl,larg,el.spMin,el.spMax,el.pd||&quot;libero&quot;);N=s2.N;SP=s2.sp;}
       for(let k2=0;k2<N;k2++){
         if(isV){
           const xc=wSx+SP+larg/2+k2*(larg+SP);
-          if(el.mat.profilo.startsWith(&quot;Ø&quot;))tondo3D(ctx,X(xc),ty(hTop+luciaV/2),Math.max(larg*sc/2,1.2),luciaV*sc/2,rgbEl2);
-          else barra3D(ctx,X(xc-larg/2),ty(hTop),Math.max(larg*sc,1.2),luciaV*sc,rgbEl2,1);
+          if(String(el.mat.profilo).startsWith(&quot;Ø&quot;))tondo3D(ctx,X(xc),ty(hTop+luciaV/2),Math.max(larg*scF/2,1.2),luciaV*scF/2,rgbEl2);
+          else barra3D(ctx,X(xc-larg/2),ty(hTop),Math.max(larg*scF,1.2),luciaV*scF,rgbEl2,1);
         } else {
           const yc=hTop+SP+larg/2+k2*(larg+SP);
-          barra3D(ctx,X(wSx),ty(yc-larg/2),luciaH*sc,Math.max(larg*sc,1.2),rgbEl2,1);
+          barra3D(ctx,X(wSx),ty(yc-larg/2),luciaH*scF,Math.max(larg*scF,1.2),rgbEl2,1);
         }
       }
     });
@@ -5970,27 +6052,22 @@ function disegnaFacceSviluppo(p,ws,cvs,ctx,leg){
     (p.traverse||[]).forEach(tr=>{
       if(!tr.mat)return;const sp2=eLarg(tr.mat);
       if((tr.dir||&quot;oriz&quot;)===&quot;oriz&quot;){
-        if(tr.quota_mm>0&amp;&amp;tr.quota_mm<luciaV){const yQ=hTop+luciaV-tr.quota_mm;barra3D(ctx,X(wSx),ty(yQ-sp2/2),luciaH*sc,Math.max(sp2*sc,2),[80,192,144],1);}
+        if(tr.quota_mm>0&amp;&amp;tr.quota_mm<luciaV){const yQ=hTop+luciaV-tr.quota_mm;barra3D(ctx,X(wSx),ty(yQ-sp2/2),luciaH*scF,Math.max(sp2*scF,2),[80,192,144],1);}
       } else {
-        if(tr.quota_mm>0&amp;&amp;tr.quota_mm<luciaH){const xQ=wSx+tr.quota_mm;barra3D(ctx,X(xQ-sp2/2),ty(hTop),Math.max(sp2*sc,2),luciaV*sc,[80,192,144],1);}
+        if(tr.quota_mm>0&amp;&amp;tr.quota_mm<luciaH){const xQ=wSx+tr.quota_mm;barra3D(ctx,X(xQ-sp2/2),ty(hTop),Math.max(sp2*scF,2),luciaV*scF,[80,192,144],1);}
       }
     });
-    // Marcatore angolo 90°
-    if(i>0){
-      ctx.strokeStyle=CVC(&quot;accento&quot;);ctx.setLineDash([5,4]);ctx.lineWidth=1.4;
-      ctx.beginPath();ctx.moveTo(X(0),ty(0)-6);ctx.lineTo(X(0),ty(Hmm)+6);ctx.stroke();ctx.setLineDash([]);
-      cvLabelQ(&quot;90°&quot;,X(0),ty(0)-8,&quot;#f08a3c&quot;,&quot;center&quot;,14);
-    }
-    if(UPG.quote){try{drawQuotaCv(ctx,tx(x0),ty(Hmm),tx(x0+Lf),ty(Hmm),cmU(Lf),12);}catch(e){}}
-    x0+=Lf;
+    cvLabelQ(&quot;Faccia &quot;+(i+1),X(Lf/2),ty(0)-8,&quot;#1d3a6e&quot;,&quot;center&quot;,12);
+    if(UPG.quote){try{drawQuotaCv(ctx,X(0),ty(Hmm),X(Lf),ty(Hmm),cmU(Lf),16);}catch(e){}}
+    cur+=Lf*scF+gap;
   });
-  if(UPG.quote){try{drawQuotaCv(ctx,tx(totW),ty(Hmm),tx(totW),ty(0),cmU(Hmm),12);}catch(e){}}
-  cvLabelQ(&quot;SVILUPPO IN PIANO — &quot;+ws.length+&quot; FACCE A SQUADRO&quot;,Math.max(tx(0),6),Math.max(ty(0)-16,20),&quot;#8fa3c8&quot;,&quot;left&quot;,13);
+  if(UPG.quote){try{drawQuotaCv(ctx,cur-gap,ty(Hmm),cur-gap,ty(0),cmU(Hmm),14);}catch(e){}}
   cvLabelFlush(ctx); // etichette sopra tutto
   if(leg){
-    leg.innerHTML=`<span><span style=&quot;color:#64a8ff&quot;>■</span> ${ws.length} facce a 90° · sviluppo ${Math.round(ws.reduce((a,b)=>a+b,0)*100)} cm</span>`;
+    leg.innerHTML=`<span><span style=&quot;color:#64a8ff&quot;>■</span> ${ws.length} facce a 90° (${ws.map(w=>Math.round(w*100)+&quot; cm&quot;).join(&quot; + &quot;)}) · totale ${Math.round(totW/10)} cm</span>`;
+    leg.innerHTML+=`<span><span style=&quot;color:#b0620c&quot;>■</span> ${p.angoloCondiviso!==false?&quot;montante d'angolo in comune&quot;:&quot;montanti d'angolo separati&quot;}</span>`;
     const tM=(p.telaio&amp;&amp;p.telaio.top&amp;&amp;p.telaio.top.mat)||(p.telaio&amp;&amp;p.telaio.sx&amp;&amp;p.telaio.sx.mat);
-    if(tM)leg.innerHTML+=`<span><span style=&quot;color:#7896d2&quot;>■</span> Telaio: ${tM.profilo}</span>`;
+    if(tM)leg.innerHTML+=`<span><span style=&quot;color:#7896d2&quot;>■</span> Telaio: ${esc(tM.profilo)}</span>`;
   }
 }
 
@@ -6216,7 +6293,7 @@ function disegnaPensilina(p,cvs,ctx,leg){
     drawQuotaCv(ctx,SX(0),SY(dy+hM+(c.saetta?c.hS:0))+14,SX(c.S),SY(dy+hM+(c.saetta?c.hS:0))+14,cmU(c.S),10);
     if(c.saetta&amp;&amp;c.hS>0)drawQuotaCv(ctx,SX(0)-20,SY(hM+c.hS),SX(0)-20,SY(hM),cmU(c.hS),0);
   }catch(e){}}
-  if(c.pend>0)cvLabelQ(&quot;pendenza &quot;+fmtN(c.pend)+&quot;%&quot;,SX(c.S/2),SY(dy/2+hM)+22,&quot;#b0620c&quot;,&quot;center&quot;,11);
+  if(c.pend>0)cvLabelQ(&quot;pendenza &quot;+fmtN(c.pend)+&quot;%&quot;,SX(c.S/2),cH-8,&quot;#b0620c&quot;,&quot;center&quot;,11);
   if(!M.mensole&amp;&amp;!M.frontale)cvLabelQ(&quot;Scegli mensole e trave frontale per completare il disegno&quot;,cW/2,cH-10,&quot;#e0a050&quot;,&quot;center&quot;,12);
   cvLabelFlush(ctx);
   if(leg){
@@ -6275,8 +6352,16 @@ function _disegnaSu(p,cvs,leg){
   const soloAnteD=isSoloAnte(p,tiD);
   const nBattD=Math.max(1,parseInt(p.nBattenti)||1);
 
-  // Margini riservati alle quote, così nessuna quota viene tagliata
-  const padL=16, padR=48, padT=42, padB=38;
+  // Margini riservati alle quote: tutte le misure stanno FUORI dal manufatto.
+  // A sinistra le traverse orizzontali (linee di richiamo), a destra le altezze,
+  // sopra luce e ante, sotto la larghezza totale e le traverse verticali.
+  const _trOriz=(p.traverse||[]).filter(t=>traversaValida(t,luce)&amp;&amp;(t.dir||'oriz')==='oriz');
+  const _trVert=(p.traverse||[]).filter(t=>traversaValida(t,luce)&amp;&amp;(t.dir||'oriz')==='vert');
+  const _quote=!!UPG.quote;
+  const padL=(_quote&amp;&amp;_trOriz.length)?96:16;
+  const padR=(_quote&amp;&amp;tiD.haAnte)?84:52;
+  const padT=(_quote?(tiD.haAnte?58:44):30);
+  const padB=(_quote?(_trVert.length?60:42):34);
   const codaMax=(p.tipo==='cancello_scorrevole')?Math.max(parseFloat(p.coda_sup)||0,parseFloat(p.coda_inf)||0):0;
   const effW=Wmm+codaMax; // spazio extra a sinistra per la coda
   const _arcoUp=cimaAlzataMax(p,luce); // spazio sopra per colmo / cuspide / lato alto
@@ -6284,6 +6369,7 @@ function _disegnaSu(p,cvs,leg){
   const ox=padL+(cW-padL-padR-effW*sc)/2+codaMax*sc;
   const oy=padT+(cH-padT-padB-(Hmm+_arcoUp)*sc)/2;
   const tx=x=>ox+x*sc, ty=y=>oy+(y+_arcoUp)*sc;
+  _boxDisegno={x0:tx(0),y0:ty(-_arcoUp),x1:tx(Wmm),y1:ty(Hmm)};
 
   // ── Posizioni di telaio, ante e luce: le STESSE misure di calcLuce (vedi layoutDisegno) ──
   const LY=layoutDisegno(p,luce,tiD);
@@ -6382,7 +6468,6 @@ function _disegnaSu(p,cvs,leg){
       }
     }
     if(_slD.trav)barra3D(ctx,tx(xIn),ty(yBot),wIn*sc,Math.max(_slD.h?LY.slTrav*sc:0,2),[80,192,144],1.5);
-    cvLabelQ(&quot;sopraluce &quot;+cmU(_slD.h),tx(xIn+wIn/2),ty(yBot)-6,&quot;#64a8ff&quot;,&quot;center&quot;,11);
   }
 
   // ── Vetro (porte): lastre per anta con il gioco per lato; simbolo del vetro (riflessi) ──
@@ -6401,6 +6486,7 @@ function _disegnaSu(p,cvs,leg){
 
   // ── Traverse: una per ogni anta/campata, alla quota scelta ──
   const RGB_TRAV=[80,192,144];
+  const _richOriz=[],_richVert=[]; // misure da scrivere fuori, con la linea di richiamo
   (p.traverse||[]).forEach(tr=>{
     const isO=(tr.dir||&quot;oriz&quot;)===&quot;oriz&quot;;
     const q=parseFloat(tr.quota_mm)||0;
@@ -6409,17 +6495,17 @@ function _disegnaSu(p,cvs,leg){
     if(isO){
       const yQ=yLuce0+luciaV-q;
       for(let s=0;s<nSeg;s++)barra3D(ctx,tx(segX0(s)),ty(yQ-sp/2),segW*sc,Math.max(sp*sc,2),RGB_TRAV,1);
-      cvLabelQ(`↔ ${cmv(q)} cm`,tx(segX0(0))+6,ty(yQ)-4,&quot;#5fd8a0&quot;,&quot;left&quot;,12);
+      _richOriz.push({v:ty(yQ),x:tx(segX0(0))+8,testo:cmv(q)+&quot; cm&quot;});
     } else {
       const ext=travExtent(p,tr,luciaV),yT=yLuce0+(luciaV-ext.y1),hE=Math.max(0,ext.y1-ext.y0);
       if(hE>0)for(let s=0;s<nSeg;s++)barra3D(ctx,tx(segX0(s)+q-sp/2),ty(yT),Math.max(sp*sc,2),hE*sc,RGB_TRAV,1);
-      cvLabelQ(`↕ ${cmv(q)} cm`,tx(segX0(0)+q),ty(yLuce0)-4,&quot;#5fd8a0&quot;,&quot;center&quot;,12);
+      _richVert.push({v:tx(segX0(0)+q),y:ty(yLuce0+luciaV)-10,testo:cmv(q)+&quot; cm&quot;});
     }
   });
 
   // ── Elementi interni (stessa logica della distinta: celle, fasce, arco) + decori e rombi ──
   const legN=[];
-  let quotaPassoFatta=false;
+  let quotaPassoFatta=false,_passoEl=0;
   (p.elemList||[]).filter(e=>e.attivo&amp;&amp;e.mat).forEach((el,gi)=>{
     const rgbEl=_cvHexRgb(EL_C[gi%EL_C.length]);
     const isV=el.dir!==&quot;oriz&quot;;
@@ -6472,11 +6558,8 @@ function _disegnaSu(p,cvs,leg){
               }
             }
           }
-          // quota tecnica della luce libera tra i primi due elementi
-          if(!quotaPassoFatta&amp;&amp;UPG.quote&amp;&amp;s===0&amp;&amp;c.pos.length>1){
-            const gx1=x0+c.pos[0]+larg/2,gx2=x0+c.pos[1]-larg/2;
-            if((gx2-gx1)*sc>14){quotaPassoFatta=true;try{drawQuotaCv(ctx,tx(gx1),ty(yTopC+hC*0.12),tx(gx2),ty(yTopC+hC*0.12),cmv(gx2-gx1),0);}catch(e){}}
-          }
+          // il passo tra gli elementi non si scrive sul disegno: va nella legenda sotto
+          if(!quotaPassoFatta&amp;&amp;s===0&amp;&amp;c.pos.length>1){quotaPassoFatta=true;_passoEl=c.pos[1]-c.pos[0]-larg;}
         });
       }
     } else {
@@ -6517,7 +6600,7 @@ function _disegnaSu(p,cvs,leg){
     if(tiD.haAnte&amp;&amp;!p.aperto_sotto&amp;&amp;!(fBot>0)&amp;&amp;LY.telBot>0){
       ctx.save();ctx.setLineDash([5,4]);ctx.strokeStyle=CVC('quota');ctx.lineWidth=1;
       ctx.strokeRect(tx(0),ty(Hmm-LY.telBot),Wmm*sc,LY.telBot*sc);ctx.restore();
-      cvLabelQ(&quot;traversa bassa da scegliere&quot;,tx(Wmm/2),ty(Hmm-LY.telBot/2)+4,&quot;#e0a050&quot;,&quot;center&quot;,11);
+      cvLabelQ(&quot;traversa bassa da scegliere&quot;,cW/2,cH-6,&quot;#e0a050&quot;,&quot;center&quot;,11);
     }
     // Code scorrevole: prolungano le traverse a sinistra
     if(p.tipo==='cancello_scorrevole'){
@@ -6588,27 +6671,44 @@ function _disegnaSu(p,cvs,leg){
     }
   }
 
-  // ── Quote (cm) ──
+  // ── Quote (cm): tutte fuori dal disegno ──
   ctx.strokeStyle=CVC('quota');ctx.lineWidth=1.2;ctx.fillStyle=CVC('quota');
   ctx.font=&quot;700 14px Arial&quot;;ctx.textAlign=&quot;center&quot;;
   if(UPG.quote){
     try{
-      drawQuotaCv(ctx,tx(0),ty(Hmm),tx(Wmm),ty(Hmm),cmU(Wmm),12);
-      drawQuotaCv(ctx,tx(Wmm),ty(Hmm),tx(Wmm),ty(0),cmU(Hmm),12);
-      // larghezza della prima anta, sopra a tutto (anche sopra il colmo dell'arco)
-      if(tiD.haAnte&amp;&amp;nBattD>1&amp;&amp;A_>0)drawQuotaCv(ctx,tx(antaX_(0)+A_),ty(antaY_-_arcoUp),tx(antaX_(0)),ty(antaY_-_arcoUp),cmU(A_),12);
-      if(!tiD.haAnte&amp;&amp;nCL>1&amp;&amp;segW>0)drawQuotaCv(ctx,tx(segX0(0)+segW),ty(0),tx(segX0(0)),ty(0),&quot;luce &quot;+cmU(segW),12);
+      // misure esterne del manufatto: larghezza sotto, altezza a destra
+      drawQuotaCv(ctx,tx(0),ty(Hmm),tx(Wmm),ty(Hmm),cmU(Wmm),20);
+      drawQuotaCv(ctx,tx(Wmm),ty(Hmm),tx(Wmm),ty(0),cmU(Hmm),tiD.haAnte?46:14);
+      // la porta/anta che nasce dentro il telaio: larghezza sopra, altezza a destra
+      if(tiD.haAnte&amp;&amp;A_>0&amp;&amp;AH_>0){
+        const _nA=nomeAnte(p.tipo);
+        drawQuotaCv(ctx,tx(antaX_(0)+A_),ty(-_arcoUp),tx(antaX_(0)),ty(-_arcoUp),_nA+&quot; &quot;+cmU(A_),14);
+        if(Math.abs(AH_-Hmm)>1)drawQuotaCv(ctx,tx(Wmm),ty(antaY_+AH_),tx(Wmm),ty(antaY_),_nA+&quot; &quot;+cmU(AH_),14);
+      }
+      // luce netta di un'anta/campata, sopra il manufatto
+      if(segW>20)drawQuotaCv(ctx,tx(segX0(0)+segW),ty(-_arcoUp),tx(segX0(0)),ty(-_arcoUp),&quot;luce &quot;+cmU(segW),tiD.haAnte?38:14);
+      // sopraluce: altezza a destra, sopra la quota dell'anta
+      if(LY.slH>0)drawQuotaCv(ctx,tx(Wmm),ty(LY.telTop+LY.slH),tx(Wmm),ty(LY.telTop),&quot;sopraluce &quot;+cmU(LY.slH),14);
+      // traverse orizzontali: misura fuori a sinistra, collegata alla traversa
+      if(_richOriz.length){
+        const xL=tx(0)-14;
+        impilaEtichette(_richOriz,19,padT-6,cH-padB+4).forEach(it=>richiamoLab(ctx,it.x,it.v,xL,it.vLab+5,it.testo,&quot;#2b7a55&quot;,&quot;sx&quot;));
+      }
+      // traverse verticali: misura sotto, collegata alla traversa
+      if(_richVert.length){
+        const yL=ty(Hmm)+40;
+        impilaEtichette(_richVert.map(it=>({v:it.v,y:it.y,testo:it.testo})),64,padL+24,cW-padR-10)
+          .forEach(it=>richiamoLab(ctx,it.v,it.y,it.vLab,yL,it.testo,&quot;#2b7a55&quot;,&quot;giu&quot;));
+      }
+      // forma della cima: etichetta fuori, sopra il punto più alto
       if(arcoAttivo(p)){
         const _adQ=arcoDatiSeg(p,luce,0,nSeg);
         const _f=_adQ?frecciaCima(p,_adQ.C):0;
         if(_adQ&amp;&amp;_f>0){
           const _forma=(FORME_CIMA.find(f=>f[0]===formaCima(p))||[&quot;&quot;,&quot;forma&quot;])[1].replace(/^\S+\s/,&quot;&quot;).toLowerCase();
           const _giu=p.arco.verso==='giu';
-          const _xc=tiD.haAnte?(LY.segOrig(0)+((p.arco.tipo==='per_anta')?A_/2:_adQ.C/2)):(_adQ.C/2);
-          const _yTop=tiD.haAnte?antaY_:0;
-          const _yArc=_giu?_yTop+_f:_yTop-_f;
           const _hEstrema=_giu?Math.max(0,Hmm-_f):Hmm+_f;
-          cvLabelQ(_forma+&quot; &quot;+cmU(_f)+&quot; · h &quot;+(_giu?&quot;min &quot;:&quot;max &quot;)+cmU(_hEstrema),tx(_xc),ty(_yArc)+32,&quot;#ffb340&quot;,&quot;center&quot;,12);
+          cvLabelQ(_forma+&quot; &quot;+cmU(_f)+&quot; · h &quot;+(_giu?&quot;min &quot;:&quot;max &quot;)+cmU(_hEstrema),12,cH-8,&quot;#b0620c&quot;,&quot;left&quot;,12);
         }
       }
     }catch(e){}
@@ -6621,7 +6721,6 @@ function _disegnaSu(p,cvs,leg){
   }
   const haProfili=(fTop||fSx||fDx||wSx||hTop)>0;
   if(!haProfili)cvLabelQ(&quot;Scegli i profili per vedere il disegno&quot;,cW/2,cH/2,&quot;#e0a050&quot;,&quot;center&quot;,14);
-  else if(segW>20&amp;&amp;!(!tiD.haAnte&amp;&amp;nCL>1&amp;&amp;UPG.quote))cvLabelQ(&quot;luce &quot;+cmv(segW)+&quot; cm&quot;,tx(segX0(0)+segW/2),ty(yLuce0)+17,&quot;#7d93c0&quot;,&quot;center&quot;,12);
   cvLabelFlush(ctx); // le etichette si disegnano per ultime: mai coperte dalle barre
 
   // Legenda
@@ -6630,7 +6729,11 @@ function _disegnaSu(p,cvs,leg){
     const addL=(c,t)=>leg.innerHTML+=`<span><span style=&quot;color:${c}&quot;>■</span> ${t}</span>`;
     const tMat=(p.telaio&amp;&amp;p.telaio.top&amp;&amp;p.telaio.top.mat)||(p.telaio&amp;&amp;p.telaio.sx&amp;&amp;p.telaio.sx.mat)||(p.ante&amp;&amp;p.ante[0]&amp;&amp;p.ante[0].top&amp;&amp;p.ante[0].top.mat);
     addL(&quot;#64a8ff&quot;,&quot;Telaio: &quot;+(tMat?esc(tMat.profilo):&quot;—&quot;));
-    legN.forEach(x=>addL(EL_C[x.gi%EL_C.length],`El.${x.gi+1}: ${esc(x.el.mat.profilo)} ${x.isV?&quot;↕&quot;:&quot;↔&quot;} ×${x.n}`));
+    if(tiD.haAnte&amp;&amp;A_>0&amp;&amp;AH_>0){const _nAl=nomeAntePlur(p.tipo,p.ante.length);addL(&quot;#7896d2&quot;,`${_nAl.charAt(0).toUpperCase()+_nAl.slice(1)}: ${cmv(A_)} × ${cmv(AH_)} cm`+(p.ante.length>1?` (×${p.ante.length})`:&quot;&quot;));}
+    if(segW>0&amp;&amp;luciaV>0)addL(&quot;#7d93c0&quot;,`Luce netta: ${cmv(segW)} × ${cmv(luciaV)} cm`);
+    if(LY.slH>0)addL(&quot;#64a8ff&quot;,`Sopraluce: ${cmv(luce.slW)} × ${cmv(LY.slH)} cm`);
+    if(arcoAttivo(p)){const _fc=(FORME_CIMA.find(f=>f[0]===formaCima(p))||[&quot;&quot;,&quot;forma&quot;])[1];addL(&quot;#b0620c&quot;,`Cima ${_fc.replace(/^S+s/,&quot;&quot;).toLowerCase()}`);}
+    legN.forEach(x=>addL(EL_C[x.gi%EL_C.length],`El.${x.gi+1}: ${esc(x.el.mat.profilo)} ${x.isV?&quot;↕&quot;:&quot;↔&quot;} ×${x.n}`+(x.isV&amp;&amp;_passoEl>0?` · passo ${cmv(_passoEl)} cm`:&quot;&quot;)));
     (p.traverse||[]).forEach((tr,i)=>{if(tr.mat){const d=(tr.dir||&quot;oriz&quot;)===&quot;oriz&quot;?&quot;↔&quot;:&quot;↕&quot;;addL(&quot;#55d39b&quot;,`Trav.${i+1}: ${d} ${esc(tr.mat.profilo)} a ${cmv(tr.quota_mm)} cm`);}});
     if(_vd)addL(&quot;#6fb6e0&quot;,`Vetro ${esc(_vd.sigla)} · ${_vd.nLastre} lastr${_vd.nLastre===1?&quot;a&quot;:&quot;e&quot;}`);
   }
