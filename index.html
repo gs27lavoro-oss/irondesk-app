@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.13.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.14.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.13.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.14.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -2639,12 +2639,18 @@ function sopraluceCalc(p){
   const riemp=S.riemp||'vetro';
   const ct=cimaTelaio(p,luce);
   const areaArco=ct?Math.max(0,arcoAreaSeg(p,ct.C,0,ct.C)):0; // la lunetta sopra la corda (arco)
+  // Sopraluce apribile: dentro la luce c'è un'anta vera (4 profili), poi il riempimento
+  const apribile=!!S.apribile;
+  const matAnta=S.matAnta||((p.ante&amp;&amp;p.ante[0]&amp;&amp;p.ante[0].top&amp;&amp;p.ante[0].top.mat)||null);
+  const aAnta=(apribile&amp;&amp;matAnta)?facciaAppoggio(matAnta):0;
+  const mostraAnta=(apribile&amp;&amp;matAnta)?eLarg(matAnta):0;
+  const wIn=Math.max(0,w-2*aAnta),hIn=Math.max(0,h-2*aAnta);
   const el=(p.elemList||[]).find(e=>e.attivo&amp;&amp;e.mat)||null;
   let nTond=0,largT=0;
-  if(riemp==='tondini'&amp;&amp;el){largT=eLarg(el.mat);nTond=calcSc(w,largT,el.spMin,el.spMax,el.pd||'libero').N;}
-  const dhEl=x=>ct?Math.max(0,ct.dh(x+(luce.telWsx||0))):0; // x misurata dal bordo interno sinistro
-  return {h,w,riemp,trav:S.mat||null,travLen:w,nPz,el,nTond,largT,dhEl,ct,
-    areaMq:(w*h+areaArco)/1e6*nPz, arco:!!ct, hColmo:h+(ct?Math.max(0,ct.dh(ct.C/2)):0)};
+  if(riemp==='tondini'&amp;&amp;el){largT=eLarg(el.mat);nTond=calcSc(wIn,largT,el.spMin,el.spMax,el.pd||'libero').N;}
+  const dhEl=x=>ct?Math.max(0,ct.dh(x+(luce.telWsx||0)+aAnta)):0; // x misurata dal bordo interno del riempimento
+  return {h,w,wIn,hIn,apribile,matAnta,aAnta,mostraAnta,riemp,trav:S.mat||null,travLen:w,nPz,el,nTond,largT,dhEl,ct,
+    areaMq:(wIn*hIn+areaArco)/1e6*nPz, arco:!!ct, hColmo:h+(ct?Math.max(0,ct.dh(ct.C/2)):0)};
 }
 function ammetteSopraluce(p){
   const ti=TIPI.find(t=>t.k===p.tipo)||TIPI[0];
@@ -3417,15 +3423,25 @@ function barRegion(p,el,luciaV){
   return {regY0:y0,regY1:Math.max(y0,y1)};
 }
 
+// Scompartimento automatico: quanti elementi ci stanno nella luce e con che spazio.
+// Lo spazio DEVE restare tra il minimo e il massimo scritti: se esce, si aggiungono
+// (o si tolgono) elementi finché rientra. Il massimo vince sempre: è quello di sicurezza.
 function calcSc(luce,elW,spMin,spMax,pd){
   if(luce<=0||elW<=0)return{N:0,sp:0};
   const s0=parseFloat(spMin)||0,s1=parseFloat(spMax)||0,sm=(s0+s1)/2;
+  const passo=(pd===&quot;pari&quot;||pd===&quot;dispari&quot;)?2:1;
+  const spDi=n=>(luce-n*elW)/(n+1);
   let N=Math.round((luce-sm)/(elW+sm));
   if(N<1)N=1;
-  if(pd===&quot;pari&quot;&amp;&amp;N%2!==0)N=Math.max(2,N%2===0?N:N-1);
+  if(pd===&quot;pari&quot;&amp;&amp;N%2!==0)N=Math.max(2,N-1);
   if(pd===&quot;dispari&quot;&amp;&amp;N%2===0)N=Math.max(1,N-1);
-  let sp=(luce-N*elW)/(N+1);
-  if(sp<0){N=Math.max(1,N-2);sp=(luce-N*elW)/(N+1);}
+  if(spDi(N)<0)N=Math.max(1,N-passo);
+  let g=0;
+  if(s0>0)while(N-passo>=1&amp;&amp;spDi(N)<s0&amp;&amp;g++<500)N-=passo;        // troppo fitto: meno elementi
+  g=0;
+  if(s1>0)while(spDi(N)>s1&amp;&amp;spDi(N+passo)>=0&amp;&amp;g++<500)N+=passo;  // troppo largo: più elementi
+  let sp=spDi(N);
+  if(sp<0){N=Math.max(1,N-passo);sp=spDi(N);}
   return{N:Math.max(0,N),sp:Math.round(sp*10)/10};
 }
 
@@ -3454,6 +3470,12 @@ function migraCampiPezzo(p){
   if(p.arco===undefined)p.arco={attivo:false,freccia:150,tipo:&quot;unico&quot;,verso:&quot;su&quot;,forma:&quot;arco&quot;};
   if(p.arco&amp;&amp;!p.arco.forma)p.arco.forma=&quot;arco&quot;;
   if(p.sopraluce===undefined)p.sopraluce={attivo:false,h:40,mat:null,riemp:'vetro'};
+  if(p.sopVarcoPos===undefined)p.sopVarcoPos='dx';
+  if(p.sopTravettiVerso===undefined)p.sopTravettiVerso='profondita';
+  if(p.strMats===undefined)p.strMats={};
+  if(p.sopScala===undefined)p.sopScala={attiva:false,larg:90,sviluppo:0,nGradini:0,alzataIdeale:175,nCosciali:2,gradTipo:'tubo',
+    pedataPiena:false,haAlzate:false,haReggini:true,lamSp:3,lamTipo:'mandorlata',mats:{},ring:{sx:false,dx:true},ringH:100};
+  if(p.scalaRing===undefined)p.scalaRing={sx:false,dx:false,h:100,passo:100,nCorr:0};
   if(p.angoloCondiviso===undefined)p.angoloCondiviso=true;
   if(p.vern_polvere===undefined)p.vern_polvere=false;
   if(p.vern_tariffa===undefined||p.vern_tariffa===null)p.vern_tariffa=UPG.vernTariffa;
@@ -3578,12 +3600,18 @@ function nuovoPezzo(id){
     vetro_canalina:'alluminio', vetro_gas:'aria', vetro_finitura:'trasparente', vetro_gioco:'',
     vetro_prezzoMq:'', vetro_fermavetro:null, vetro_fvLati:0, vetro_su_sp:'', vetro_su_kg:'', vetro_su_cl:'',
     // Sopraluce: finestra fissa sopra le ante, nello stesso telaio
-    sopraluce:{attivo:false,h:40,mat:null,riemp:'vetro'},
+    sopraluce:{attivo:false,h:40,mat:null,riemp:'vetro',apribile:false,matAnta:null},
     // Soppalco e pensilina: materiali per ruolo (pilastri, travi, travetti, parapetto, mensole…)
     strMats:{},
     sopH:2.4, sopCampate:1, sopMuro:'nessuno', sopInterasse:50,
     sopPiano:'lamiera', sopPianoLam:'mandorlata', sopPianoSp:5, sopPianoKgMq:'', sopPianoPrezzoKg:UPG.lamPrezzoKg, sopPianoPrezzoMq:'',
-    sopPar:{fronte:true,sx:true,dx:true,retro:false}, sopParH:100, sopParPasso:100, sopParNCorr:2, sopVarco:0,
+    sopPar:{fronte:true,sx:true,dx:true,retro:false}, sopParH:100, sopParPasso:100, sopParNCorr:2,
+    sopVarco:0, sopVarcoPos:'dx', sopTravettiVerso:'profondita',
+    // scala dentro il soppalco: nasce dal varco del parapetto
+    sopScala:{attiva:false,larg:90,sviluppo:0,nGradini:0,alzataIdeale:175,nCosciali:2,gradTipo:'tubo',
+      pedataPiena:false,haAlzate:false,haReggini:true,lamSp:3,lamTipo:'mandorlata',mats:{},ring:{sx:false,dx:true},ringH:100},
+    // ringhiera del manufatto scala (lati, altezza, passo, correnti)
+    scalaRing:{sx:false,dx:false,h:100,passo:100,nCorr:0},
     penPasso:150, penPend:10, penSaetta:true, penSaettaH:60, penTraveMuro:false, penInterasse:60,
     penCop:'policarbonato', penCopKgMq:'', penCopPrezzoMq:'',
     ante:[],        // ante interne (per porta/porta cancellata)
@@ -4493,7 +4521,8 @@ function disegnaScala(p,cvs,ctx,leg){
   if(!(Hmm>0)||!(Lmm>0)){ctx.fillStyle=CVC(&quot;tenue&quot;);ctx.font=&quot;600 18px Arial&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci altezza e sviluppo&quot;,cW/2,cH/2);return;}
   const sm=p.scalaMats||{};
   const padL=64,padR=86,padT=40,padB=52;
-  const conManc=!!(p.scalaHaMancorrente&amp;&amp;sm.mancorrente), Hfit=Hmm*(conManc?1.14:1);
+  const _ringOn=!!(p.scalaRing&amp;&amp;(p.scalaRing.sx||p.scalaRing.dx));
+  const conManc=!!(p.scalaHaMancorrente&amp;&amp;sm.mancorrente), Hfit=Hmm*(conManc?1.14:1)+(_ringOn?Math.max(0,numOk((p.scalaRing||{}).h,100)*10):0);
   const s=Math.min((cW-padL-padR)/Lmm,(cH-padT-padB)/Hfit);
   const ox=padL+(cW-padL-padR-Lmm*s)/2, base=cH-padB-(cH-padT-padB-Hfit*s)/2;
   const X=x=>ox+x*s, Y=y=>base-y*s;
@@ -4530,6 +4559,51 @@ function disegnaScala(p,cvs,ctx,leg){
     ctx.strokeStyle=CVC(&quot;manc&quot;);ctx.setLineDash([8,5]);ctx.lineWidth=2;
     ctx.beginPath();ctx.moveTo(X(0),Y(a+off));ctx.lineTo(X(Lmm),Y(Hmm+off));ctx.stroke();ctx.setLineDash([]);
   }
+  // ── Ringhiera della scala: montanti verticali, corrimano parallelo alla rampa, elementi ──
+  const _R=Object.assign({sx:false,dx:false,h:100,passo:100,nCorr:0},p.scalaRing||{});
+  const _rPz=ringhieraScalaManufatto(p)[0]||null;
+  if(_rPz){
+    const hR=Math.max(0,numOk(_R.h,100)*10);
+    const luR=calcLuce(_rPz),svil=Math.hypot(Lmm,Hmm);
+    const RGB_R=[176,98,12];
+    const onRampa=t=>({x:Lmm*t,y:Hmm*t});                       // t = 0..1 lungo la rampa
+    const wM=Math.max((luR.wSx||40)*s,1.5);
+    for(let k=0;k<luR.nCL+1;k++){
+      const t=Math.min(1,k/Math.max(1,luR.nCL)),pt=onRampa(t);
+      barra3D(ctx,Math.min(Math.max(X(pt.x)-wM/2,X(0)),X(Lmm)-wM),Y(pt.y+hR),wM,hR*s,RGB_R,1);
+    }
+    const hc=Math.max((luR.hTop||40)*s,2);
+    barraObliqua(ctx,X(0),Y(hR-luR.hTop/2),X(Lmm),Y(Hmm+hR-luR.hTop/2),hc);
+    if(luR.hBot>0&amp;&amp;!_rPz.aperto_sotto)barraObliqua(ctx,X(0),Y(luR.hBot/2),X(Lmm),Y(Hmm+luR.hBot/2),Math.max(luR.hBot*s,1.5));
+    (luR.correnti||[]).forEach(c=>{
+      const q=luR.hTop+luR.luciaV-c.q;
+      barraObliqua(ctx,X(0),Y(hR-q),X(Lmm),Y(Hmm+hR-q),Math.max(c.sp*s,1.5));
+    });
+    (_rPz.elemList||[]).filter(e=>e.attivo&amp;&amp;e.mat).forEach(el=>{
+      const larg=eLarg(el.mat),isTondo=String(el.mat.profilo).startsWith(&quot;Ø&quot;);
+      const rgbEl=_cvHexRgb(EL_C[0]);
+      if(el.dir==='oriz'){
+        fasceLuce(luR).forEach(fa=>elemPosizioni(el,fa.y1-fa.y0,larg).forEach(pos=>{
+          const q=luR.hTop+(luR.luciaV-(fa.y0+pos));
+          barraObliqua(ctx,X(0),Y(hR-q),X(Lmm),Y(Hmm+hR-q),Math.max(larg*s,1.2));
+        }));
+      } else {
+        for(let sI=0;sI<luR.nCL;sI++){
+          elemCelle(_rPz,el,luR.luciaH,luR.luciaV,barRegion(_rPz,el,luR.luciaV)).forEach(c=>{
+            const hC=c.by1-c.by0;if(!(hC>0))return;
+            c.pos.forEach(pos=>{
+              const d=(luR.campX0(sI)+pos)/Math.max(1,svil);       // posizione lungo la rampa
+              const pt=onRampa(Math.min(1,d));
+              const yTop=hR-(luR.hTop+(luR.luciaV-c.by1));
+              if(isTondo)tondo3D(ctx,X(pt.x),Y(pt.y+yTop-hC/2),Math.max(larg*s/2,1.2),hC*s/2,rgbEl);
+              else barra3D(ctx,X(pt.x)-Math.max(larg*s,1.2)/2,Y(pt.y+yTop),Math.max(larg*s,1.2),hC*s,rgbEl,1);
+            });
+          });
+        }
+      }
+    });
+    cvLabelQ(&quot;ringhiera &quot;+[_R.sx?&quot;sx&quot;:&quot;&quot;,_R.dx?&quot;dx&quot;:&quot;&quot;].filter(Boolean).join(&quot; + &quot;)+&quot; · h &quot;+cmU(hR),X(Lmm/2),Y(Hmm+hR)-10,&quot;#b0620c&quot;,&quot;center&quot;,11);
+  }
   // quote
   if(UPG.quote){
     try{
@@ -4543,12 +4617,15 @@ function disegnaScala(p,cvs,ctx,leg){
     leg.innerHTML=`<span><span style=&quot;color:#f08a3c&quot;>■</span> ${n} gradini da ${cmv(a)} × ${cmv(pd)} cm</span>`+
       `<span><span style=&quot;color:#b090f0&quot;>■</span> ${sc.nCorr} coscial${sc.nCorr>1?&quot;i&quot;:&quot;e&quot;} ${sm.correnti?esc(sm.correnti.profilo)+&quot; · &quot;+cmv(sc.D*1000)+&quot; cm&quot;:&quot;—&quot;}</span>`+
       `<span><span style=&quot;color:#64a8ff&quot;>■</span> larghezza ${cmv(sc.W*1000)} cm</span>`+
-      (p.scalaHaMancorrente&amp;&amp;sm.mancorrente?`<span><span style=&quot;color:#64a8ff&quot;>■</span> mancorrente ${esc(sm.mancorrente.profilo)}</span>`:&quot;&quot;);
+      (p.scalaHaMancorrente&amp;&amp;sm.mancorrente?`<span><span style=&quot;color:#64a8ff&quot;>■</span> mancorrente ${esc(sm.mancorrente.profilo)}</span>`:&quot;&quot;)+
+      (_ringOn?`<span><span style=&quot;color:#b0620c&quot;>■</span> Ringhiera ${[(p.scalaRing.sx?&quot;sx&quot;:&quot;&quot;),(p.scalaRing.dx?&quot;dx&quot;:&quot;&quot;)].filter(Boolean).join(&quot; + &quot;)} · h ${numOk(p.scalaRing.h,100)} cm</span>`:&quot;&quot;);
   }
 }
 
 function buildBodyScala(p){
   const sc=scalaCalc(p);
+  const _ring=Object.assign({sx:false,dx:false,h:100,passo:100,nCorr:0},p.scalaRing||{});
+  const _ringPz=ringhieraScalaManufatto(p)[0]||null;   // ringhiera virtuale: geometria e stile
   const {H,L,W,n,D,nCorr,nTubi,gradTipo}=sc;
   const alzata=Math.round(sc.alzata*10)/10, pedata=Math.round(sc.pedata*10)/10;
   const ang=Math.round(Math.atan2(H,L)*1800/Math.PI)/10;
@@ -4710,6 +4787,47 @@ function buildBodyScala(p){
       <div><b style=&quot;color:#64a8ff&quot;>Mancorrente</b> — il corrimano parallelo alla scala, 1 o 2.</div>
     </div>
   </details>
+
+  <!-- RINGHIERA DELLA SCALA: una ringhiera vera sullo sviluppo inclinato -->
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${(_ring.sx||_ring.dx)?'#b0620c':'#172438'}&quot;>
+    <div class=&quot;st&quot; style=&quot;color:${(_ring.sx||_ring.dx)?'#b0620c':'#91a2bb'}&quot;>🛡️ Ringhiera della scala</div>
+    <p style=&quot;font-size:11px;color:#91a2bb;margin-bottom:9px;line-height:1.4&quot;>
+      Si monta sul lato che vuoi (o su tutti e due) ed è una ringhiera vera: montanti, corrimano, corrente di base,
+      correnti e gli elementi che scegli qui sotto. Sviluppo inclinato della rampa: <b style=&quot;color:#f08a3c&quot;>${cmU(Math.hypot(sc.H*1000,sc.L*1000))}</b>
+    </p>
+    <div style=&quot;display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px&quot;>
+      ${[[&quot;sx&quot;,&quot;Lato sinistro&quot;],[&quot;dx&quot;,&quot;Lato destro&quot;]].map(l=>`<label style=&quot;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:700;color:${_ring[l[0]]?'#b0620c':'#8a96b0'}&quot;>
+        <input type=&quot;checkbox&quot; ${_ring[l[0]]?'checked':''} onchange=&quot;setScalaRing(${p.id},'${l[0]}',this.checked)&quot; style=&quot;width:16px;height:16px&quot;>${l[1]}</label>`).join(&quot;&quot;)}
+    </div>
+    ${(_ring.sx||_ring.dx)?`
+    <div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Altezza ringhiera (cm)</label>
+        <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;30&quot; step=&quot;5&quot; value=&quot;${numOk(_ring.h,100)}&quot; style=&quot;border-color:#b0620c&quot;
+          onchange=&quot;setScalaRing(${p.id},'h',Math.max(30,parseFloat(this.value)||100))&quot;></div>
+      <div><label class=&quot;fl&quot;>Un montante ogni (cm)</label>
+        <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;20&quot; step=&quot;5&quot; value=&quot;${numOk(_ring.passo,100)}&quot; style=&quot;border-color:#b0620c&quot;
+          onchange=&quot;setScalaRing(${p.id},'passo',Math.max(20,parseFloat(this.value)||100))&quot;></div>
+    </div>
+    <div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Correnti orizzontali (n°)</label>
+        <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; max=&quot;8&quot; step=&quot;1&quot; value=&quot;${Math.max(0,Math.round(numOk(_ring.nCorr,0)))}&quot;
+          onchange=&quot;setScalaRing(${p.id},'nCorr',Math.max(0,parseInt(this.value)||0))&quot;></div>
+      <div></div>
+    </div>
+    ${latoBtn(p.id,`str-${p.id}-ringMont`,&quot;Montanti&quot;,(p.strMats||{}).ringMont,&quot;#b0620c&quot;)}
+    ${latoBtn(p.id,`str-${p.id}-ringCorrimano`,&quot;Corrimano&quot;,(p.strMats||{}).ringCorrimano,&quot;#b0620c&quot;)}
+    ${latoBtn(p.id,`str-${p.id}-ringBase`,&quot;Corrente di base (facoltativo)&quot;,(p.strMats||{}).ringBase,&quot;#b0620c&quot;)}
+    ${Math.round(numOk(_ring.nCorr,0))>0?latoBtn(p.id,`str-${p.id}-ringCorrenti`,&quot;Correnti&quot;,(p.strMats||{}).ringCorrenti,&quot;#b0620c&quot;):&quot;&quot;}
+    ${_ringPz?`<div class=&quot;costi-riga&quot; style=&quot;margin-top:6px&quot;><span>Ringhiera per lato</span><b>${cmv(Math.hypot(sc.H*1000,sc.L*1000))} × ${numOk(_ring.h,100)} cm · ${calcLuce(_ringPz).nCL} campate</b></div>`:&quot;&quot;}
+    ${_ringPz?`<div style=&quot;margin-top:8px&quot;>
+      <div class=&quot;st&quot; style=&quot;color:#9060e0;font-size:12px&quot;>⬆️ ➡️ Elementi della ringhiera</div>
+      ${buildElemHtml(p,_ringPz)}
+      <button class=&quot;btn-add&quot; style=&quot;border-color:#9060e0;color:#9060e0;background:#0c0618;padding:7px&quot; onclick=&quot;aggiungiEl(${p.id})&quot;>+ Aggiungi elemento</button>
+      <div class=&quot;st&quot; style=&quot;color:#55d39b;font-size:12px;margin-top:8px&quot;>➖ Traverse della ringhiera</div>
+      ${buildTravHtml(p,_ringPz)}
+      <button class=&quot;btn-add&quot; style=&quot;border-color:#55d39b;color:#55d39b;background:#061208;padding:7px&quot; onclick=&quot;aggiungiTraversa(${p.id})&quot;>+ Aggiungi traversa</button>
+    </div>`:&quot;&quot;}`:&quot;&quot;}
+  </div>
 
   ${buildLavorazioniHtml(p)}
 
@@ -4886,6 +5004,23 @@ function buildVetroHtml(p){
 }
 
 // ═══════ SOPPALCO e PENSILINA (card) ═══════
+function setSopScala(id,campo,val){
+  pezzi=pezzi.map(p=>p.id!==id?p:{...p,sopScala:Object.assign({attiva:false,larg:90,ring:{sx:false,dx:true}},p.sopScala||{},{[campo]:val})});
+  renderTutto();
+}
+function setSopScalaRing(id,lato,val){
+  pezzi=pezzi.map(p=>{
+    if(p.id!==id)return p;
+    const S=Object.assign({attiva:false,larg:90},p.sopScala||{});
+    S.ring=Object.assign({sx:false,dx:true},S.ring||{},{[lato]:!!val});
+    return {...p,sopScala:S};
+  });
+  renderTutto();
+}
+function setScalaRing(id,campo,val){
+  pezzi=pezzi.map(p=>p.id!==id?p:{...p,scalaRing:Object.assign({sx:false,dx:false,h:100,passo:100,nCorr:0},p.scalaRing||{},{[campo]:val})});
+  renderTutto();
+}
 function setSoppPar(id,lato,val){
   pezzi=pezzi.map(p=>p.id!==id?p:{...p,sopPar:Object.assign({fronte:true,sx:true,dx:true,retro:false},p.sopPar||{},{[lato]:!!val})});
   renderTutto();
@@ -4925,6 +5060,9 @@ function buildBodySoppalco(p){
   const piano=s.piano;
   const qPar=parapettoPezzi(p)[0]||null;              // ringhiera virtuale: geometria del parapetto
   const qParLuce=qPar?calcLuce(qPar):{luciaH:0,luciaV:0,nCL:1};
+  const scOn=!!(p.sopScala&amp;&amp;p.sopScala.attiva);
+  const scPz=scalaSoppalcoPezzo(p),scG=scPz?scalaCalc(scPz):null;
+  const scRing=Object.assign({sx:false,dx:true},(p.sopScala||{}).ring||{});
   return `
   ${_testaStruttura(p,&quot;N° soppalchi uguali&quot;)}
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${col}&quot;>
@@ -4940,8 +5078,9 @@ function buildBodySoppalco(p){
     <div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Appoggio</label>${_scelte(p,'sopMuro',[[&quot;nessuno&quot;,&quot;Libero: pilastri davanti e dietro&quot;],[&quot;retro&quot;,&quot;Retro appoggiato al muro&quot;]],s.muro?&quot;retro&quot;:&quot;nessuno&quot;,col)}</div>
     <div class=&quot;g2 mb8&quot;>
       ${_numInput(p,&quot;Travetti: uno ogni (cm)&quot;,&quot;sopInterasse&quot;,numOk(p.sopInterasse,50),5,col)}
-      <div></div>
+      <div><label class=&quot;fl&quot;>Verso dei travetti</label>${_scelte(p,'sopTravettiVerso',SOPP_TRAVETTI,s.travVerso,col)}</div>
     </div>
+    <div class=&quot;nota-info&quot;>I travetti corrono ${s.travVerso==='profondita'?&quot;nel verso della profondità&quot;:&quot;nel verso della larghezza&quot;}: le travi principali stanno nel verso opposto (${s.traviLungoL?&quot;lungo il fronte&quot;:&quot;lungo i lati&quot;}), a campate tra i pilastri.</div>
     ${latoBtn(p.id,`str-${p.id}-pilastri`,&quot;Pilastri&quot;,M.pilastri,col)}
     ${latoBtn(p.id,`str-${p.id}-travi`,&quot;Travi principali&quot;,M.travi,col)}
     ${latoBtn(p.id,`str-${p.id}-travetti`,&quot;Travetti&quot;,M.travetti,col)}
@@ -4973,8 +5112,10 @@ function buildBodySoppalco(p){
       ${_numInput(p,&quot;Correnti orizzontali (n°)&quot;,&quot;sopParNCorr&quot;,Math.round(numOk(p.sopParNCorr,2)),1,col,true)}
       ${_numInput(p,&quot;Varco scala sul fronte (cm)&quot;,&quot;sopVarco&quot;,numOk(p.sopVarco,0),5,col)}
     </div>
+    ${s.varco>0?`<div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Dove sta il varco</label>${_scelte(p,'sopVarcoPos',SOPP_VARCO_POS,s.varcoPos,col)}</div>`:&quot;&quot;}
     ${latoBtn(p.id,`str-${p.id}-parMont`,&quot;Montanti&quot;,M.parMont,col)}
     ${latoBtn(p.id,`str-${p.id}-parCorrimano`,&quot;Corrimano&quot;,M.parCorrimano,col)}
+    ${latoBtn(p.id,`str-${p.id}-parBase`,&quot;Corrente di base (facoltativo)&quot;,M.parBase,col)}
     ${s.nCorr>0?latoBtn(p.id,`str-${p.id}-parCorrenti`,&quot;Correnti&quot;,M.parCorrenti,col):&quot;&quot;}
     <div class=&quot;nota-info&quot;>Il varco (a destra sul fronte) lascia il passaggio per la scala: la scala la aggiungi come manufatto 🪜 Scala.</div>
   </div>
@@ -4994,6 +5135,63 @@ function buildBodySoppalco(p){
     <button class=&quot;btn-add&quot; style=&quot;border-color:#55d39b;color:#55d39b;background:#061208;padding:7px&quot; onclick=&quot;aggiungiTraversa(${p.id})&quot;>+ Aggiungi traversa</button>
   </div>`:&quot;&quot;}
 
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${scOn?'#f08a3c':'#172438'}&quot;>
+    <div style=&quot;display:flex;align-items:center;gap:10px;margin-bottom:${scOn?'10px':'0'}&quot;>
+      <input type=&quot;checkbox&quot; ${scOn?'checked':''} style=&quot;width:18px;height:18px;cursor:pointer&quot;
+        onchange=&quot;setSopScala(${p.id},'attiva',this.checked)&quot;>
+      <label style=&quot;cursor:pointer;font-size:13px;font-weight:700;color:${scOn?'#f08a3c':'#91a2bb'}&quot;>🪜 Scala del soppalco</label>
+      ${scOn?'':'<span style=&quot;font-size:11px;color:#273851&quot;>— nasce dal varco e si vede nel disegno</span>'}
+    </div>
+    ${scOn&amp;&amp;scG?`
+    <div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Larghezza della scala (cm)</label>
+        <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;30&quot; step=&quot;5&quot; value=&quot;${cmv(scG.W*1000)}&quot; style=&quot;border-color:#f08a3c&quot;
+          onchange=&quot;setSopScala(${p.id},'larg',Math.max(30,parseFloat(this.value)||90))&quot;></div>
+      <div><label class=&quot;fl&quot;>Sviluppo in pianta (cm)</label>
+        <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;30&quot; step=&quot;5&quot; value=&quot;${cmv(scG.L*1000)}&quot; style=&quot;border-color:#f08a3c&quot;
+          onchange=&quot;setSopScala(${p.id},'sviluppo',Math.max(30,parseFloat(this.value)||0))&quot;></div>
+    </div>
+    <div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>N° gradini</label>
+        <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;1&quot; step=&quot;1&quot; value=&quot;${scG.n}&quot; style=&quot;border-color:#f08a3c&quot;
+          onchange=&quot;setSopScala(${p.id},'nGradini',Math.max(1,parseInt(this.value)||1))&quot;></div>
+      <div><label class=&quot;fl&quot;>Cosciali</label>
+        <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;1&quot; max=&quot;4&quot; step=&quot;1&quot; value=&quot;${scG.nCorr}&quot;
+          onchange=&quot;setSopScala(${p.id},'nCosciali',Math.max(1,parseInt(this.value)||2))&quot;></div>
+    </div>
+    <div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Gradini</label>
+      <div style=&quot;display:flex;gap:6px;flex-wrap:wrap&quot;>
+        <button onclick=&quot;setSopScala(${p.id},'gradTipo','tubo')&quot; style=&quot;flex:1;padding:7px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1.5px solid ${scG.gradTipo!=='lamiera'?'#f08a3c':'#172438'};color:${scG.gradTipo!=='lamiera'?'#f08a3c':'#91a2bb'};background:${scG.gradTipo!=='lamiera'?'#1a1205':'transparent'}&quot;>Tubolari</button>
+        <button onclick=&quot;setSopScala(${p.id},'gradTipo','lamiera')&quot; style=&quot;flex:1;padding:7px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1.5px solid ${scG.gradTipo==='lamiera'?'#f08a3c':'#172438'};color:${scG.gradTipo==='lamiera'?'#f08a3c':'#91a2bb'};background:${scG.gradTipo==='lamiera'?'#1a1205':'transparent'}&quot;>Lamiera piegata</button>
+      </div></div>
+    ${latoBtn(p.id,`sos-${p.id}-correnti`,&quot;Cosciali&quot;,(p.sopScala.mats||{}).correnti,&quot;#f08a3c&quot;)}
+    ${scG.gradTipo!=='lamiera'?latoBtn(p.id,`sos-${p.id}-gradini`,&quot;Gradini&quot;,(p.sopScala.mats||{}).gradini,&quot;#f08a3c&quot;):&quot;&quot;}
+    ${scG.gradTipo!=='lamiera'&amp;&amp;(p.sopScala||{}).haAlzate?latoBtn(p.id,`sos-${p.id}-alzate`,&quot;Alzate&quot;,(p.sopScala.mats||{}).alzate,&quot;#f08a3c&quot;):&quot;&quot;}
+    ${(p.sopScala||{}).haReggini!==false?latoBtn(p.id,`sos-${p.id}-reggini`,&quot;Reggini&quot;,(p.sopScala.mats||{}).reggini,&quot;#f08a3c&quot;):&quot;&quot;}
+    <div style=&quot;display:flex;gap:14px;flex-wrap:wrap;margin:8px 0&quot;>
+      <label style=&quot;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:${(p.sopScala||{}).haAlzate?'#f08a3c':'#8a96b0'}&quot;>
+        <input type=&quot;checkbox&quot; ${(p.sopScala||{}).haAlzate?'checked':''} onchange=&quot;setSopScala(${p.id},'haAlzate',this.checked)&quot; style=&quot;width:16px;height:16px&quot;>Alzate chiuse</label>
+      <label style=&quot;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:${(p.sopScala||{}).haReggini!==false?'#f08a3c':'#8a96b0'}&quot;>
+        <input type=&quot;checkbox&quot; ${(p.sopScala||{}).haReggini!==false?'checked':''} onchange=&quot;setSopScala(${p.id},'haReggini',this.checked)&quot; style=&quot;width:16px;height:16px&quot;>Reggini sotto i gradini</label>
+    </div>
+    ${_rigaInfo(&quot;Alzata × pedata&quot;,cmv(scG.alzata)+&quot; × &quot;+cmv(scG.pedata)+&quot; cm · pendenza &quot;+(Math.atan2(scG.H,scG.L)*180/Math.PI).toFixed(1)+&quot;°&quot;)}
+    <div style=&quot;border-top:1px solid #2a2008;margin-top:8px;padding-top:8px&quot;>
+      <div style=&quot;font-size:12px;font-weight:700;color:#b0620c;margin-bottom:6px&quot;>Ringhiera della scala (stesso stile del parapetto)</div>
+      <div style=&quot;display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px&quot;>
+        ${[[&quot;sx&quot;,&quot;Lato sinistro&quot;],[&quot;dx&quot;,&quot;Lato destro&quot;]].map(l=>`<label style=&quot;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:700;color:${(scRing[l[0]])?'#b0620c':'#8a96b0'}&quot;>
+          <input type=&quot;checkbox&quot; ${scRing[l[0]]?'checked':''} onchange=&quot;setSopScalaRing(${p.id},'${l[0]}',this.checked)&quot; style=&quot;width:16px;height:16px&quot;>${l[1]}</label>`).join(&quot;&quot;)}
+      </div>
+      ${(scRing.sx||scRing.dx)?`<div class=&quot;g2 mb8&quot;>
+        <div><label class=&quot;fl&quot;>Altezza ringhiera scala (cm)</label>
+          <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;30&quot; step=&quot;5&quot; value=&quot;${numOk((p.sopScala||{}).ringH,numOk(p.sopParH,100))}&quot; style=&quot;border-color:#b0620c&quot;
+            onchange=&quot;setSopScala(${p.id},'ringH',Math.max(30,parseFloat(this.value)||100))&quot;></div>
+        <div>${_rigaInfo(&quot;Sviluppo inclinato&quot;,cmv(Math.hypot(scG.H*1000,scG.L*1000))+&quot; cm&quot;)}</div>
+      </div>`:&quot;&quot;}
+    </div>
+    <div class=&quot;nota-info&quot;>La scala usa lo stesso varco del parapetto: cambiando larghezza o posizione del varco si sposta anche la scala. Tagli, pesi e costi sono nella distinta qui sotto.</div>`
+    :(scOn?`<div style=&quot;font-size:11px;color:#e0a050&quot;>Scrivi l'altezza del piano per calcolare la scala.</div>`:&quot;&quot;)}
+  </div>
+
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${col}&quot;>
     <div class=&quot;st&quot; style=&quot;color:${col}&quot;>📐 Disegno e quantità</div>
     <div id=&quot;dis-${p.id}&quot; class=&quot;tavola-dis&quot; data-h=&quot;300&quot; style=&quot;margin-top:4px&quot;></div>
@@ -5004,6 +5202,7 @@ function buildBodySoppalco(p){
     ${s.tratti.length?_rigaInfo(&quot;Montanti parapetto&quot;,s.nMont*s.nPz+&quot; × &quot;+cmv(s.lMont)+&quot; cm&quot;):&quot;&quot;}
     ${s.tratti.length?_rigaInfo(&quot;Campate del parapetto&quot;,s.tratti.map(t=>t.lato+&quot; &quot;+t.nCamp).join(&quot; · &quot;)):&quot;&quot;}
     ${_rigaInfo(&quot;Piastre di base&quot;,s.nPiastre+&quot; pz&quot;)}
+    ${scG?_rigaInfo(&quot;Scala&quot;,scG.n+&quot; gradini da &quot;+cmv(scG.alzata)+&quot; × &quot;+cmv(scG.pedata)+&quot; cm · larga &quot;+cmv(scG.W*1000)+&quot; cm&quot;):&quot;&quot;}
     ${s.muro?_rigaInfo(&quot;Appoggi a muro (piastre / tasselli)&quot;,s.nAppMuro+&quot; pz&quot;):&quot;&quot;}
     <div class=&quot;nota-info&quot;>Pilastro = altezza del piano − piano (${fmtN(s.spPiano)} mm) − travetto (${fmtN(s.hTrav)} mm) − trave (${fmtN(s.hTrave)} mm). Piastre, tasselli e bulloni: aggiungili nella ferramenta per averne il costo.</div>
     ${_notaTecnico()}
@@ -5437,7 +5636,12 @@ function buildBody(p){
         <div style=&quot;display:flex;gap:5px;flex-wrap:wrap&quot;>${SOPRALUCE_RIEMP.map(r=>_slBtn(r[0],r[1])).join(&quot;&quot;)}</div></div>
     </div>
     ${latoBtn(p.id,`slt-${p.id}`,&quot;Traverso fisso&quot;,_sl.mat,&quot;#64a8ff&quot;)}
+    <label style=&quot;display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px;font-size:12px;font-weight:700;color:${_sl.apribile?'#64a8ff':'#8a96b0'}&quot;>
+      <input type=&quot;checkbox&quot; ${_sl.apribile?'checked':''} onchange=&quot;setSopraluce(${p.id},'apribile',this.checked)&quot; style=&quot;width:16px;height:16px&quot;>
+      Finestra apribile (con la sua anta) — senza spunta è vetro fisso nel telaio</label>
+    ${_sl.apribile?latoBtn(p.id,`sla-${p.id}`,&quot;Profilo dell'anta del sopraluce&quot;,_slC?_slC.matAnta:null,&quot;#64a8ff&quot;):&quot;&quot;}
     ${_slC?`<div class=&quot;costi-riga&quot;><span>Luce della finestra</span><b>${cmv(_slC.w)} × ${cmv(_slC.h)} cm${_slC.arco?&quot; (sagomata: &quot;+cmv(_slC.hColmo)+&quot; cm al colmo)&quot;:&quot;&quot;}</b></div>
+    ${_slC.apribile?`<div class=&quot;costi-riga&quot;><span>Anta del sopraluce</span><b>${cmv(_slC.w)} × ${cmv(_slC.h)} cm · luce ${cmv(_slC.wIn)} × ${cmv(_slC.hIn)} cm</b></div>`:&quot;&quot;}
     ${_slC.riemp==='tondini'?`<div class=&quot;costi-riga&quot;><span>Tondini del sopraluce</span><b>${_slC.nTond} × ${cmv(_slC.h)} cm</b></div>`:&quot;&quot;}
     ${_slC.riemp==='vetro'?`<div class=&quot;nota-info&quot;>Il vetro del sopraluce usa la composizione e il prezzo della sezione 🪟 Vetro qui sotto (anche se le ante non sono vetrate).</div>`:&quot;&quot;}
     ${_slC.riemp==='lamiera'?`<div class=&quot;nota-info&quot;>Il pannello usa tipo, spessore e prezzo della lamiera impostati qui sotto.</div>`:&quot;&quot;}`
@@ -6216,39 +6420,73 @@ function muroTratteggio(ctx,x,y,w,h){
   ctx.save();ctx.strokeStyle=CVC('contorno');ctx.lineWidth=1;ctx.strokeRect(x,y,w,h);ctx.restore();
 }
 
-// ═══════ SOPPALCO: pianta + vista frontale ═══════
+// ═══════ SOPPALCO: pianta + vista frontale (con scala e parapetti) ═══════
 function disegnaSoppalco(p,cvs,ctx,leg){
   const cW=cvs.width,cH=cvs.height,s=soppCalc(p),M=p.strMats||{};
   if(!(s.L>0&amp;&amp;s.P>0&amp;&amp;s.H>0)){ctx.fillStyle=CVC(&quot;tenue&quot;);ctx.font=&quot;600 18px Arial&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci larghezza, profondità e altezza&quot;,cW/2,cH/2);return;}
-  const RGB_P=[77,157,224],RGB_T=[120,150,210],RGB_TR=[80,192,144],RGB_PAR=[176,98,12];
+  const scPz=scalaSoppalcoPezzo(p),scG=scPz?scalaCalc(scPz):null;
+  const RGB_P=[77,157,224],RGB_T=[120,150,210],RGB_TR=[80,192,144],RGB_PAR=[176,98,12],RGB_SC=[150,110,230];
   const half=(cW-40)/2,pad=34;
   const bTr=M.travetti?Math.max(eProf(M.travetti),1):40,bTv=M.travi?Math.max(eProf(M.travi),1):60;
   const sPil=M.pilastri?Math.max(eLarg(M.pilastri),eProf(M.pilastri)):80;
-  // PIANTA (sinistra): y = 0 retro, y = P fronte
-  const scP=Math.min((half-pad*2)/s.L,(cH-pad*2-20)/s.P);
-  const px0=20+(half-s.L*scP)/2,py0=pad+14+(cH-pad*2-24-s.P*scP)/2;
+  const scLarg=scG?scG.W*1000:0,scSvil=scG?scG.L*1000:0;
+  const scX0=Math.min(Math.max(s.varco>0?s.varcoX:(s.L-scLarg)/2,0),Math.max(0,s.L-scLarg));
+  // ── PIANTA (sinistra): y = 0 retro, y = P fronte; la scala esce davanti ──
+  const Ptot=s.P+(scG?scSvil:0);
+  const scP=Math.min((half-pad*2)/s.L,(cH-pad*2-26)/Ptot);
+  const px0=20+(half-s.L*scP)/2,py0=pad+16+(cH-pad*2-26-Ptot*scP)/2;
   const X=x=>px0+x*scP,Y=y=>py0+y*scP;
   if(s.muro)muroTratteggio(ctx,X(0)-6,Y(0)-9,s.L*scP+12,8);
   if(s.piano!=='nessuno'){ctx.fillStyle=CVC('piano');ctx.fillRect(X(0),Y(0),s.L*scP,s.P*scP);}
-  const wT=Math.max(bTr*scP,1.5);
-  for(let i=0;i<s.nTrav;i++){const x=Math.min(Math.max(i*s.passoTrav-bTr/2,0),s.L-bTr);barra3D(ctx,X(x),Y(0),wT,s.P*scP,RGB_TR,1);}
-  const wV=Math.max(bTv*scP,2.5);
-  barra3D(ctx,X(0),Y(0),s.L*scP,wV,RGB_T,1);barra3D(ctx,X(0),Y(s.P)-wV,s.L*scP,wV,RGB_T,1);
+  const wT=Math.max(bTr*scP,1.5),wV=Math.max(bTv*scP,2.5);
+  if(s.traviLungoL){
+    for(let i=0;i<s.nTrav;i++){const x=Math.min(Math.max(i*s.passoTrav-bTr/2,0),s.L-bTr);barra3D(ctx,X(x),Y(0),wT,s.P*scP,RGB_TR,1);}
+    barra3D(ctx,X(0),Y(0),s.L*scP,wV,RGB_T,1);barra3D(ctx,X(0),Y(s.P)-wV,s.L*scP,wV,RGB_T,1);
+  } else {
+    for(let i=0;i<s.nTrav;i++){const y=Math.min(Math.max(i*s.passoTrav-bTr/2,0),s.P-bTr);barra3D(ctx,X(0),Y(y),s.L*scP,wT,RGB_TR,1);}
+    barra3D(ctx,X(0),Y(0),wV,s.P*scP,RGB_T,1);barra3D(ctx,X(s.L)-wV,Y(0),wV,s.P*scP,RGB_T,1);
+  }
   const q=Math.max(sPil*scP,5);
-  const file=s.muro?[s.P]:[0,s.P];
-  file.forEach(yf=>{for(let i=0;i<=s.nCamp;i++){const x=i*s.campL;const xx=Math.min(Math.max(X(x)-q/2,X(0)),X(s.L)-q),yy=Math.min(Math.max(Y(yf)-q/2,Y(0)),Y(s.P)-q);barra3D(ctx,xx,yy,q,q,RGB_P,1);}});
-  ctx.save();ctx.strokeStyle=CVC('accento');ctx.lineWidth=3;ctx.lineCap=&quot;round&quot;;ctx.beginPath();
+  const posPil=[];
+  for(let i=0;i<=s.nCamp;i++){
+    const t=i*s.campL;
+    if(s.traviLungoL){const file=s.muro?[s.P]:[0,s.P];file.forEach(yf=>posPil.push([t,yf]));}
+    else {const file=[0,s.L];file.forEach(xf=>{if(!(s.muro&amp;&amp;t<1))posPil.push([xf,t]);});}
+  }
+  posPil.forEach(c=>{
+    const xx=Math.min(Math.max(X(c[0])-q/2,X(0)),X(s.L)-q),yy=Math.min(Math.max(Y(c[1])-q/2,Y(0)),Y(s.P)-q);
+    barra3D(ctx,xx,yy,q,q,RGB_P,1);
+  });
+  // parapetti: un tratto per volta, nella sua posizione reale
+  ctx.save();ctx.strokeStyle=CVC('accento');ctx.lineWidth=3;ctx.lineCap=&quot;butt&quot;;ctx.beginPath();
   s.tratti.forEach(t=>{
-    if(t.lato==='fronte'){ctx.moveTo(X(0),Y(s.P)+4);ctx.lineTo(X(t.len),Y(s.P)+4);}
-    if(t.lato==='retro'){ctx.moveTo(X(0),Y(0)-4);ctx.lineTo(X(s.L),Y(0)-4);}
-    if(t.lato==='sx'){ctx.moveTo(X(0)-4,Y(0));ctx.lineTo(X(0)-4,Y(s.P));}
-    if(t.lato==='dx'){ctx.moveTo(X(s.L)+4,Y(0));ctx.lineTo(X(s.L)+4,Y(s.P));}
+    if(t.lato==='fronte'){ctx.moveTo(X(t.a),Y(s.P)+4);ctx.lineTo(X(t.b),Y(s.P)+4);}
+    if(t.lato==='retro'){ctx.moveTo(X(t.a),Y(0)-4);ctx.lineTo(X(t.b),Y(0)-4);}
+    if(t.lato==='sx'){ctx.moveTo(X(0)-4,Y(t.a));ctx.lineTo(X(0)-4,Y(t.b));}
+    if(t.lato==='dx'){ctx.moveTo(X(s.L)+4,Y(t.a));ctx.lineTo(X(s.L)+4,Y(t.b));}
   });
   ctx.stroke();ctx.restore();
-  if(s.varco>0)cvLabelQ(&quot;varco &quot;+cmv(s.varco)+&quot; cm&quot;,X(s.L-s.varco/2),Y(s.P)+18,&quot;#b0620c&quot;,&quot;center&quot;,11);
+  // scala in pianta: esce dal varco con i suoi gradini
+  if(scG&amp;&amp;scLarg>0&amp;&amp;scSvil>0){
+    ctx.save();
+    ctx.fillStyle=cvTec()?&quot;#d3d7de&quot;:&quot;rgba(150,110,230,.18)&quot;;
+    ctx.fillRect(X(scX0),Y(s.P),scLarg*scP,scSvil*scP);
+    ctx.strokeStyle=CVC('contorno');ctx.lineWidth=1;ctx.strokeRect(X(scX0),Y(s.P),scLarg*scP,scSvil*scP);
+    ctx.beginPath();
+    for(let k=1;k<scG.n;k++){const y=s.P+scSvil*k/scG.n;ctx.moveTo(X(scX0),Y(y));ctx.lineTo(X(scX0+scLarg),Y(y));}
+    ctx.stroke();
+    // ringhiere della scala in pianta
+    const rl=Object.assign({sx:false,dx:true},(p.sopScala||{}).ring||{});
+    ctx.strokeStyle=CVC('accento');ctx.lineWidth=2.5;ctx.beginPath();
+    if(rl.sx){ctx.moveTo(X(scX0)-3,Y(s.P));ctx.lineTo(X(scX0)-3,Y(s.P+scSvil));}
+    if(rl.dx){ctx.moveTo(X(scX0+scLarg)+3,Y(s.P));ctx.lineTo(X(scX0+scLarg)+3,Y(s.P+scSvil));}
+    ctx.stroke();ctx.restore();
+    cvLabelQ(&quot;scala &quot;+scG.n+&quot; gradini&quot;,X(scX0+scLarg/2),Y(s.P+scSvil)+16,&quot;#6a3fb5&quot;,&quot;center&quot;,11);
+  }
+  if(s.varco>0)cvLabelQ(&quot;varco &quot;+cmv(s.varco)+&quot; cm&quot;,X(s.varcoX+s.varco/2),Y(s.P)+(scG?30:18),&quot;#b0620c&quot;,&quot;center&quot;,11);
   cvLabelQ(&quot;PIANTA&quot;,X(0),Y(0)-14,&quot;#8fa3c8&quot;,&quot;left&quot;,12);
-  if(UPG.quote){try{drawQuotaCv(ctx,X(0),Y(s.P)+10,X(s.L),Y(s.P)+10,cmU(s.L),12);drawQuotaCv(ctx,X(s.L),Y(s.P),X(s.L),Y(0),cmU(s.P),14);}catch(e){}}
-  // VISTA FRONTALE (destra): y = 0 in cima al parapetto, terra = hPar + H
+  if(UPG.quote){try{drawQuotaCv(ctx,X(0),Y(s.P)+(scG?scSvil*scP+22:10),X(s.L),Y(s.P)+(scG?scSvil*scP+22:10),cmU(s.L),12);drawQuotaCv(ctx,X(s.L),Y(s.P),X(s.L),Y(0),cmU(s.P),14);}catch(e){}}
+  // ── VISTA FRONTALE (destra): y = 0 in cima al parapetto, terra = hPar + H ──
   const yP=s.hPar,yG=s.hPar+s.H,Ht=yG;
   const scF=Math.min((half-pad*2)/s.L,(cH-pad*2-24)/Ht);
   const fx0=20+half+(half-s.L*scF)/2,fy0=pad+14+(cH-pad*2-24-Ht*scF)/2;
@@ -6256,69 +6494,45 @@ function disegnaSoppalco(p,cvs,ctx,leg){
   ctx.strokeStyle=CVC(&quot;pav&quot;);ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(FX(-s.L*0.04),FY(yG));ctx.lineTo(FX(s.L*1.04),FY(yG));ctx.stroke();
   const ySt=yP+s.spPiano,yTr=ySt+s.hTrav,yTv=yTr+s.hTrave;
   if(s.spPiano>0)barra3D(ctx,FX(0),FY(yP),s.L*scF,Math.max(s.spPiano*scF,1.5),[150,156,164],1);
-  for(let i=0;i<s.nTrav;i++){const x=Math.min(Math.max(i*s.passoTrav-bTr/2,0),s.L-bTr);barra3D(ctx,FX(x),FY(ySt),Math.max(bTr*scF,1.5),Math.max(s.hTrav*scF,1.5),RGB_TR,1);}
-  barra3D(ctx,FX(0),FY(yTr),s.L*scF,Math.max(s.hTrave*scF,2),RGB_T,1);
+  if(s.traviLungoL){
+    for(let i=0;i<s.nTrav;i++){const x=Math.min(Math.max(i*s.passoTrav-bTr/2,0),s.L-bTr);barra3D(ctx,FX(x),FY(ySt),Math.max(bTr*scF,1.5),Math.max(s.hTrav*scF,1.5),RGB_TR,1);}
+    barra3D(ctx,FX(0),FY(yTr),s.L*scF,Math.max(s.hTrave*scF,2),RGB_T,1);
+  } else {
+    barra3D(ctx,FX(0),FY(ySt),s.L*scF,Math.max(s.hTrav*scF,1.5),RGB_TR,1);       // i travetti corrono lungo il fronte
+    barra3D(ctx,FX(0),FY(yTr),Math.max(bTv*scF,2),Math.max(s.hTrave*scF,2),RGB_T,1);
+    barra3D(ctx,FX(s.L)-Math.max(bTv*scF,2),FY(yTr),Math.max(bTv*scF,2),Math.max(s.hTrave*scF,2),RGB_T,1);
+  }
   const wPil=Math.max((M.pilastri?eLarg(M.pilastri):80)*scF,3);
-  for(let i=0;i<=s.nCamp;i++){const x=i*s.campL;const xx=Math.min(Math.max(FX(x)-wPil/2,FX(0)),FX(s.L)-wPil);barra3D(ctx,xx,FY(yTv),wPil,Math.max((yG-yTv)*scF,1),RGB_P,1);}
-  // Parapetto del fronte: si disegna dalla ringhiera virtuale, così è uguale alla distinta
-  const fr=s.tratti.find(t=>t.lato==='fronte');
-  const qFr=fr?parapettoPezzi(p).find(x=>x._lato==='fronte'):null;
-  if(qFr){
-    const lu=calcLuce(qFr),Hpar=s.hPar+s.spPiano;
-    const wM=Math.max((lu.wSx||40)*scF,1.5),hCor=Math.max((lu.hTop||40)*scF,2);
-    const luceH=lu.luciaH,luciaVp=lu.luciaV;
-    if(lu.hTop>0)barra3D(ctx,FX(0),FY(0),fr.len*scF,hCor,RGB_PAR,1);          // corrimano
-    barra3D(ctx,FX(0),FY(0),wM,Hpar*scF,RGB_PAR,1);                            // montanti d'estremità
-    barra3D(ctx,FX(fr.len)-wM,FY(0),wM,Hpar*scF,RGB_PAR,1);
-    for(let i=1;i<lu.nCL;i++){const xm=lu.campX0(i)-lu.wMid;barra3D(ctx,FX(xm),FY(0),Math.max(lu.wMid*scF,1.5),Hpar*scF,RGB_PAR,1);}
-    (lu.correnti||[]).forEach(c=>{const y=lu.hTop+luciaVp-c.q;
-      for(let sI=0;sI<lu.nCL;sI++)barra3D(ctx,FX(lu.campX0(sI)),FY(y-c.sp/2),luceH*scF,Math.max(c.sp*scF,1.5),RGB_PAR,1);});
-    // elementi del parapetto: tondini, orizzontali o rombi, come in una ringhiera
-    (qFr.elemList||[]).filter(e=>e.attivo&amp;&amp;e.mat).forEach((el,gi)=>{
-      const rgbEl=_cvHexRgb(EL_C[gi%EL_C.length]),larg=eLarg(el.mat);
-      const isTondo=String(el.mat.profilo).startsWith(&quot;Ø&quot;),isR=el.dir==='rombi',isV=el.dir!=='oriz';
-      for(let sI=0;sI<lu.nCL;sI++){
-        const x0=lu.campX0(sI);
-        if(isR){
-          barCells(qFr,luceH,luciaVp,0,luciaVp,larg,el.spMin,el.spMax,el.pd||'libero').forEach(c=>{
-            const w=c.b-c.a,h=c.by1-c.by0;if(!(w>0&amp;&amp;h>0))return;
-            const ox=x0+c.a,oyB=lu.hTop+(luciaVp-c.by0);
-            rombiSegmenti(w,h,passoRombi(el,larg),larg).forEach(g=>barraObliqua(ctx,FX(ox+g.x1),FY(oyB-g.y1),FX(ox+g.x2),FY(oyB-g.y2),Math.max(larg*scF,1.2)));
-          });
-        } else if(isV){
-          elemCelle(qFr,el,luceH,luciaVp,barRegion(qFr,el,luciaVp)).forEach(c=>{
-            const yTopC=lu.hTop+(luciaVp-c.by1),hC=c.by1-c.by0;if(!(hC>0))return;
-            c.pos.forEach(pos=>{
-              const xc=x0+pos;
-              if(isTondo)tondo3D(ctx,FX(xc),FY(yTopC+hC/2),Math.max(larg*scF/2,1.2),hC*scF/2,rgbEl);
-              else barra3D(ctx,FX(xc-larg/2),FY(yTopC),Math.max(larg*scF,1.2),hC*scF,rgbEl,1);
-            });
-          });
-        } else {
-          fasceLuce(lu).forEach(fa=>elemPosizioni(el,fa.y1-fa.y0,larg).forEach(pos=>{
-            const yc=lu.hTop+(luciaVp-(fa.y0+pos));
-            barra3D(ctx,FX(x0),FY(yc-larg/2),luceH*scF,Math.max(larg*scF,1.2),rgbEl,1);
-          }));
-        }
-      }
-    });
-    (qFr.traverse||[]).forEach(tr=>{
-      if(!traversaValida(tr,lu))return;
-      const sp2=eLarg(tr.mat);
-      if((tr.dir||'oriz')==='oriz'){
-        const yQ=lu.hTop+luciaVp-tr.quota_mm;
-        for(let sI=0;sI<lu.nCL;sI++)barra3D(ctx,FX(lu.campX0(sI)),FY(yQ-sp2/2),luceH*scF,Math.max(sp2*scF,1.5),[80,192,144],1);
-      } else {
-        const ex=travExtent(qFr,tr,luciaVp);
-        for(let sI=0;sI<lu.nCL;sI++)barra3D(ctx,FX(lu.campX0(sI)+tr.quota_mm-sp2/2),FY(lu.hTop+(luciaVp-ex.y1)),Math.max(sp2*scF,1.5),Math.max(0,ex.y1-ex.y0)*scF,[80,192,144],1);
-      }
-    });
+  const xPil=s.traviLungoL?Array.from({length:s.nCamp+1},(_,i)=>i*s.campL):[0,s.L];
+  xPil.forEach(x=>{const xx=Math.min(Math.max(FX(x)-wPil/2,FX(0)),FX(s.L)-wPil);barra3D(ctx,xx,FY(yTv),wPil,Math.max((yG-yTv)*scF,1),RGB_P,1);});
+  // parapetti del fronte (uno o due tratti, secondo il varco)
+  const qFronte=parapettoPezzi(p).filter(x=>x._lato==='fronte');
+  s.tratti.filter(t=>t.lato==='fronte').forEach((t,i)=>{
+    const qFr=qFronte[i];if(!qFr)return;
+    disegnaRinghieraSu(ctx,qFr,x=>FX(t.a+x),FY,scF,s.hPar+s.spPiano,RGB_PAR);
+  });
+  // scala nella vista frontale: sagoma dei gradini nel varco
+  if(scG&amp;&amp;scLarg>0){
+    const alz=scG.alzata,ped=scG.pedata;
+    ctx.save();ctx.strokeStyle=cvTec()?&quot;#6a3fb5&quot;:&quot;#9060e0&quot;;ctx.lineWidth=1.6;ctx.setLineDash([]);
+    ctx.beginPath();
+    let yy=yG;
+    ctx.moveTo(FX(scX0),FY(yy));
+    for(let k=0;k<scG.n;k++){
+      const x1=FX(scX0),x2=FX(scX0+scLarg);
+      ctx.lineTo(x2,FY(yy));
+      yy-=alz;
+      ctx.moveTo(x1,FY(yy));ctx.lineTo(x2,FY(yy));
+    }
+    ctx.stroke();ctx.restore();
+    const rl=Object.assign({sx:false,dx:true},(p.sopScala||{}).ring||{});
+    if(rl.sx||rl.dx)cvLabelQ(&quot;ringhiera scala: &quot;+[rl.sx?&quot;sx&quot;:&quot;&quot;,rl.dx?&quot;dx&quot;:&quot;&quot;].filter(Boolean).join(&quot; + &quot;),FX(scX0+scLarg/2),FY(yG)+30,&quot;#b0620c&quot;,&quot;center&quot;,11);
   }
   cvLabelQ(&quot;VISTA FRONTALE&quot;,FX(0),FY(0)-14,&quot;#8fa3c8&quot;,&quot;left&quot;,12);
   if(UPG.quote){try{
     drawQuotaCv(ctx,FX(0),FY(yG),FX(s.L),FY(yG),cmU(s.L),12);
     drawQuotaCv(ctx,FX(s.L),FY(yG),FX(s.L),FY(yP),&quot;piano &quot;+cmU(s.H),24);
-    if(fr)drawQuotaCv(ctx,FX(s.L),FY(yP),FX(s.L),FY(0),cmU(s.hPar),24);
+    if(s.tratti.some(t=>t.lato==='fronte'))drawQuotaCv(ctx,FX(s.L),FY(yP),FX(s.L),FY(0),cmU(s.hPar),24);
   }catch(e){}}
   if(!M.pilastri&amp;&amp;!M.travi&amp;&amp;!M.travetti)cvLabelQ(&quot;Scegli pilastri, travi e travetti per completare il disegno&quot;,cW/2,cH-10,&quot;#e0a050&quot;,&quot;center&quot;,12);
   cvLabelFlush(ctx);
@@ -6326,12 +6540,65 @@ function disegnaSoppalco(p,cvs,ctx,leg){
     leg.innerHTML=&quot;&quot;;
     const addL=(c,t)=>leg.innerHTML+=`<span><span style=&quot;color:${c}&quot;>■</span> ${t}</span>`;
     addL(&quot;#64a8ff&quot;,&quot;Pilastri: &quot;+(M.pilastri?esc(M.pilastri.profilo):&quot;—&quot;)+&quot; × &quot;+s.nPil);
-    addL(&quot;#7896d2&quot;,&quot;Travi: &quot;+(M.travi?esc(M.travi.profilo):&quot;—&quot;));
-    addL(&quot;#55d39b&quot;,&quot;Travetti: &quot;+(M.travetti?esc(M.travetti.profilo):&quot;—&quot;)+&quot; × &quot;+s.nTrav);
-    if(s.tratti.length)addL(&quot;#b0620c&quot;,&quot;Parapetto: &quot;+s.tratti.map(t=>t.lato).join(&quot;, &quot;));
+    addL(&quot;#7896d2&quot;,&quot;Travi: &quot;+(M.travi?esc(M.travi.profilo):&quot;—&quot;)+(s.traviLungoL?&quot; (lungo il fronte)&quot;:&quot; (lungo i lati)&quot;));
+    addL(&quot;#55d39b&quot;,&quot;Travetti: &quot;+(M.travetti?esc(M.travetti.profilo):&quot;—&quot;)+&quot; × &quot;+s.nTrav+(s.travVerso==='profondita'?&quot; (profondità)&quot;:&quot; (larghezza)&quot;));
+    if(s.tratti.length)addL(&quot;#b0620c&quot;,&quot;Parapetto: &quot;+[...new Set(s.tratti.map(t=>t.lato))].join(&quot;, &quot;));
+    if(scG)addL(&quot;#9060e0&quot;,&quot;Scala: &quot;+scG.n+&quot; gradini &quot;+cmv(scG.alzata)+&quot;×&quot;+cmv(scG.pedata)+&quot; cm, larga &quot;+cmv(scG.W*1000)+&quot; cm&quot;);
   }
 }
-
+// Disegna una ringhiera virtuale (parapetto o ringhiera di scala) dentro un'altra vista.
+// xMap porta la x della ringhiera (mm, dal suo inizio) nel disegno; FYv la y (0 = sopra la ringhiera).
+function disegnaRinghieraSu(ctx,q,xMap,FYv,scala,Htot,rgb){
+  const lu=calcLuce(q);
+  const wM=Math.max((lu.wSx||40)*scala,1.5),hCor=Math.max((lu.hTop||40)*scala,2);
+  const luceH=lu.luciaH,luciaVp=lu.luciaV,Lq=lu.Wmm;
+  if(lu.hTop>0)ctx.save(),ctx.restore(),barra3D(ctx,xMap(0),FYv(0),Lq*scala,hCor,rgb,1);
+  if(lu.hBot>0&amp;&amp;!q.aperto_sotto)barra3D(ctx,xMap(0),FYv(Htot-lu.hBot),Lq*scala,Math.max(lu.hBot*scala,1.5),rgb,1);
+  barra3D(ctx,xMap(0),FYv(0),wM,Htot*scala,rgb,1);
+  barra3D(ctx,xMap(Lq)-wM,FYv(0),wM,Htot*scala,rgb,1);
+  for(let i=1;i<lu.nCL;i++){const xm=lu.campX0(i)-lu.wMid;barra3D(ctx,xMap(xm),FYv(0),Math.max(lu.wMid*scala,1.5),Htot*scala,rgb,1);}
+  (lu.correnti||[]).forEach(c=>{const y=lu.hTop+luciaVp-c.q;
+    for(let sI=0;sI<lu.nCL;sI++)barra3D(ctx,xMap(lu.campX0(sI)),FYv(y-c.sp/2),luceH*scala,Math.max(c.sp*scala,1.5),rgb,1);});
+  (q.elemList||[]).filter(e=>e.attivo&amp;&amp;e.mat).forEach((el,gi)=>{
+    const rgbEl=_cvHexRgb(EL_C[gi%EL_C.length]),larg=eLarg(el.mat);
+    const isTondo=String(el.mat.profilo).startsWith(&quot;Ø&quot;),isR=el.dir==='rombi',isV=el.dir!=='oriz';
+    for(let sI=0;sI<lu.nCL;sI++){
+      const x0=lu.campX0(sI);
+      if(isR){
+        barCells(q,luceH,luciaVp,0,luciaVp,larg,el.spMin,el.spMax,el.pd||'libero').forEach(c=>{
+          const w=c.b-c.a,h=c.by1-c.by0;if(!(w>0&amp;&amp;h>0))return;
+          const ox=x0+c.a,oyB=lu.hTop+(luciaVp-c.by0);
+          rombiSegmenti(w,h,passoRombi(el,larg),larg).forEach(g=>barraObliqua(ctx,xMap(ox+g.x1),FYv(oyB-g.y1),xMap(ox+g.x2),FYv(oyB-g.y2),Math.max(larg*scala,1.2)));
+        });
+      } else if(isV){
+        elemCelle(q,el,luceH,luciaVp,barRegion(q,el,luciaVp)).forEach(c=>{
+          const yTopC=lu.hTop+(luciaVp-c.by1),hC=c.by1-c.by0;if(!(hC>0))return;
+          c.pos.forEach(pos=>{
+            const xc=x0+pos;
+            if(isTondo)tondo3D(ctx,xMap(xc),FYv(yTopC+hC/2),Math.max(larg*scala/2,1.2),hC*scala/2,rgbEl);
+            else barra3D(ctx,xMap(xc-larg/2),FYv(yTopC),Math.max(larg*scala,1.2),hC*scala,rgbEl,1);
+          });
+        });
+      } else {
+        fasceLuce(lu).forEach(fa=>elemPosizioni(el,fa.y1-fa.y0,larg).forEach(pos=>{
+          const yc=lu.hTop+(luciaVp-(fa.y0+pos));
+          barra3D(ctx,xMap(x0),FYv(yc-larg/2),luceH*scala,Math.max(larg*scala,1.2),rgbEl,1);
+        }));
+      }
+    }
+  });
+  (q.traverse||[]).forEach(tr=>{
+    if(!traversaValida(tr,lu))return;
+    const sp2=eLarg(tr.mat);
+    if((tr.dir||'oriz')==='oriz'){
+      const yQ=lu.hTop+luciaVp-tr.quota_mm;
+      for(let sI=0;sI<lu.nCL;sI++)barra3D(ctx,xMap(lu.campX0(sI)),FYv(yQ-sp2/2),luceH*scala,Math.max(sp2*scala,1.5),[80,192,144],1);
+    } else {
+      const ex=travExtent(q,tr,luciaVp);
+      for(let sI=0;sI<lu.nCL;sI++)barra3D(ctx,xMap(lu.campX0(sI)+tr.quota_mm-sp2/2),FYv(lu.hTop+(luciaVp-ex.y1)),Math.max(sp2*scala,1.5),Math.max(0,ex.y1-ex.y0)*scala,[80,192,144],1);
+    }
+  });
+}
 // ═══════ PENSILINA: pianta + sezione laterale ═══════
 function disegnaPensilina(p,cvs,ctx,leg){
   const cW=cvs.width,cH=cvs.height,c=penCalc(p),M=p.strMats||{};
@@ -6517,7 +6784,16 @@ function _disegnaSu(p,cvs,leg){
   // ── Sopraluce: finestra fissa sopra le ante (vetro, tondini o pannello) col suo traverso ──
   const _slD=sopraluceCalc(p);
   if(_slD){
-    const xIn=LY.telSx,wIn=_slD.w,yTop=LY.telTop,yBot=yTop+_slD.h;
+    const xIn=LY.telSx+_slD.aAnta,wIn=_slD.wIn,yTop=LY.telTop+_slD.aAnta,yBot=LY.telTop+_slD.h-_slD.aAnta;
+    if(_slD.apribile&amp;&amp;_slD.mostraAnta>0){ // il telaietto dell'anta del sopraluce
+      const mA=_slD.mostraAnta,RGB_SLA=[120,150,210];
+      barra3D(ctx,tx(LY.telSx),ty(LY.telTop),_slD.w*sc,mA*sc,RGB_SLA,1.5);
+      barra3D(ctx,tx(LY.telSx),ty(LY.telTop+_slD.h-mA),_slD.w*sc,mA*sc,RGB_SLA,1.5);
+      barra3D(ctx,tx(LY.telSx),ty(LY.telTop),mA*sc,_slD.h*sc,RGB_SLA,1.5);
+      barra3D(ctx,tx(LY.telSx+_slD.w-mA),ty(LY.telTop),mA*sc,_slD.h*sc,RGB_SLA,1.5);
+      giunti45(ctx,tx(LY.telSx),ty(LY.telTop),_slD.w*sc,_slD.h*sc,mA*sc,mA*sc,mA*sc,mA*sc);
+      if(cvTec())cerniera(ctx,tx(LY.telSx)-4,ty(LY.telTop+_slD.h*0.5),4,Math.max(9,_slD.h*sc*0.12));
+    }
     const dhx=x=>_ctD?Math.max(0,_ctD.dh(x)):0;
     const bordo=(azione)=>{ // contorno del sopraluce: sopra segue la cima
       ctx.beginPath();const N=28;
@@ -7411,10 +7687,18 @@ function applicaMat(mat){
     // corr-{pid} — tubo corrimano a muro
     const pidC=parseInt(parts[1]);
     pezzi=pezzi.map(p=>p.id!==pidC?p:{...p,corrMat:mat});
+  } else if(mTarget.startsWith(&quot;sos-&quot;)){
+    // sos-{pid}-{slot} — materiali della scala dentro il soppalco
+    const pidSS=parseInt(parts[1]),slotSS=parts[2];
+    pezzi=pezzi.map(p=>p.id!==pidSS?p:{...p,sopScala:Object.assign({},p.sopScala||{},{mats:Object.assign({},(p.sopScala||{}).mats||{},{[slotSS]:mat})})});
   } else if(mTarget.startsWith(&quot;str-&quot;)){
     // str-{pid}-{ruolo} — soppalco / pensilina (pilastri, travi, travetti, parapetto, mensole…)
     const pidS=parseInt(parts[1]),ruolo=parts[2];
     pezzi=pezzi.map(p=>p.id!==pidS?p:{...p,strMats:{...(p.strMats||{}),[ruolo]:mat}});
+  } else if(mTarget.startsWith(&quot;sla-&quot;)){
+    // sla-{pid} — profilo dell'anta del sopraluce apribile
+    const pidA=parseInt(parts[1]);
+    pezzi=pezzi.map(p=>p.id!==pidA?p:{...p,sopraluce:Object.assign({attivo:true,h:40,riemp:'vetro'},p.sopraluce||{},{matAnta:mat,apribile:true})});
   } else if(mTarget.startsWith(&quot;slt-&quot;)){
     // slt-{pid} — traverso fisso del sopraluce
     const pidL=parseInt(parts[1]);
@@ -7707,8 +7991,12 @@ const DECORO_MIN_MM=150;
 function decoriPezzo(p){
   const out={collari:0,riccioli:0};
   const ti=TIPI.find(t=>t.k===p.tipo)||TIPI[0];
-  if(ti.isSoppalco){ // i decori stanno nel parapetto, che è una ringhiera
-    parapettoPezzi(p).forEach(q=>{const d=decoriPezzo(q);out.collari+=d.collari;out.riccioli+=d.riccioli;});
+  if(ti.isSoppalco){ // i decori stanno nel parapetto e nella ringhiera della scala
+    parapettoPezzi(p).concat(ringhieraScalaSoppalco(p)).forEach(q=>{const d=decoriPezzo(q);out.collari+=d.collari;out.riccioli+=d.riccioli;});
+    return out;
+  }
+  if(ti.isScala){ // la ringhiera della scala può avere collari e riccioli
+    ringhieraScalaManufatto(p).forEach(q=>{const d=decoriPezzo(q);out.collari+=d.collari;out.riccioli+=d.riccioli;});
     return out;
   }
   if(ti.isScala||ti.isCorrimano||ti.isAlluminio||ti.isGazebo||tipoStruttura(ti))return out;
@@ -7749,15 +8037,20 @@ function walkPezzoMateriali(p,addG){
   if(ti.isSoppalco){
     const s=soppCalc(p),M=p.strMats||{};
     A(M.pilastri,s.hPil,s.nPil*nPz,&quot;pilastro&quot;);
-    A(M.travi,s.campL,s.nCamp*nPz,&quot;trave principale fronte&quot;);
-    A(M.travi,s.campL,s.nCamp*nPz,s.muro?&quot;trave a muro (retro)&quot;:&quot;trave principale retro&quot;);
-    A(M.travetti,s.P,s.nTrav*nPz,&quot;travetto&quot;);
-    // il parapetto è una ringhiera per ogni lato: stessa distinta degli altri manufatti
-    parapettoPezzi(p).forEach(q=>walkPezzoMateriali(q,(mat,ml,mm,qty,lbl)=>{
-      const t=String(lbl).replace(/traversa alta 45°/,&quot;corrimano&quot;).replace(/ 45°/g,&quot;&quot;)
-        .replace(/montante intermedio/,&quot;montante&quot;).replace(/corrente intermedio/,&quot;corrente&quot;);
+    const nomiTravi=s.traviLungoL?[&quot;fronte&quot;,&quot;retro&quot;]:[&quot;sx&quot;,&quot;dx&quot;];
+    A(M.travi,s.campL,s.nCamp*nPz,&quot;trave principale &quot;+nomiTravi[0]);
+    A(M.travi,s.campL,s.nCamp*nPz,(s.muro&amp;&amp;s.traviLungoL?&quot;trave a muro (&quot;:&quot;trave principale &quot;)+nomiTravi[1]+(s.muro&amp;&amp;s.traviLungoL?&quot;)&quot;:&quot;&quot;));
+    A(M.travetti,s.Ltravetto,s.nTrav*nPz,&quot;travetto&quot;);
+    // il parapetto (e la ringhiera della scala) sono ringhiere vere: stessa distinta degli altri manufatti
+    const rinomina=(mat,ml,mm,qty,lbl)=>{
+      const t=String(lbl).replace(/traversa alta 45°/,&quot;corrimano&quot;).replace(/traversa bassa 45°/,&quot;corrente di base&quot;)
+        .replace(/ 45°/g,&quot;&quot;).replace(/montante intermedio/,&quot;montante&quot;).replace(/corrente intermedio/,&quot;corrente&quot;);
       addG(mat,ml,mm,qty,t);
-    }));
+    };
+    parapettoPezzi(p).forEach(q=>walkPezzoMateriali(q,rinomina));
+    ringhieraScalaSoppalco(p).forEach(q=>walkPezzoMateriali(q,rinomina));
+    const scSo=scalaSoppalcoPezzo(p);
+    if(scSo)walkPezzoMateriali(scSo,addG);
     return;
   }
   if(ti.isPensilina){
@@ -7770,6 +8063,12 @@ function walkPezzoMateriali(p,addG){
     return;
   }
   if(ti.isScala){
+    // ringhiera della scala: ringhiera vera sullo sviluppo inclinato della rampa
+    ringhieraScalaManufatto(p).forEach(q=>walkPezzoMateriali(q,(mat,ml,mm,qty,lbl)=>{
+      const t=String(lbl).replace(/traversa alta 45°/,&quot;corrimano&quot;).replace(/traversa bassa 45°/,&quot;corrente di base&quot;)
+        .replace(/ 45°/g,&quot;&quot;).replace(/montante intermedio/,&quot;montante&quot;).replace(/corrente intermedio/,&quot;corrente&quot;);
+      addG(mat,ml,mm,qty,t);
+    }));
     const sc=scalaCalc(p),sm=p.scalaMats||{};
     const rL=(parseFloat(p.scalaRegginoL)||0.10)*1000;
     A(sm.correnti,sc.D*1000,sc.nCorr*sc.nPz,&quot;cosciale&quot;);
@@ -7890,11 +8189,17 @@ function walkPezzoMateriali(p,addG){
   const _sl=sopraluceCalc(p);
   if(_sl){
     A(_sl.trav,_sl.travLen,nPz,&quot;traverso fisso del sopraluce&quot;);
+    if(_sl.apribile&amp;&amp;_sl.matAnta){ // finestra apribile: la sua anta, 4 profili tagliati a 45°
+      A(_sl.matAnta,_sl.w,nPz,&quot;sopraluce · traversa alta 45°&quot;);
+      A(_sl.matAnta,_sl.w,nPz,&quot;sopraluce · traversa bassa 45°&quot;);
+      A(_sl.matAnta,_sl.h,nPz,&quot;sopraluce · montante sx 45°&quot;);
+      A(_sl.matAnta,_sl.h,nPz,&quot;sopraluce · montante dx 45°&quot;);
+    }
     if(_sl.riemp==='tondini'&amp;&amp;_sl.el&amp;&amp;_sl.nTond>0){
-      const sp=(_sl.w-_sl.nTond*_sl.largT)/(_sl.nTond+1);
+      const sp=(_sl.wIn-_sl.nTond*_sl.largT)/(_sl.nTond+1);
       for(let k=0;k<_sl.nTond;k++){
         const x=sp+_sl.largT/2+k*(_sl.largT+sp);
-        A(_sl.el.mat,_sl.h+_sl.dhEl(x),nPz,&quot;tondino del sopraluce&quot;);
+        A(_sl.el.mat,_sl.hIn+_sl.dhEl(x),nPz,&quot;tondino del sopraluce&quot;);
       }
     }
   }
@@ -10056,7 +10361,7 @@ function calcVetro(p){
   const gm={};
   lastre.forEach(l=>{const w=Math.round(l.w)/10,h=Math.round(l.h)/10,k=w+&quot;x&quot;+h;if(!gm[k])gm[k]={w_cm:w,h_cm:h,q:0};gm[k].q+=q;});
   if(slVetro){
-    const wS=sl.w-2*G,hS=sl.h-2*G;
+    const wS=sl.wIn-2*G,hS=sl.hIn-2*G;
     if(wS>0&amp;&amp;hS>0){
       const wc=Math.round(wS)/10,hc=Math.round(hS)/10,k=wc+&quot;x&quot;+hc;
       areaTot+=(sl.arco?(sl.areaMq/Math.max(1,nPz)):(wS*hS/1e6))*nPz;
@@ -10081,70 +10386,164 @@ function calcVetro(p){
 // Schema: travi principali lungo la larghezza (fronte e retro, a campate fra i pilastri), travetti sopra
 // le travi lungo la profondità, piano sopra i travetti. Pilastro = altezza piano − piano − travetto − trave.
 const SOPP_PIANI=[[&quot;lamiera&quot;,&quot;Lamiera&quot;],[&quot;grigliato&quot;,&quot;Grigliato&quot;],[&quot;grecata&quot;,&quot;Lamiera grecata&quot;],[&quot;legno&quot;,&quot;Pannello / legno&quot;],[&quot;nessuno&quot;,&quot;Nessun piano&quot;]];
-const SOPP_LATI=[[&quot;fronte&quot;,&quot;Fronte&quot;],[&quot;sx&quot;,&quot;Lato sx&quot;],[&quot;dx&quot;,&quot;Lato dx&quot;],[&quot;retro&quot;,&quot;Retro&quot;]];
+const SOPP_LATI=[[&quot;fronte&quot;,&quot;Fronte&quot;],[&quot;dx&quot;,&quot;Lato dx&quot;],[&quot;retro&quot;,&quot;Retro&quot;],[&quot;sx&quot;,&quot;Lato sx&quot;]];
+const SOPP_VARCO_POS=[[&quot;sx&quot;,&quot;A sinistra&quot;],[&quot;centro&quot;,&quot;Al centro&quot;],[&quot;dx&quot;,&quot;A destra&quot;]];
+const SOPP_TRAVETTI=[[&quot;profondita&quot;,&quot;Nel verso della profondità&quot;],[&quot;larghezza&quot;,&quot;Nel verso della larghezza&quot;]];
 function soppCalc(p){
   const L=Math.max(0,(parseFloat(p.larg)||0)*1000),P=Math.max(0,(parseFloat(p.alt)||0)*1000),H=Math.max(0,numOk(p.sopH,2.4)*1000);
   const nPz=Math.max(1,parseInt(p.nPezziUguali)||1),M=p.strMats||{};
   const nCamp=Math.max(1,parseInt(p.sopCampate)||1),muro=p.sopMuro==='retro';
-  const nFile=muro?1:2,nPilFila=nCamp+1,nPil=nFile*nPilFila;
+  // Verso dei travetti: le travi principali corrono sempre nel verso opposto
+  const travVerso=(p.sopTravettiVerso==='larghezza')?'larghezza':'profondita';
+  const traviLungoL=travVerso==='profondita';
+  const Ltrave=traviLungoL?L:P;          // lunghezza di una linea di travi principali
+  const Ltravetto=traviLungoL?P:L;       // lunghezza di un travetto
+  const nFile=muro?1:2,nPilFila=nCamp+1;
+  const nPil=(muro&amp;&amp;!traviLungoL)?nFile*Math.max(0,nPilFila-1)*2:nFile*nPilFila;
   const hTrave=M.travi?eLarg(M.travi):0,hTrav=M.travetti?eLarg(M.travetti):0;
   const piano=p.sopPiano||'lamiera';
   const spPiano=piano==='nessuno'?0:Math.max(0,numOk(p.sopPianoSp,5));
   const hPil=Math.max(0,H-spPiano-hTrav-hTrave);
-  const campL=L/nCamp;
+  const campL=Ltrave/nCamp;
   const inter=Math.max(100,numOk(p.sopInterasse,50)*10);
-  const nTrav=L>0?Math.ceil(L/inter-1e-6)+1:0,passoTrav=nTrav>1?L/(nTrav-1):0;
+  const nTrav=Ltrave>0?Math.ceil(Ltrave/inter-1e-6)+1:0,passoTrav=nTrav>1?Ltrave/(nTrav-1):0;
+  // ── Parapetto: lati scelti, spezzati dal varco della scala ──
   const par=Object.assign({fronte:true,sx:true,dx:true,retro:false},p.sopPar||{});
   const hPar=Math.max(0,numOk(p.sopParH,100)*10),passoPar=Math.max(200,numOk(p.sopParPasso,100)*10);
   const nCorr=Math.max(0,Math.round(numOk(p.sopParNCorr,2)));
-  const varco=par.fronte?Math.min(L,Math.max(0,numOk(p.sopVarco,0)*10)):0;
-  // I lati si leggono girando intorno al soppalco: fronte → dx → retro → sx. Due lati vicini
-  // hanno il montante d'angolo in comune (si conta una volta sola), come nella ringhiera a squadro.
-  const giro=[['fronte',L-varco],['dx',P],['retro',L],['sx',P]];
-  const tratti=giro.filter(g=>par[g[0]]&amp;&amp;g[1]>0).map(g=>({lato:g[0],len:g[1]}));
-  const vicini={'fronte|dx':varco===0,'dx|retro':true,'retro|sx':true,'sx|fronte':true};
-  tratti.forEach((t,i)=>{
-    const prec=tratti[(i-1+tratti.length)%tratti.length];
-    t.nCamp=Math.max(1,Math.ceil(t.len/passoPar-1e-6));
-    t.skipSx=i>0&amp;&amp;!!vicini[prec.lato+'|'+t.lato];
-  });
-  if(tratti.length>2){ // il giro si chiude: l'ultimo angolo è già contato dal primo lato
-    const ult=tratti[tratti.length-1];
-    if(vicini[ult.lato+'|'+tratti[0].lato]&amp;&amp;tratti[0].skipSx===false)ult.skipDx=true;
+  const varco=Math.min(L,Math.max(0,numOk(p.sopVarco,0)*10));
+  const varcoPos=(SOPP_VARCO_POS.find(v=>v[0]===p.sopVarcoPos)||[&quot;dx&quot;])[0];
+  const varcoX=varco>0?(varcoPos==='sx'?0:varcoPos==='centro'?(L-varco)/2:L-varco):0; // inizio del varco sul fronte
+  const lungLato={fronte:L,dx:P,retro:L,sx:P};
+  const segmenti=lato=>{
+    if(!par[lato])return [];
+    if(lato!=='fronte'||varco<=0)return [{a:0,b:lungLato[lato]}];
+    const out=[];
+    if(varcoX>1)out.push({a:0,b:varcoX});
+    if(L-(varcoX+varco)>1)out.push({a:varcoX+varco,b:L});
+    return out;
+  };
+  const giro=['fronte','dx','retro','sx'];
+  const tratti=[];
+  giro.forEach(lato=>segmenti(lato).forEach((sg,i,arr)=>tratti.push({
+    lato,a:sg.a,b:sg.b,len:sg.b-sg.a,inizioLato:sg.a<=1,fineLato:sg.b>=lungLato[lato]-1,
+  })));
+  tratti.forEach(t=>{t.nCamp=Math.max(1,Math.ceil(t.len/passoPar-1e-6));t.skipSx=false;t.skipDx=false;});
+  // angolo in comune tra due lati vicini del giro: il montante si conta una volta sola
+  for(let i=1;i<tratti.length;i++){
+    const prec=tratti[i-1],cur=tratti[i];
+    if(prec.lato!==cur.lato&amp;&amp;prec.fineLato&amp;&amp;cur.inizioLato&amp;&amp;giro[(giro.indexOf(prec.lato)+1)%4]===cur.lato)cur.skipSx=true;
+  }
+  if(tratti.length>1){
+    const ult=tratti[tratti.length-1],pri=tratti[0];
+    if(ult.lato!==pri.lato&amp;&amp;ult.fineLato&amp;&amp;pri.inizioLato&amp;&amp;giro[(giro.indexOf(ult.lato)+1)%4]===pri.lato&amp;&amp;!pri.skipSx)ult.skipDx=true;
   }
   const nMont=Math.max(0,tratti.reduce((a,t)=>a+t.nCamp+1-(t.skipSx?1:0)-(t.skipDx?1:0),0));
   const lPar=tratti.reduce((a,t)=>a+t.len,0),lMont=hPar+spPiano;
+  // ── Piano di calpestio ──
   const area=L*P/1e6*nPz;
   let kgMq=0,acciaio=true,costo=0,unita=&quot;€/kg&quot;,prezzo=0;
   if(piano==='lamiera'){kgMq=LAM_DENS*spPiano;prezzo=numOk(p.sopPianoPrezzoKg,UPG.lamPrezzoKg);costo=area*kgMq*prezzo;}
   else if(piano!=='nessuno'){kgMq=Math.max(0,numOk(p.sopPianoKgMq,0));acciaio=piano!=='legno';unita=&quot;€/m²&quot;;prezzo=Math.max(0,numOk(p.sopPianoPrezzoMq,0));costo=area*prezzo;}
   return {L,P,H,nPz,nCamp,muro,nFile,nPilFila,nPil,hTrave,hTrav,spPiano,hPil,campL,inter,nTrav,passoTrav,
-    par,hPar,passoPar,nCorr,varco,tratti,nMont,lPar,lMont,area,piano,pianoKgMq:kgMq,pianoKg:area*kgMq,pianoAcciaio:acciaio,
-    pianoPrezzo:prezzo,pianoUnita:unita,pianoCosto:costo,nPiastre:nPil*nPz,nAppMuro:muro?nPilFila*nPz:0};
+    travVerso,traviLungoL,Ltrave,Ltravetto,
+    par,hPar,passoPar,nCorr,varco,varcoPos,varcoX,tratti,nMont,lPar,lMont,area,piano,pianoKgMq:kgMq,pianoKg:area*kgMq,pianoAcciaio:acciaio,
+    pianoPrezzo:prezzo,pianoUnita:unita,pianoCosto:costo,
+    nPiastre:nPil*nPz,nAppMuro:muro?(traviLungoL?nPilFila:2)*nPz:0};
 }
 // Il parapetto è una RINGHIERA vera: un pezzo virtuale per ogni lato, con gli stessi montanti,
 // corrimano, correnti, elementi (tondini, rombi, decori) e traverse degli altri manufatti.
 // Così puoi fare il parapetto con lo stile che vuoi, e distinta/disegno restano coerenti.
+// Una ringhiera vera e propria, costruita al volo (parapetti del soppalco e ringhiere delle scale)
+function ringhieraVirtuale(o){
+  const q=migraCampiPezzo({
+    id:o.id,nome:o.nome,tipo:'ringhiera',
+    larg:String(Math.max(0,o.len)/1000),alt:String(Math.max(0,o.h)/1000),
+    nBattenti:1,aperto_sotto:!o.mats.base,nPzLarg:Math.max(0,(o.nCamp||1)-1),nPzAlt:Math.max(0,o.nCorr||0),
+    nPezziUguali:Math.max(1,o.nPz||1),
+    telaio:{top:{mat:o.mats.corrimano||null,battuta:'senza'},bot:{mat:o.mats.base||null,battuta:'senza'},
+      sx:{mat:o.mats.mont||null,battuta:'senza'},dx:{mat:o.mats.mont||null,battuta:'senza'},
+      midV:{mat:o.mats.mont||null},midH:{mat:o.mats.correnti||null},intermedi:[]},
+    elemList:o.elemList||[],traverse:o.traverse||[],ante:[],facce:[],
+    zinc_caldo:false,vern_polvere:false,ferr:{},lamiera:false,vetro:false,
+    arco:{attivo:false,freccia:150,tipo:'unico',verso:'su',forma:'arco'},
+    sopraluce:{attivo:false,h:0,mat:null,riemp:'vetro'},
+  });
+  q._skipSx=!!o.skipSx;q._skipDx=!!o.skipDx;q._lato=o.lato||'';
+  return q;
+}
 function parapettoPezzi(p){
   const s=soppCalc(p),M=p.strMats||{};
   if(!s.tratti.length||!(s.hPar>0))return [];
-  return s.tratti.map(t=>{
-    const q=migraCampiPezzo({
-      id:p.id,nome:(p.nome||&quot;Soppalco&quot;)+&quot; · parapetto &quot;+t.lato,tipo:'ringhiera',
-      larg:String(t.len/1000),alt:String((s.hPar+s.spPiano)/1000),
-      nBattenti:1,aperto_sotto:true,nPzLarg:Math.max(0,t.nCamp-1),nPzAlt:Math.max(0,s.nCorr),
-      nPezziUguali:s.nPz,
-      telaio:{top:{mat:M.parCorrimano||null,battuta:'senza'},bot:{mat:null,battuta:'senza'},
-        sx:{mat:M.parMont||null,battuta:'senza'},dx:{mat:M.parMont||null,battuta:'senza'},
-        midV:{mat:M.parMont||null},midH:{mat:M.parCorrenti||null},intermedi:[]},
-      elemList:p.elemList||[],traverse:p.traverse||[],ante:[],facce:[],
-      zinc_caldo:false,vern_polvere:false,ferr:{},lamiera:false,vetro:false,
-      arco:{attivo:false,freccia:150,tipo:'unico',verso:'su',forma:'arco'},
-      sopraluce:{attivo:false,h:0,mat:null,riemp:'vetro'},
-    });
-    q._skipSx=!!t.skipSx;q._skipDx=!!t.skipDx;q._lato=t.lato;
-    return q;
+  return s.tratti.map(t=>ringhieraVirtuale({
+    id:p.id,nome:(p.nome||&quot;Soppalco&quot;)+&quot; · parapetto &quot;+t.lato,len:t.len,h:s.hPar+s.spPiano,
+    nCamp:t.nCamp,nCorr:s.nCorr,nPz:s.nPz,lato:t.lato,skipSx:t.skipSx,skipDx:t.skipDx,
+    mats:{mont:M.parMont,corrimano:M.parCorrimano,base:M.parBase,correnti:M.parCorrenti},
+    elemList:p.elemList||[],traverse:p.traverse||[],
+  }));
+}
+// ═══════ SCALA DENTRO IL SOPPALCO ═══════
+// La scala del soppalco è una scala vera (stesso calcolo del manufatto 🪜 Scala) che nasce
+// dal varco del parapetto: qui si vede nel disegno e entra nella distinta del soppalco.
+function scalaSoppalcoPezzo(p){
+  const S=p.sopScala||{};
+  if(!S.attiva)return null;
+  const s=soppCalc(p);
+  if(!(s.H>0))return null;
+  const Wcm=Math.max(30,numOk(S.larg,0)||(s.varco/10)||90);
+  const nGr=Math.max(1,parseInt(S.nGradini)||Math.max(1,Math.round(s.H/Math.max(100,numOk(S.alzataIdeale,175)))));
+  const svilCm=Math.max(30,numOk(S.sviluppo,0)||nGr*25);
+  return migraCampiPezzo({
+    id:p.id,nome:(p.nome||&quot;Soppalco&quot;)+&quot; · scala&quot;,tipo:'scala',larg:'1',alt:'1',
+    nPezziUguali:s.nPz,
+    scalaH:s.H/1000,scalaL:svilCm/100,scalaW:Wcm/100,scalaN:nGr,
+    scalaNCorrenti:Math.max(1,parseInt(S.nCosciali)||2),
+    scalaGradTipo:S.gradTipo||'tubo',scalaPedataPiena:!!S.pedataPiena,
+    scalaHaAlzate:!!S.haAlzate,scalaHaReggini:S.haReggini!==false,scalaRegginoL:0.10,
+    scalaHaMancorrente:false,scalaNManc:0,
+    scalaLamSp:numOk(S.lamSp,3),scalaLamTipo:S.lamTipo||'mandorlata',scalaLamRibordo:0,
+    scalaMats:Object.assign({correnti:null,gradini:null,alzate:null,mancorrente:null,reggini:null},S.mats||{}),
+    elemList:[],traverse:[],ante:[],facce:[],ferr:{},zinc_caldo:false,vern_polvere:false,
   });
+}
+// Ringhiera di una scala: è una ringhiera normale lunga quanto lo sviluppo inclinato della rampa
+function ringhieraScalaPezzi(o){
+  const lati=[];
+  if(o.lati&amp;&amp;o.lati.sx)lati.push('sx');
+  if(o.lati&amp;&amp;o.lati.dx)lati.push('dx');
+  if(!lati.length||!(o.H>0)||!(o.L>0)||!(o.h>0))return [];
+  const svil=Math.hypot(o.H,o.L);                       // sviluppo inclinato della rampa
+  const passo=Math.max(200,o.passo||1000);
+  const nCamp=Math.max(1,Math.ceil(svil/passo-1e-6));
+  return lati.map(lato=>ringhieraVirtuale({
+    id:o.id,nome:o.nome+&quot; · ringhiera scala &quot;+lato,len:svil,h:o.h,
+    nCamp,nCorr:o.nCorr||0,nPz:o.nPz||1,lato,
+    mats:o.mats||{},elemList:o.elemList||[],traverse:o.traverse||[],
+  }));
+}
+// Dati della ringhiera della scala del soppalco (stessi materiali e stile del parapetto)
+function ringhieraScalaSoppalco(p){
+  const sc=scalaSoppalcoPezzo(p);if(!sc)return [];
+  const S=p.sopScala||{},s=soppCalc(p),M=p.strMats||{},g=scalaCalc(sc);
+  return ringhieraScalaPezzi({id:p.id,nome:(p.nome||&quot;Soppalco&quot;)+&quot; · scala&quot;,
+    H:g.H*1000,L:g.L*1000,h:Math.max(0,numOk(S.ringH,numOk(p.sopParH,100))*10),
+    passo:Math.max(200,numOk(p.sopParPasso,100)*10),nCorr:s.nCorr,nPz:s.nPz,
+    lati:Object.assign({sx:false,dx:true},S.ring||{}),
+    mats:{mont:M.parMont,corrimano:M.parCorrimano,base:M.parBase,correnti:M.parCorrenti},
+    elemList:p.elemList||[],traverse:p.traverse||[]});
+}
+// Ringhiera del manufatto 🪜 Scala (lati, stile e materiali suoi)
+function ringhieraScalaManufatto(p){
+  const ti=TIPI.find(t=>t.k===p.tipo)||TIPI[0];
+  if(!ti.isScala)return [];
+  const R=Object.assign({sx:false,dx:false,h:100,passo:100,nCorr:0},p.scalaRing||{});
+  const g=scalaCalc(p),M=p.strMats||{};
+  return ringhieraScalaPezzi({id:p.id,nome:p.nome||&quot;Scala&quot;,
+    H:g.H*1000,L:g.L*1000,h:Math.max(0,numOk(R.h,100)*10),passo:Math.max(200,numOk(R.passo,100)*10),
+    nCorr:Math.max(0,Math.round(numOk(R.nCorr,0))),nPz:g.nPz,
+    lati:{sx:!!R.sx,dx:!!R.dx},
+    mats:{mont:M.ringMont,corrimano:M.ringCorrimano,base:M.ringBase,correnti:M.ringCorrenti},
+    elemList:p.elemList||[],traverse:p.traverse||[]});
 }
 function nomePianoSopp(p){
   const s=p.sopPiano||'lamiera',n=(SOPP_PIANI.find(x=>x[0]===s)||[&quot;&quot;,&quot;&quot;])[1].toLowerCase();
