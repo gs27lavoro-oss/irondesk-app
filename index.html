@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.14.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.15.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.14.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.15.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -4237,7 +4237,7 @@ function aluDisegna(cvs,p){
     // Label
     ctx.fillStyle=cvTec()?CV_TEC.fondoTesto:'rgba(0,0,0,0.72)';ctx.fillRect(ox,oy,cellW,22);
     ctx.fillStyle=cvTec()?CV_TEC.testo:col;ctx.font='bold 14px Arial';ctx.textAlign='left';
-    ctx.fillText(fd.l+' '+L+'×'+A+' cm',ox+5,oy+16);
+    if(!_cvMuto)ctx.fillText(fd.l+' '+L+'×'+A+' cm',ox+5,oy+16);
   });
 }
 
@@ -7068,7 +7068,7 @@ function _disegnaSu(p,cvs,leg){
         }
       }
     }catch(e){}
-  } else {
+  } else if(!_cvMuto){
     ctx.beginPath();ctx.moveTo(tx(0),ty(Hmm)+9);ctx.lineTo(tx(Wmm),ty(Hmm)+9);ctx.stroke();
     ctx.fillText(cmU(Wmm),tx(Wmm/2),ty(Hmm)+26);
     ctx.beginPath();ctx.moveTo(tx(Wmm)+9,ty(0));ctx.lineTo(tx(Wmm)+9,ty(Hmm));ctx.stroke();
@@ -7738,10 +7738,13 @@ function iduVaiA(frameName){
 // [PREV] Immagine del manufatto per il preventivo (JPEG, sfondo scuro dell'app).
 // Si disegna SEMPRE su una tela a parte: prima si riusava la tela a video con lo stesso numero di
 // manufatto, e un preventivo dell'archivio poteva uscire col disegno del lavoro aperto.
+// Immagine del manufatto per il preventivo: SENZA quote e senza scritte.
+// Al cliente serve l'idea del manufatto, le misure stanno nel testo della voce.
 function pezzoImgDataURL(p){
   try{
     const cvs=document.createElement('canvas');cvs.width=700;cvs.height=420;
-    disegnaPezzo(p,cvs,null);
+    const _q=UPG.quote;UPG.quote=false;_cvMuto=true;
+    try{disegnaPezzo(p,cvs,null);}finally{UPG.quote=_q;_cvMuto=false;}
     const out=document.createElement('canvas');out.width=cvs.width;out.height=cvs.height;
     const ox=out.getContext('2d');
     ox.fillStyle='#0d1422';ox.fillRect(0,0,out.width,out.height);
@@ -10915,6 +10918,11 @@ textarea{resize:vertical}
 
   <div class=&quot;sec&quot; style=&quot;border-color:#64a8ff&quot;>
     <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>🔩 Voci di lavoro</div>
+    <label style=&quot;display:flex;align-items:center;gap:9px;cursor:pointer;margin-bottom:10px;font-size:12px;font-weight:700;color:#55d39b&quot;>
+      <input type=&quot;checkbox&quot; id=&quot;chk-prezzi-voce&quot; onchange=&quot;renderVoci();aggiornaSommaVoci()&quot; style=&quot;width:17px;height:17px;cursor:pointer&quot;>
+      Prezzo per singolo manufatto
+      <span style=&quot;font-weight:400;color:#91a2bb&quot;>— accendilo solo se il cliente vuole vedere il prezzo di ogni voce</span>
+    </label>
     <div id=&quot;lista-voci&quot;></div>
     <button class=&quot;btn-add&quot; style=&quot;border-color:#64a8ff;color:#64a8ff;background:#0a1628&quot; onclick=&quot;aggiungiVoce()&quot;>+ Aggiungi voce</button>
   </div>
@@ -11425,6 +11433,7 @@ function togFin(vid,fk){
     return{...v,finiture:f};});renderVoci();
 }
 // Somma dei prezzi voce → suggerimento per l'importo totale
+function prezziVoce(){return !!($(&quot;chk-prezzi-voce&quot;)&amp;&amp;$(&quot;chk-prezzi-voce&quot;).checked);}
 function sommaVoci(){return voci.reduce((a,v)=>a+(parseFloat(v.prezzo)||0),0)+trattamenti().tot;}
 function aggiornaSommaVoci(){
   const s=sommaVoci(),el=$(&quot;somma-voci-hint&quot;);
@@ -11440,6 +11449,7 @@ function usaSommaVoci(){
 }
 
 function renderVoci(){
+  const przOn=prezziVoce();
   const w=$(&quot;lista-voci&quot;);w.innerHTML=&quot;&quot;;
   voci.forEach((v,gi)=>{
     const col=COL[gi%COL.length];
@@ -11480,9 +11490,11 @@ function renderVoci(){
       <div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Colore / RAL</label>
         <input class=&quot;fi&quot; type=&quot;text&quot; value=&quot;${v.colore}&quot; placeholder=&quot;es. RAL 9005 Nero intenso&quot; onchange=&quot;setV(${v.id},'colore',this.value)&quot;></div>`:``}
       <div class=&quot;g2 mb8&quot; style=&quot;margin-top:8px&quot;>
-        <div><label class=&quot;fl&quot;>Prezzo voce (€) — opzionale</label>
-          <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${v.prezzo||''}&quot; min=&quot;0&quot; step=&quot;0.01&quot; placeholder=&quot;—&quot; style=&quot;border-color:#55d39b;font-weight:700&quot;
+        <div><label class=&quot;fl&quot;>Prezzo voce (€) — ${przOn?&quot;opzionale&quot;:&quot;spento&quot;}</label>
+          <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${v.prezzo||''}&quot; min=&quot;0&quot; step=&quot;0.01&quot; placeholder=&quot;—&quot; ${przOn?&quot;&quot;:&quot;disabled&quot;}
+            style=&quot;border-color:${przOn?'#55d39b':'#172438'};font-weight:700;${przOn?'':'opacity:.45;cursor:not-allowed'}&quot;
             onchange=&quot;setV(${v.id},'prezzo',this.value);aggiornaSommaVoci()&quot;>
+          ${przOn?&quot;&quot;:'<div style=&quot;font-size:10px;color:#91a2bb;margin-top:3px&quot;>Accendi &quot;Prezzo per singolo manufatto&quot; qui sopra per usarlo</div>'}
           <label class=&quot;fl&quot; style=&quot;margin-top:6px&quot;>Peso (kg) — da FerroCalc</label>
           <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${v.peso_kg||''}&quot; min=&quot;0&quot; step=&quot;0.1&quot; placeholder=&quot;—&quot; style=&quot;border-color:#90c060&quot;
             onchange=&quot;setV(${v.id},'peso_kg',this.value);aggiornaTrattamenti()&quot;></div>
@@ -11550,7 +11562,7 @@ function buildHTML(){
 
     const matFormatted=v.isAlluminio?v.materiali:formatMat(v.materiali);
 
-    const przV=parseFloat(v.prezzo)||0;
+    const przV=prezziVoce()?(parseFloat(v.prezzo)||0):0;
     return`<div style=&quot;border:1px solid #ddd;border-radius:6px;padding:12px;margin-bottom:10px&quot;>
       <div style=&quot;display:flex;justify-content:space-between;align-items:baseline;gap:10px&quot;>
         <div style=&quot;font-weight:700;font-size:14px;margin-bottom:4px&quot;>${gi+1}. ${tl}</div>
@@ -11724,6 +11736,7 @@ function salvaPrev(){
       &quot;validita&quot;:sv(&quot;validita&quot;),&quot;pag-custom&quot;:sv(&quot;pag-custom&quot;),
       &quot;chk-posa&quot;:$(&quot;chk-posa&quot;)?.checked?&quot;1&quot;:&quot;0&quot;,
       &quot;chk-val&quot;:$(&quot;chk-val&quot;)?.checked?&quot;1&quot;:&quot;0&quot;,
+      &quot;chk-prezzi-voce&quot;:$(&quot;chk-prezzi-voce&quot;)?.checked?&quot;1&quot;:&quot;0&quot;,
       &quot;chk-zinc&quot;:$(&quot;chk-zinc&quot;)?.checked?&quot;1&quot;:&quot;0&quot;,
       &quot;chk-vern&quot;:$(&quot;chk-vern&quot;)?.checked?&quot;1&quot;:&quot;0&quot;,
       &quot;tratt-zinc-kg&quot;:sv(&quot;tratt-zinc-kg&quot;),&quot;tratt-vern-kg&quot;:sv(&quot;tratt-vern-kg&quot;),
@@ -11774,7 +11787,7 @@ function riapriPrev(id){
     });
     $(&quot;wrap-posa&quot;).style.display=$(&quot;chk-posa&quot;)?.checked?&quot;block&quot;:&quot;none&quot;;
     $(&quot;wrap-val&quot;).style.display=$(&quot;chk-val&quot;)?.checked?&quot;block&quot;:&quot;none&quot;;
-    showTab(&quot;nuovo&quot;);renderVoci();aggiornaTrattamenti();
+    showTab(&quot;nuovo&quot;);renderVoci();aggiornaTrattamenti();aggiornaSommaVoci();
   });
 }
 function stampaDaArch(id){
