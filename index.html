@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.17.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.18.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.17.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.18.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -602,6 +602,7 @@ details.dett>.dett-body{padding:0 10px 10px}
 </div>
 <div id=&quot;tab-riepilogo&quot; class=&quot;page&quot;>
   <!-- BARRA AZIONI CANTIERE -->
+  <div id=&quot;stato-cantiere&quot; style=&quot;display:none;border-radius:10px;padding:9px 12px;margin-bottom:9px;font-size:12px;font-weight:700;align-items:center;gap:10px;flex-wrap:wrap&quot;></div>
   <div style=&quot;display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap&quot;>
     <button onclick=&quot;nuovoCantiere()&quot; class=&quot;btn&quot;
       style=&quot;border-color:#f06b6b;color:#f06b6b;background:#1a0808;flex:1;padding:10px;font-size:13px&quot;>
@@ -3779,6 +3780,7 @@ function renderTutto(){
   setTimeout(()=>pezzi.forEach(p=>{if(p.aperto)disegnaPezzo(p);}),0);
   _statoValido={json:JSON.stringify(pezzi),fuori:new Set(fuori.map(x=>x.k))};
   autosalvaCantiere();
+  try{aggiornaStatoCantiere();}catch(e){}
 }
 // Il lavoro in corso si salva da solo: una ricarica della pagina (sync, backup, crash) non lo perde più.
 let _autosaveT=null;
@@ -8595,14 +8597,32 @@ var SYNC = (function(){
     }).catch(function(e){ return {ok:false, error:String(e)}; });
   }
 
-  // Scarica UNA chiave dal cloud e la scrive in localStorage
+  // Unisce i dati del cloud con quelli già sul dispositivo, per id: quello che hai
+  // salvato qui non viene MAI cancellato da una copia vecchia del telefono (e viceversa).
+  function unisciDati(locale, remoto){
+    if(!Array.isArray(remoto)) return remoto;          // configurazioni e contatori: resta il comportamento di prima
+    if(!Array.isArray(locale)) return remoto;
+    var m={}, ordine=[], i, x, k;
+    function raccogli(arr){
+      for(i=0;i<arr.length;i++){
+        x=arr[i]; if(!x||typeof x!=='object') continue;
+        k=String(x.id!=null?x.id:(x.numero||JSON.stringify(x)));
+        if(!m[k]){ m[k]=x; ordine.push(k); }
+      }
+    }
+    raccogli(locale); raccogli(remoto);               // a parità di id vince quello del dispositivo
+    return ordine.map(function(kk){ return m[kk]; });
+  }
+  // Scarica UNA chiave dal cloud e la unisce a quella locale
   function pullChiave(chiave){
     if(!configurato()) return Promise.resolve({ok:false, reason:'non configurato'});
     var u = getUrl()+'/rest/v1/'+TABELLA+'?chiave=eq.'+encodeURIComponent(chiave)+'&amp;select=dati,aggiornato_il';
     return fetch(u, { headers:headers() })
       .then(function(r){ if(!r.ok) return {ok:false,status:r.status}; return r.json().then(function(rows){
         if(rows &amp;&amp; rows.length){
-          localStorage.setItem(chiave, JSON.stringify(rows[0].dati));
+          var loc=null; try{ loc=JSON.parse(localStorage.getItem(chiave)||'null'); }catch(e){}
+          var fusi=unisciDati(loc, rows[0].dati);
+          if(fusi!==null&amp;&amp;fusi!==undefined) localStorage.setItem(chiave, JSON.stringify(fusi));
           return {ok:true, trovato:true, aggiornato_il:rows[0].aggiornato_il};
         }
         return {ok:true, trovato:false};
@@ -8650,8 +8670,14 @@ function loadArchivio(){
   catch(e){ return []; }
 }
 function saveArchivio(arch){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify(arch)); }
-  catch(e){ alert(&quot;Impossibile salvare: &quot;+e.message); }
+  // Scrive e RILEGGE: se il dato non resta in memoria lo dico subito, non a cose fatte
+  try{
+    const testo=JSON.stringify(arch);
+    localStorage.setItem(STORE_KEY, testo);
+    if(localStorage.getItem(STORE_KEY)!==testo)throw new Error(&quot;il dato non è rimasto in memoria&quot;);
+    return true;
+  }
+  catch(e){ alert(&quot;Impossibile salvare: &quot;+(e&amp;&amp;e.message?e.message:e)); return false; }
 }
 
 // Popup di conferma custom (evita problemi con confirm() in iframe/claudeai)
@@ -8694,8 +8720,28 @@ function salvaCantiere(){
   var btnNuovo=document.getElementById(&quot;btn-salva-nuovo&quot;);
   if(avviso) avviso.style.display = cantiereInModifica?&quot;block&quot;:&quot;none&quot;;
   if(btnNuovo) btnNuovo.style.display = cantiereInModifica?&quot;inline-block&quot;:&quot;none&quot;;
+  var lbl=document.getElementById(&quot;btn-salva-label&quot;);
+  if(lbl) lbl.textContent = cantiereInModifica ? &quot;Aggiorna «&quot;+cantiereInModifica.nome+&quot;»&quot; : &quot;Salva&quot;;
   document.getElementById(&quot;popup-salva&quot;).style.display=&quot;flex&quot;;
   setTimeout(()=>document.getElementById(&quot;input-nome-lavoro&quot;).focus(),100);
+}
+// Riga in alto nel Riepilogo: dice se il lavoro è nuovo o se stai modificando uno già salvato
+function aggiornaStatoCantiere(){
+  const el=document.getElementById(&quot;stato-cantiere&quot;);if(!el)return;
+  if(cantiereInModifica){
+    el.style.display=&quot;flex&quot;;el.style.background=&quot;#1a1205&quot;;el.style.border=&quot;2px solid #f08a3c&quot;;el.style.color=&quot;#f08a3c&quot;;
+    el.innerHTML='✏️ Stai modificando il preventivo salvato <b>'+esc(cantiereInModifica.nome)+'</b> — con 💾 Salva lo aggiorni.'+
+      '<button onclick=&quot;scollegaCantiere()&quot; style=&quot;margin-left:auto;padding:6px 10px;border-radius:8px;cursor:pointer;font-weight:700;font-size:11px;border:1.5px solid #64a8ff;background:#0a1628;color:#64a8ff&quot;>🆕 Salvalo come nuovo</button>';
+  }else{
+    el.style.display=&quot;flex&quot;;el.style.background=&quot;#061208&quot;;el.style.border=&quot;1.5px solid #1e4a34&quot;;el.style.color=&quot;#55d39b&quot;;
+    el.innerHTML=&quot;🆕 Lavoro nuovo (non ancora salvato): con 💾 Salva viene aggiunto all'archivio.&quot;;
+  }
+}
+// Stacca il lavoro dal preventivo salvato: il prossimo salvataggio ne crea uno nuovo
+function scollegaCantiere(){
+  cantiereInModifica=null;
+  autosalvaCantiere();
+  aggiornaStatoCantiere();
 }
 
 function confermaSlava(salvaComeNuovo){
@@ -8715,11 +8761,11 @@ function confermaSlava(salvaComeNuovo){
         pezzoCnt,
       };
       cantiereInModifica.nome=nome;
-      saveArchivio(arch);
+      if(!saveArchivio(arch))return;
       autoSyncSalva();
       document.getElementById(&quot;popup-salva&quot;).style.display=&quot;none&quot;;
       alert(`✓ Preventivo &quot;${nome}&quot; aggiornato!`);
-      renderArchivio();
+      renderArchivio();aggiornaStatoCantiere();
       return;
     }
     // se non trovato (es. cancellato), prosegue creandone uno nuovo
@@ -8734,12 +8780,13 @@ function confermaSlava(salvaComeNuovo){
     pezzoCnt,
   };
   arch.unshift(snap);
-  saveArchivio(arch);
+  if(!saveArchivio(arch))return;
   cantiereInModifica={id:snap.id, nome}; // ora questo diventa il cantiere corrente
+  autosalvaCantiere();
   autoSyncSalva();
   document.getElementById(&quot;popup-salva&quot;).style.display=&quot;none&quot;;
   alert(`✓ Preventivo &quot;${nome}&quot; salvato!`);
-  renderArchivio();
+  renderArchivio();aggiornaStatoCantiere();
 }
 
 function renderArchivio(){
@@ -10871,6 +10918,13 @@ function ripristinaCantiereCorrente(){
   try{
     const v=JSON.parse(localStorage.getItem('fc_cantiere_corrente')||'null');
     if(!v||!Array.isArray(v.pezzi)||!v.pezzi.length)return false;
+    // Se il lavoro è già in archivio identico, si riparte da una SCHEDA NUOVA:
+    // non si perde niente (sta nell'archivio, si riapre da lì) e non ti ritrovi
+    // ogni volta il lavoro vecchio con il rischio di sovrascriverlo senza accorgertene.
+    if(v.modifica&amp;&amp;v.modifica.id){
+      const sn=loadArchivio().find(x=>x.id===v.modifica.id);
+      if(sn&amp;&amp;JSON.stringify(sn.pezzi)===JSON.stringify(v.pezzi))return false;
+    }
     pezzi=v.pezzi.map(p=>{migraCampiPezzo(p);aggiornaNAnte(p);return p;});
     pezzoCnt=Math.max(parseInt(v.pezzoCnt)||1,1);
     cantiereInModifica=(v.modifica&amp;&amp;v.modifica.id)?v.modifica:null;
@@ -10945,6 +10999,7 @@ textarea{resize:vertical}
 
 <!-- NUOVO -->
 <div id=&quot;tab-nuovo&quot; class=&quot;page on&quot;>
+  <div id=&quot;stato-prev&quot; style=&quot;display:none;border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:12px;font-weight:700;align-items:center;gap:10px;flex-wrap:wrap&quot;></div>
   <div id=&quot;banner-fc&quot; style=&quot;display:none;background:#061208;border:2px solid #55d39b;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#55d39b;font-weight:700&quot;></div>
 
   <div class=&quot;sec&quot; style=&quot;border-color:#f08a3c&quot;>
@@ -11078,6 +11133,7 @@ textarea{resize:vertical}
 
   <div style=&quot;display:flex;gap:8px;flex-wrap:wrap&quot;>
     <button onclick=&quot;mostraAnteprima()&quot; style=&quot;flex:1;padding:12px;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px;border:2px solid #f08a3c;background:#1a1205;color:#f08a3c&quot;>👁 Anteprima</button>
+    <button onclick=&quot;nuovoPrev()&quot; style=&quot;flex:0 0 auto;padding:12px 14px;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px;border:2px solid #64a8ff;background:#0a1628;color:#64a8ff&quot;>🆕 Nuovo</button>
     <button onclick=&quot;salvaPrev()&quot; style=&quot;flex:1;padding:12px;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px;border:2px solid #55d39b;background:#061208;color:#55d39b&quot;>💾 Salva</button>
   </div>
 </div>
@@ -11176,7 +11232,7 @@ textarea{resize:vertical}
     <div id=&quot;cfm-msg&quot; style=&quot;font-size:13px;color:#e8eef7;margin-bottom:16px&quot;></div>
     <div style=&quot;display:flex;gap:8px&quot;>
       <button id=&quot;cfm-si&quot; style=&quot;flex:1;padding:10px;border-radius:9px;cursor:pointer;font-weight:700;border:2px solid #f06b6b;background:#1a0808;color:#f06b6b&quot;>✓ Sì</button>
-      <button onclick=&quot;document.getElementById('popup-cfm').style.display='none'&quot; style=&quot;flex:1;padding:10px;border-radius:9px;cursor:pointer;border:1px solid #172438;background:transparent;color:#91a2bb&quot;>Annulla</button>
+      <button id=&quot;cfm-no&quot; onclick=&quot;document.getElementById('popup-cfm').style.display='none'&quot; style=&quot;flex:1;padding:10px;border-radius:9px;cursor:pointer;border:1px solid #172438;background:transparent;color:#91a2bb&quot;>Annulla</button>
     </div>
   </div>
 </div>
@@ -11237,14 +11293,32 @@ var SYNC = (function(){
     }).catch(function(e){ return {ok:false, error:String(e)}; });
   }
 
-  // Scarica UNA chiave dal cloud e la scrive in localStorage
+  // Unisce i dati del cloud con quelli già sul dispositivo, per id: quello che hai
+  // salvato qui non viene MAI cancellato da una copia vecchia del telefono (e viceversa).
+  function unisciDati(locale, remoto){
+    if(!Array.isArray(remoto)) return remoto;          // configurazioni e contatori: resta il comportamento di prima
+    if(!Array.isArray(locale)) return remoto;
+    var m={}, ordine=[], i, x, k;
+    function raccogli(arr){
+      for(i=0;i<arr.length;i++){
+        x=arr[i]; if(!x||typeof x!=='object') continue;
+        k=String(x.id!=null?x.id:(x.numero||JSON.stringify(x)));
+        if(!m[k]){ m[k]=x; ordine.push(k); }
+      }
+    }
+    raccogli(locale); raccogli(remoto);               // a parità di id vince quello del dispositivo
+    return ordine.map(function(kk){ return m[kk]; });
+  }
+  // Scarica UNA chiave dal cloud e la unisce a quella locale
   function pullChiave(chiave){
     if(!configurato()) return Promise.resolve({ok:false, reason:'non configurato'});
     var u = getUrl()+'/rest/v1/'+TABELLA+'?chiave=eq.'+encodeURIComponent(chiave)+'&amp;select=dati,aggiornato_il';
     return fetch(u, { headers:headers() })
       .then(function(r){ if(!r.ok) return {ok:false,status:r.status}; return r.json().then(function(rows){
         if(rows &amp;&amp; rows.length){
-          localStorage.setItem(chiave, JSON.stringify(rows[0].dati));
+          var loc=null; try{ loc=JSON.parse(localStorage.getItem(chiave)||'null'); }catch(e){}
+          var fusi=unisciDati(loc, rows[0].dati);
+          if(fusi!==null&amp;&amp;fusi!==undefined) localStorage.setItem(chiave, JSON.stringify(fusi));
           return {ok:true, trovato:true, aggiornato_il:rows[0].aggiornato_il};
         }
         return {ok:true, trovato:false};
@@ -11435,9 +11509,13 @@ function msg(t,col){
   d.textContent=t;document.body.appendChild(d);
   setTimeout(()=>{try{document.body.removeChild(d);}catch(e){}},4000);
 }
-function confirm2(titolo,testo,onSi){
+function confirm2(titolo,testo,onSi,onNo,etichette){
   $(&quot;cfm-title&quot;).textContent=titolo;$(&quot;cfm-msg&quot;).textContent=testo;
   $(&quot;cfm-si&quot;).onclick=()=>{$(&quot;popup-cfm&quot;).style.display=&quot;none&quot;;onSi();};
+  const no=$(&quot;cfm-no&quot;);
+  if(no)no.onclick=()=>{$(&quot;popup-cfm&quot;).style.display=&quot;none&quot;;if(onNo)onNo();};
+  if(etichette){$(&quot;cfm-si&quot;).textContent=etichette[0];if(no)no.textContent=etichette[1];}
+  else{$(&quot;cfm-si&quot;).textContent=&quot;✓ Sì&quot;;if(no)no.textContent=&quot;Annulla&quot;;}
   $(&quot;popup-cfm&quot;).style.display=&quot;flex&quot;;
 }
 
@@ -11814,11 +11892,49 @@ function salvaPrev(){
   const idxEx=arch.findIndex(x=>x.numero&amp;&amp;x.numero===numeroCorrente);
   if(idxEx>=0){snap.id=arch[idxEx].id;arch[idxEx]=snap;}
   else arch.unshift(snap);
-  localStorage.setItem(&quot;prevArch&quot;,JSON.stringify(arch));
+  if(!scriviArch(arch))return;
   if(typeof autoSyncSalva===&quot;function&quot;)autoSyncSalva();
-  msg(&quot;✓ Preventivo &quot;+numeroCorrente+&quot; salvato!&quot;);
+  aggiornaStatoPrev();
+  msg((idxEx>=0?&quot;✓ Preventivo &quot;+numeroCorrente+&quot; aggiornato!&quot;:&quot;✓ Preventivo &quot;+numeroCorrente+&quot; salvato!&quot;));
 }
 function loadArch(){try{return JSON.parse(localStorage.getItem(&quot;prevArch&quot;)||&quot;[]&quot;);}catch(e){return[];}}
+// Scrive l'archivio e CONTROLLA che sia rimasto davvero in memoria (prima un errore passava inosservato)
+function scriviArch(arch){
+  try{
+    const testo=JSON.stringify(arch);
+    localStorage.setItem(&quot;prevArch&quot;,testo);
+    if(localStorage.getItem(&quot;prevArch&quot;)!==testo)throw new Error(&quot;il dato non è rimasto in memoria&quot;);
+    return true;
+  }catch(e){
+    alert(&quot;Impossibile salvare il preventivo: &quot;+(e&amp;&amp;e.message?e.message:e)+&quot;\nLibera spazio (Archivio: elimina i preventivi vecchi) e riprova.&quot;);
+    return false;
+  }
+}
+// Riga in alto: dice sempre se stai scrivendo un preventivo NUOVO o se ne stai modificando uno salvato
+function aggiornaStatoPrev(){
+  const el=$(&quot;stato-prev&quot;);if(!el)return;
+  if(numeroCorrente){
+    el.style.display=&quot;flex&quot;;el.style.background=&quot;#1a1205&quot;;el.style.border=&quot;2px solid #f08a3c&quot;;el.style.color=&quot;#f08a3c&quot;;
+    el.innerHTML='✏️ Stai modificando il preventivo <b>N° '+numeroCorrente+'</b> — con 💾 Salva lo aggiorni.'+
+      '<button onclick=&quot;nuovoPrev()&quot; style=&quot;margin-left:auto;padding:6px 10px;border-radius:8px;cursor:pointer;font-weight:700;font-size:11px;border:1.5px solid #64a8ff;background:#0a1628;color:#64a8ff&quot;>🆕 Preventivo nuovo</button>';
+  }else{
+    el.style.display=&quot;flex&quot;;el.style.background=&quot;#061208&quot;;el.style.border=&quot;1.5px solid #1e4a34&quot;;el.style.color=&quot;#55d39b&quot;;
+    el.innerHTML=&quot;🆕 Preventivo nuovo (non ancora salvato): con 💾 Salva viene aggiunto all'archivio.&quot;;
+  }
+}
+// Azzera e riparte da un preventivo vuoto (il numero nuovo si prende al salvataggio)
+function nuovoPrev(diretto){
+  const azzera=()=>{
+    numeroCorrente=&quot;&quot;;
+    voci=[nuovaVoce()];
+    [&quot;cli-nome&quot;,&quot;cli-ind&quot;,&quot;cli-tel&quot;,&quot;prev-oggetto&quot;,&quot;prev-note&quot;,&quot;prev-importo&quot;,&quot;prev-accessori&quot;,&quot;prev-posa&quot;].forEach(k=>{if($(k))$(k).value=&quot;&quot;;});
+    if($(&quot;prev-data&quot;))$(&quot;prev-data&quot;).value=new Date().toISOString().split(&quot;T&quot;)[0];
+    const b=$(&quot;banner-fc&quot;);if(b)b.style.display=&quot;none&quot;;
+    renderVoci();aggiornaTrattamenti();aggiornaSommaVoci();aggiornaStatoPrev();showTab(&quot;nuovo&quot;);
+  };
+  if(diretto===true)return azzera();
+  confirm2(&quot;Preventivo nuovo&quot;,&quot;Svuoto la scheda e ricomincio da un preventivo nuovo?&quot;,azzera);
+}
 
 function renderArchivio(){
   const arch=loadArch();
@@ -11855,7 +11971,7 @@ function riapriPrev(id){
     });
     $(&quot;wrap-posa&quot;).style.display=$(&quot;chk-posa&quot;)?.checked?&quot;block&quot;:&quot;none&quot;;
     $(&quot;wrap-val&quot;).style.display=$(&quot;chk-val&quot;)?.checked?&quot;block&quot;:&quot;none&quot;;
-    showTab(&quot;nuovo&quot;);renderVoci();aggiornaTrattamenti();aggiornaSommaVoci();
+    showTab(&quot;nuovo&quot;);renderVoci();aggiornaTrattamenti();aggiornaSommaVoci();aggiornaStatoPrev();
   });
 }
 function stampaDaArch(id){
@@ -11900,6 +12016,19 @@ function controllaDatiFC(){
     const dati=JSON.parse(raw);
     if(!dati||!dati.ts||(Date.now()-dati.ts)>120000)return; // max 2 min
     localStorage.removeItem(&quot;PREV_IMPORT&quot;);
+    // Se è già aperto un preventivo salvato, chiedo dove vanno i manufatti:
+    // così non si sovrascrive per sbaglio il preventivo di prima.
+    if(numeroCorrente){
+      confirm2(&quot;Manufatti da FerroCalc&quot;,&quot;Stai lavorando sul preventivo N° &quot;+numeroCorrente+&quot;: faccio un preventivo NUOVO con questi manufatti oppure li aggiungo a quello aperto?&quot;,
+        ()=>{nuovoPrev(true);applicaDatiFC(dati);},()=>applicaDatiFC(dati),[&quot;🆕 Preventivo nuovo&quot;,&quot;Aggiungi a questo&quot;]);
+      return;
+    }
+    applicaDatiFC(dati);
+  }catch(e){console.error(&quot;PREV import error:&quot;,e);}
+}
+// Mette in scheda i manufatti arrivati da FerroCalc
+function applicaDatiFC(dati){
+  try{
     // Applica
     if(dati.nome&amp;&amp;!sv(&quot;prev-oggetto&quot;))$(&quot;prev-oggetto&quot;).value=&quot;Preventivo — &quot;+dati.nome;
     if(dati.pezzi&amp;&amp;dati.pezzi.length){
@@ -12025,7 +12154,7 @@ window.addEventListener(&quot;DOMContentLoaded&quot;,()=>{
   $(&quot;prev-data&quot;).value=new Date().toISOString().split(&quot;T&quot;)[0];
   caricaCfg();
   renderDatalistClienti();
-  voci=[nuovaVoce()];renderVoci();
+  voci=[nuovaVoce()];renderVoci();aggiornaStatoPrev();
   caricaPrezziTratt();aggiornaTrattamenti();
   // Controlla subito se ci sono dati da FC (PREV aperto da FC)
   controllaDatiFC();
