@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.16.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.17.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.16.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.17.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -2589,6 +2589,26 @@ function cimaAlzataMax(p,luce){
   const ad=arcoDatiSeg(p,luce,0,luce.haAnte?Math.max(1,luce.nAnte||1):Math.max(1,luce.nCL||1));
   if(!ad)return 0;
   return frecciaCima(p,ad.C);
+}
+// Le misure che servono in officina per TRACCIARE la cima: le due altezze laterali,
+// l'altezza al punto estremo (colmo o punto basso), la corda, la freccia, il raggio e lo sviluppo.
+function cimaMisure(p,luce){
+  if(!arcoAttivo(p))return null;
+  luce=luce||calcLuce(p);
+  const nSeg=luce.haAnte?Math.max(1,luce.nAnte||1):Math.max(1,luce.nCL||1);
+  const ad=arcoDatiSeg(p,luce,0,nSeg);
+  if(!ad)return null;
+  const C=ad.C,f=frecciaCima(p,C),giu=p.arco.verso==='giu';
+  const H=luce.Hmm||0;
+  // altezze sui due lati del manufatto (agli estremi della corda)
+  const dhSx=arcoY(p,0,C),dhDx=arcoY(p,C,C);
+  // punto estremo: colmo dell'arco/cuspide, oppure il lato alto se inclinata
+  let xEstremo=C/2,dhEstremo=arcoY(p,C/2,C);
+  if(formaCima(p)==='inclinata'){xEstremo=giu?0:C;dhEstremo=arcoY(p,xEstremo,C);}
+  const R=(formaCima(p)==='inclinata'||formaCima(p)==='cuspide'||f<=0)?0:(C*C/4+f*f)/(2*f);
+  return {forma:formaCima(p),C,f,giu,R,
+    hSx:Math.max(0,H+dhSx),hDx:Math.max(0,H+dhDx),hEstremo:Math.max(0,H+dhEstremo),
+    xEstremo,sviluppo:ad.topLen,nSeg,perAnta:(luce.haAnte&amp;&amp;(p.arco.tipo||'unico')==='per_anta')};
 }
 // La cima curva/inclinata riguarda le ante, oppure il sopraluce quando c'è (porta ad arco con lunetta)
 function arcoSulleAnte(p){return arcoAttivo(p)&amp;&amp;!sopraluceAttivo(p);}
@@ -5607,6 +5627,17 @@ function buildBody(p){
         <div style=&quot;display:flex;gap:5px&quot;>${_versoLbl.map(v=>_arBtn('verso',v[0],v[1])).join(&quot;&quot;)}</div>
       </div>
     </div>
+    ${(()=>{const m=cimaMisure(p,_luceCima);if(!m||!(m.f>0))return &quot;&quot;;
+      return `<div style=&quot;background:#1a1205;border:1.5px solid #f08a3c;border-radius:9px;padding:9px 11px;margin-bottom:8px&quot;>
+        <div style=&quot;font-size:11px;font-weight:700;color:#f08a3c;margin-bottom:5px&quot;>📏 Misure per tracciare la cima</div>
+        <div class=&quot;costi-riga&quot;><span>Altezza ai lati (sx / dx)</span><b>${cmv(m.hSx)} / ${cmv(m.hDx)} cm</b></div>
+        <div class=&quot;costi-riga&quot;><span>${m.giu?&quot;Altezza al punto basso (centro)&quot;:&quot;Altezza al colmo (centro)&quot;}</span><b style=&quot;color:#f08a3c&quot;>${cmv(m.hEstremo)} cm</b></div>
+        <div class=&quot;costi-riga&quot;><span>Corda (larghezza della cima)</span><b>${cmv(m.C)} cm</b></div>
+        <div class=&quot;costi-riga&quot;><span>Freccia</span><b>${cmv(m.f)} cm</b></div>
+        ${m.R>0?`<div class=&quot;costi-riga&quot;><span>Raggio di curvatura</span><b>${cmv(m.R)} cm</b></div>`:&quot;&quot;}
+        <div class=&quot;costi-riga&quot;><span>Sviluppo del profilo curvato</span><b>${cmv(m.sviluppo)} cm</b></div>
+        <div class=&quot;nota-info&quot;>Con queste tre altezze (i due lati e il centro) tracci la sagoma sul banco; il raggio serve alla calandra.</div>
+      </div>`;})()}
     <div style=&quot;font-size:10px;color:#91a2bb;line-height:1.6&quot;>
       L'<b>Altezza totale</b> resta quella del lato basso${_ar.verso!=='giu'?`; il punto alto sale di ${cmU(_fCima)}`:`; il punto basso scende di ${cmU(_fCima)}`}.
       La traversa superiore esce in distinta con lo <b>sviluppo reale</b>${_forma==='cuspide'?' (i due tratti della falda)':''}; montanti e verticali con le <b>lunghezze una per una</b> nel piano di taglio.
@@ -6833,7 +6864,7 @@ function _disegnaSu(p,cvs,leg){
   if(_vd){
     for(let s=0;s<nSeg;s++){
       const bx=segX0(s);
-      _vd.lastre.forEach(l=>{
+      _vd.lastre.filter(l=>!l.sopraluce).forEach(l=>{
         const X=tx(bx+l.ca+_vd.G),Y=ty(yLuce0+(luciaV-l.b)+_vd.G),W=l.w*sc,H=l.h*sc;
         ctx.fillStyle=CVC('vetro');ctx.fillRect(X,Y,W,H);
         ctx.strokeStyle=CVC('contorno');ctx.lineWidth=1;ctx.strokeRect(X,Y,W,H);
@@ -7059,15 +7090,15 @@ function _disegnaSu(p,cvs,leg){
           .forEach(it=>richiamoLab(ctx,it.v,it.y,it.vLab,yL,it.testo,&quot;#2b7a55&quot;,&quot;giu&quot;));
       }
       // forma della cima: etichetta fuori, sopra il punto più alto
-      if(arcoAttivo(p)){
-        const _adQ=arcoDatiSeg(p,luce,0,nSeg);
-        const _f=_adQ?frecciaCima(p,_adQ.C):0;
-        if(_adQ&amp;&amp;_f>0){
-          const _forma=(FORME_CIMA.find(f=>f[0]===formaCima(p))||[&quot;&quot;,&quot;forma&quot;])[1].replace(/^\S+\s/,&quot;&quot;).toLowerCase();
-          const _giu=p.arco.verso==='giu';
-          const _hEstrema=_giu?Math.max(0,Hmm-_f):Hmm+_f;
-          cvLabelQ(_forma+&quot; &quot;+cmU(_f)+&quot; · h &quot;+(_giu?&quot;min &quot;:&quot;max &quot;)+cmU(_hEstrema),12,cH-8,&quot;#b0620c&quot;,&quot;left&quot;,12);
-        }
+      // Cima sagomata: le tre misure per tracciarla (i due lati e il punto estremo)
+      const _cm=cimaMisure(p,luce);
+      if(_cm&amp;&amp;_cm.f>0){
+        const _forma=(FORME_CIMA.find(f=>f[0]===formaCima(p))||[&quot;&quot;,&quot;forma&quot;])[1].replace(/^\S+\s/,&quot;&quot;).toLowerCase();
+        const _xE=(tiD.haAnte?LY.segOrig(0):0)+_cm.xEstremo;
+        const _yE=(tiD.haAnte?antaY_:0)-(_cm.giu?-_cm.f:_cm.f);
+        // altezza al colmo (o al punto basso): quota fuori, a sinistra del manufatto
+        drawQuotaCv(ctx,tx(0),ty(Hmm),tx(0),ty(_cm.giu?_cm.f:-_cm.f),(_cm.giu?&quot;punto basso &quot;:&quot;colmo &quot;)+cmU(_cm.hEstremo),_trOriz.length?-70:-26);
+        cvLabelQ(_forma+&quot; &quot;+cmU(_cm.f)+&quot; · lati &quot;+cmU(_cm.hSx)+(Math.abs(_cm.hSx-_cm.hDx)>0.5?&quot; / &quot;+cmU(_cm.hDx):&quot;&quot;)+&quot; · &quot;+(_cm.giu?&quot;punto basso &quot;:&quot;colmo &quot;)+cmU(_cm.hEstremo)+(_cm.R>0?&quot; · raggio &quot;+cmU(_cm.R):&quot;&quot;),12,cH-8,&quot;#b0620c&quot;,&quot;left&quot;,12);
       }
     }catch(e){}
   } else if(!_cvMuto){
@@ -7090,7 +7121,11 @@ function _disegnaSu(p,cvs,leg){
     if(tiD.haAnte&amp;&amp;A_>0&amp;&amp;AH_>0){const _nAl=nomeAntePlur(p.tipo,p.ante.length);addL(&quot;#7896d2&quot;,`${_nAl.charAt(0).toUpperCase()+_nAl.slice(1)}: ${cmv(A_)} × ${cmv(AH_)} cm`+(p.ante.length>1?` (×${p.ante.length})`:&quot;&quot;));}
     if(segW>0&amp;&amp;luciaV>0)addL(&quot;#7d93c0&quot;,`Luce netta: ${cmv(segW)} × ${cmv(luciaV)} cm`);
     if(LY.slH>0)addL(&quot;#64a8ff&quot;,`Sopraluce: ${cmv(luce.slW)} × ${cmv(LY.slH)} cm`);
-    if(arcoAttivo(p)){const _fc=(FORME_CIMA.find(f=>f[0]===formaCima(p))||[&quot;&quot;,&quot;forma&quot;])[1];addL(&quot;#b0620c&quot;,`Cima ${_fc.replace(/^S+s/,&quot;&quot;).toLowerCase()}`);}
+    if(arcoAttivo(p)){
+      const _fc=(FORME_CIMA.find(f=>f[0]===formaCima(p))||[&quot;&quot;,&quot;forma&quot;])[1].replace(/^S+s/,&quot;&quot;).toLowerCase();
+      const _cmL=cimaMisure(p,luce);
+      addL(&quot;#b0620c&quot;,`Cima ${_fc}`+(_cmL?`: lati ${cmv(_cmL.hSx)}${Math.abs(_cmL.hSx-_cmL.hDx)>0.5?&quot; / &quot;+cmv(_cmL.hDx):&quot;&quot;} cm · ${_cmL.giu?&quot;punto basso&quot;:&quot;colmo&quot;} ${cmv(_cmL.hEstremo)} cm`:&quot;&quot;));
+    }
     legN.forEach(x=>addL(EL_C[x.gi%EL_C.length],`El.${x.gi+1}: ${esc(x.el.mat.profilo)} ${x.isV?&quot;↕&quot;:&quot;↔&quot;} ×${x.n}`+(x.isV&amp;&amp;_passoEl>0?` · passo ${cmv(_passoEl)} cm`:&quot;&quot;)));
     (p.traverse||[]).forEach((tr,i)=>{if(tr.mat){const d=(tr.dir||&quot;oriz&quot;)===&quot;oriz&quot;?&quot;↔&quot;:&quot;↕&quot;;addL(&quot;#55d39b&quot;,`Trav.${i+1}: ${d} ${esc(tr.mat.profilo)} a ${cmv(tr.quota_mm)} cm`);}});
     if(_vd)addL(&quot;#6fb6e0&quot;,`Vetro ${esc(_vd.sigla)} · ${_vd.nLastre} lastr${_vd.nLastre===1?&quot;a&quot;:&quot;e&quot;}`);
@@ -7864,7 +7899,8 @@ function inviaPREV(snapId){
       const _adP=arcoDatiSeg(p,_luP,0,_luP.haAnte?Math.max(1,(p.ante||[]).length):Math.max(1,_luP.nCL||1));
       const _fP=_adP?frecciaCima(p,_adP.C):0;
       const _nf=(FORME_CIMA.find(f=>f[0]===formaCima(p))||[&quot;&quot;,&quot;arco&quot;])[1].replace(/^\S+\s/,&quot;&quot;).toLowerCase();
-      desc+=`, cima ${_nf} (${p.arco.verso==='giu'?'ribassata':'alzata'} ${cmv(_fP)} cm)`;
+      const _mP=cimaMisure(p,_luP);
+      desc+=`, cima ${_nf} (${p.arco.verso==='giu'?'ribassata':'alzata'} ${cmv(_fP)} cm`+(_mP?`: lati ${cmv(_mP.hSx)}${Math.abs(_mP.hSx-_mP.hDx)>0.5?&quot;/&quot;+cmv(_mP.hDx):&quot;&quot;} cm, ${_mP.giu?&quot;punto basso&quot;:&quot;colmo&quot;} ${cmv(_mP.hEstremo)} cm`:&quot;&quot;)+`)`;
     }
     const _slP=sopraluceCalc(p);
     if(_slP){
@@ -8222,7 +8258,14 @@ function walkPezzoMateriali(p,addG){
   // ── Fermavetro: 4 pezzi per lastra (per ogni lato fermato), alla misura della lastra ──
   if(p.vetro_fermavetro&amp;&amp;ammetteVetro(p)&amp;&amp;(p.vetro||(_sl&amp;&amp;_sl.riemp==='vetro'))){
     const vd=calcVetro(p);
-    if(vd){const q=vd.moltSeg*nPz*vd.latiFV;vd.lastre.forEach(l=>{A(p.vetro_fermavetro,l.w,2*q,&quot;fermavetro orizzontale&quot;);A(p.vetro_fermavetro,l.h,2*q,&quot;fermavetro verticale&quot;);});}
+    if(vd){
+      const qA=vd.moltSeg*nPz*vd.latiFV,qS=nPz*vd.latiFV;
+      vd.lastre.forEach(l=>{
+        const q2=l.sopraluce?qS:qA,dove=l.sopraluce?&quot; del sopraluce&quot;:&quot;&quot;;
+        A(p.vetro_fermavetro,l.w,2*q2,&quot;fermavetro orizzontale&quot;+dove);
+        A(p.vetro_fermavetro,l.h,2*q2,&quot;fermavetro verticale&quot;+dove);
+      });
+    }
   }
 }
 
@@ -10392,7 +10435,7 @@ function calcVetro(p){
   if(arcoAttivo(p)&amp;&amp;lastre.some(l=>l.sopraluce||l.b>=luciaV-0.5))avvisi.push(&quot;Porta ad arco: la lastra in cima va sagomata. Qui trovi il rettangolo senza l'arco; per la sagoma serve la dima del vetraio.&quot;);
   if(p.lamiera&amp;&amp;(p.lamiera_modo||'tutto')==='tutto'&amp;&amp;(p.vetro_modo||'tutto')==='tutto')avvisi.push(&quot;Lamiera e vetro riempiono la stessa luce: scegli lamiera sotto e vetro sopra (o il contrario).&quot;);
   const latiFV=(parseInt(p.vetro_fvLati)||0)>0?parseInt(p.vetro_fvLati):((luce.sx&amp;&amp;battutaAppoggio(luce.sx)>0)?1:2);
-  return {G,comp,sigla:comp.sigla,lastre,gruppi,moltSeg,nPz,nLastre:lastre.length*q,areaTot,perimTot,
+  return {G,comp,sigla:comp.sigla,lastre,gruppi,moltSeg,nPz,nLastre:lastre.filter(l=>!l.sopraluce).length*q+(lastre.some(l=>l.sopraluce)?nPz:0),areaTot,perimTot,
     pesoTot:areaTot*comp.kgMq,prezzoMq,costo:areaTot*prezzoMq,guarnizioneM:perimTot*2,latiFV,modo:p.vetro_modo||'tutto',avvisi};
 }
 
