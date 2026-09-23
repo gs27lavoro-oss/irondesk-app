@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.15.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.16.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.15.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.16.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -4520,7 +4520,7 @@ function disegnaScala(p,cvs,ctx,leg){
   const Hmm=sc.H*1000,Lmm=sc.L*1000,n=sc.n,a=sc.alzata,pd=sc.pedata;
   if(!(Hmm>0)||!(Lmm>0)){ctx.fillStyle=CVC(&quot;tenue&quot;);ctx.font=&quot;600 18px Arial&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci altezza e sviluppo&quot;,cW/2,cH/2);return;}
   const sm=p.scalaMats||{};
-  const padL=64,padR=86,padT=40,padB=52;
+  const padL=_cvMuto?16:64,padR=_cvMuto?16:86,padT=_cvMuto?16:40,padB=_cvMuto?16:52;
   const _ringOn=!!(p.scalaRing&amp;&amp;(p.scalaRing.sx||p.scalaRing.dx));
   const conManc=!!(p.scalaHaMancorrente&amp;&amp;sm.mancorrente), Hfit=Hmm*(conManc?1.14:1)+(_ringOn?Math.max(0,numOk((p.scalaRing||{}).h,100)*10):0);
   const s=Math.min((cW-padL-padR)/Lmm,(cH-padT-padB)/Hfit);
@@ -6705,10 +6705,12 @@ function _disegnaSu(p,cvs,leg){
   const _trOriz=(p.traverse||[]).filter(t=>traversaValida(t,luce)&amp;&amp;(t.dir||'oriz')==='oriz');
   const _trVert=(p.traverse||[]).filter(t=>traversaValida(t,luce)&amp;&amp;(t.dir||'oriz')==='vert');
   const _quote=!!UPG.quote;
-  const padL=(_quote&amp;&amp;_trOriz.length)?96:16;
-  const padR=(_quote&amp;&amp;tiD.haAnte)?84:52;
-  const padT=(_quote?(tiD.haAnte?58:44):30);
-  const padB=(_quote?(_trVert.length?60:42):34);
+  // Immagine per il preventivo (_cvMuto): niente quote né scritte, quindi margini stretti
+  // e manufatto grande quanto il riquadro.
+  const padL=_cvMuto?14:((_quote&amp;&amp;_trOriz.length)?96:16);
+  const padR=_cvMuto?14:((_quote&amp;&amp;tiD.haAnte)?84:52);
+  const padT=_cvMuto?14:(_quote?(tiD.haAnte?58:44):30);
+  const padB=_cvMuto?14:(_quote?(_trVert.length?60:42):34);
   const codaMax=(p.tipo==='cancello_scorrevole')?Math.max(parseFloat(p.coda_sup)||0,parseFloat(p.coda_inf)||0):0;
   const effW=Wmm+codaMax; // spazio extra a sinistra per la coda
   const _arcoUp=cimaAlzataMax(p,luce); // spazio sopra per colmo / cuspide / lato alto
@@ -7740,16 +7742,26 @@ function iduVaiA(frameName){
 // manufatto, e un preventivo dell'archivio poteva uscire col disegno del lavoro aperto.
 // Immagine del manufatto per il preventivo: SENZA quote e senza scritte.
 // Al cliente serve l'idea del manufatto, le misure stanno nel testo della voce.
+// Immagine del manufatto per il preventivo: SENZA quote e senza scritte, ritagliata
+// attorno al manufatto così nel PDF il disegno si vede grande.
 function pezzoImgDataURL(p){
   try{
     const cvs=document.createElement('canvas');cvs.width=700;cvs.height=420;
     const _q=UPG.quote;UPG.quote=false;_cvMuto=true;
-    try{disegnaPezzo(p,cvs,null);}finally{UPG.quote=_q;_cvMuto=false;}
-    const out=document.createElement('canvas');out.width=cvs.width;out.height=cvs.height;
+    let box=null;
+    try{disegnaPezzo(p,cvs,null);box=_boxDisegno;}finally{UPG.quote=_q;_cvMuto=false;}
+    let sx=0,sy=0,sw=cvs.width,sh=cvs.height;
+    if(box&amp;&amp;box.x1>box.x0+20&amp;&amp;box.y1>box.y0+20){
+      const mg=16;
+      sx=Math.max(0,box.x0-mg);sy=Math.max(0,box.y0-mg);
+      sw=Math.min(cvs.width-sx,(box.x1-box.x0)+2*mg);sh=Math.min(cvs.height-sy,(box.y1-box.y0)+2*mg);
+    }
+    const out=document.createElement('canvas');
+    out.width=Math.max(120,Math.round(sw));out.height=Math.max(120,Math.round(sh));
     const ox=out.getContext('2d');
-    ox.fillStyle='#0d1422';ox.fillRect(0,0,out.width,out.height);
-    ox.drawImage(cvs,0,0);
-    return out.toDataURL('image/jpeg',0.82);
+    ox.fillStyle=cvTec()?CV_TEC.carta:'#0d1422';ox.fillRect(0,0,out.width,out.height);
+    ox.drawImage(cvs,sx,sy,sw,sh,0,0,out.width,out.height);
+    return out.toDataURL('image/jpeg',0.86);
   }catch(e){return null;}
 }
 
@@ -7819,7 +7831,7 @@ function inviaPREV(snapId){
         const s=soppCalc(p);
         if(s.piano!=='nessuno')righeT.push({ruolo:'',testo:'piano di calpestio in '+nomePianoSopp(p)+' ('+s.area.toFixed(2)+' m²)'});
         descT='Soppalco '+cmv(s.L)+'×'+cmv(s.P)+' cm, piano a '+cmv(s.H)+' cm da terra, '+s.nPil+' pilastri'+(s.muro?', lato posteriore appoggiato al muro':'')
-          +(s.tratti.length?', parapetto h '+cmv(s.hPar)+' cm ('+s.tratti.map(t=>t.lato).join(', ')+')':'');
+          +(s.tratti.length?', parapetto h '+cmv(s.hPar)+' cm ('+[...new Set(s.tratti.map(t=>t.lato))].join(', ')+')':'')+(p.sopScala&amp;&amp;p.sopScala.attiva?', con scala '+scalaCalc(scalaSoppalcoPezzo(p)).n+' gradini':'');
       } else {
         const c=penCalc(p),nc=(PEN_COPERTURE.find(x=>x[0]===c.cop)||[&quot;&quot;,c.cop])[1].toLowerCase();
         if(c.cop!=='nessuna')righeT.push({ruolo:'',testo:'copertura in '+nc+' ('+c.area.toFixed(2)+' m²)'});
@@ -10919,7 +10931,7 @@ textarea{resize:vertical}
   <div class=&quot;sec&quot; style=&quot;border-color:#64a8ff&quot;>
     <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>🔩 Voci di lavoro</div>
     <label style=&quot;display:flex;align-items:center;gap:9px;cursor:pointer;margin-bottom:10px;font-size:12px;font-weight:700;color:#55d39b&quot;>
-      <input type=&quot;checkbox&quot; id=&quot;chk-prezzi-voce&quot; onchange=&quot;renderVoci();aggiornaSommaVoci()&quot; style=&quot;width:17px;height:17px;cursor:pointer&quot;>
+      <input type=&quot;checkbox&quot; id=&quot;chk-prezzi-voce&quot; onchange=&quot;accendiPrezziVoce()&quot; style=&quot;width:17px;height:17px;cursor:pointer&quot;>
       Prezzo per singolo manufatto
       <span style=&quot;font-weight:400;color:#91a2bb&quot;>— accendilo solo se il cliente vuole vedere il prezzo di ogni voce</span>
     </label>
@@ -11399,7 +11411,7 @@ function showTab(t){
 // ══ VOCI ══
 function nuovaVoce(dati){
   return{id:voceCnt++,tipo:&quot;cancello_battente&quot;,titolo:&quot;&quot;,larg:&quot;&quot;,alt:&quot;&quot;,
-    quantita:&quot;1&quot;,materiali:&quot;&quot;,desc:&quot;&quot;,finiture:[],colore:&quot;&quot;,note:&quot;&quot;,prezzo:&quot;&quot;,peso_kg:&quot;&quot;,img:null,...(dati||{})};
+    quantita:&quot;1&quot;,materiali:&quot;&quot;,desc:&quot;&quot;,finiture:[],colore:&quot;&quot;,note:&quot;&quot;,prezzo:&quot;&quot;,prezzo_fc:&quot;&quot;,peso_kg:&quot;&quot;,img:null,...(dati||{})};
 }
 // ══ TRATTAMENTI A PESO ══
 // Peso totale = somma dei kg delle voci (da FerroCalc). Costo = kg × €/kg della casella scelta.
@@ -11434,6 +11446,15 @@ function togFin(vid,fk){
 }
 // Somma dei prezzi voce → suggerimento per l'importo totale
 function prezziVoce(){return !!($(&quot;chk-prezzi-voce&quot;)&amp;&amp;$(&quot;chk-prezzi-voce&quot;).checked);}
+// Accendendo i prezzi per voce, ogni voce riparte dal prezzo calcolato da FerroCalc (poi lo cambi a mano)
+function accendiPrezziVoce(){
+  if(prezziVoce())voci=voci.map(v=>(!(parseFloat(v.prezzo)>0)&amp;&amp;parseFloat(v.prezzo_fc)>0)?{...v,prezzo:v.prezzo_fc}:v);
+  renderVoci();aggiornaSommaVoci();
+}
+function ripristinaPrezzoFC(id){
+  voci=voci.map(v=>v.id===id&amp;&amp;parseFloat(v.prezzo_fc)>0?{...v,prezzo:v.prezzo_fc}:v);
+  renderVoci();aggiornaSommaVoci();
+}
 function sommaVoci(){return voci.reduce((a,v)=>a+(parseFloat(v.prezzo)||0),0)+trattamenti().tot;}
 function aggiornaSommaVoci(){
   const s=sommaVoci(),el=$(&quot;somma-voci-hint&quot;);
@@ -11494,7 +11515,11 @@ function renderVoci(){
           <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${v.prezzo||''}&quot; min=&quot;0&quot; step=&quot;0.01&quot; placeholder=&quot;—&quot; ${przOn?&quot;&quot;:&quot;disabled&quot;}
             style=&quot;border-color:${przOn?'#55d39b':'#172438'};font-weight:700;${przOn?'':'opacity:.45;cursor:not-allowed'}&quot;
             onchange=&quot;setV(${v.id},'prezzo',this.value);aggiornaSommaVoci()&quot;>
-          ${przOn?&quot;&quot;:'<div style=&quot;font-size:10px;color:#91a2bb;margin-top:3px&quot;>Accendi &quot;Prezzo per singolo manufatto&quot; qui sopra per usarlo</div>'}
+          ${przOn?(parseFloat(v.prezzo_fc)>0?`<div style=&quot;font-size:10px;color:#91a2bb;margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap&quot;>
+            <span>Da FerroCalc: <b style=&quot;color:#55d39b&quot;>€ ${(parseFloat(v.prezzo_fc)||0).toFixed(2).replace(&quot;.&quot;,&quot;,&quot;)}</b> — modificabile</span>
+            ${Math.abs((parseFloat(v.prezzo)||0)-(parseFloat(v.prezzo_fc)||0))>0.005?`<button class=&quot;btn&quot; style=&quot;border-color:#55d39b;color:#55d39b;padding:2px 7px;font-size:10px&quot; onclick=&quot;ripristinaPrezzoFC(${v.id})&quot;>↺ rimetti</button>`:&quot;&quot;}
+          </div>`:&quot;&quot;)
+          :'<div style=&quot;font-size:10px;color:#91a2bb;margin-top:3px&quot;>Accendi &quot;Prezzo per singolo manufatto&quot; qui sopra per usarlo</div>'}
           <label class=&quot;fl&quot; style=&quot;margin-top:6px&quot;>Peso (kg) — da FerroCalc</label>
           <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${v.peso_kg||''}&quot; min=&quot;0&quot; step=&quot;0.1&quot; placeholder=&quot;—&quot; style=&quot;border-color:#90c060&quot;
             onchange=&quot;setV(${v.id},'peso_kg',this.value);aggiornaTrattamenti()&quot;></div>
@@ -11874,6 +11899,7 @@ function controllaDatiFC(){
             isAlluminio:true,
             aluFacce:p.aluFacce,
             prezzo:p.prezzo>0?String(p.prezzo):&quot;&quot;,
+            prezzo_fc:p.prezzo>0?String(p.prezzo):&quot;&quot;,
             peso_kg:p.peso_kg>0?String(p.peso_kg):&quot;&quot;,
             img:p.img||null,
           });
@@ -11886,6 +11912,7 @@ function controllaDatiFC(){
             materiali:Array.isArray(p.materiali)?p.materiali.map(m=>m.testo).join(&quot;, &quot;):(p.materiali||&quot;&quot;),
             desc:p.desc_tecnica||&quot;&quot;,
             prezzo:p.prezzo>0?String(p.prezzo):&quot;&quot;,
+            prezzo_fc:p.prezzo>0?String(p.prezzo):&quot;&quot;,
             peso_kg:p.peso_kg>0?String(p.peso_kg):&quot;&quot;,
             img:p.img||null,
           });
