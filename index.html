@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.18.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.19.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.18.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.19.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -3669,7 +3669,12 @@ function showTab(t){
   const tabs=document.querySelectorAll(&quot;.tab&quot;);
   if(idx>=0&amp;&amp;tabs[idx])tabs[idx].classList.add(&quot;on&quot;);
   if(t===&quot;riepilogo&quot;)renderRiepilogo();
-  if(t===&quot;archivio&quot;)renderArchivio();
+  if(t===&quot;archivio&quot;){
+    renderArchivio();
+    // apro l'archivio: guardo se dal telefono è arrivato qualcosa di nuovo
+    if(typeof SYNC!==&quot;undefined&quot;&amp;&amp;SYNC.configurato()&amp;&amp;localStorage.getItem('sync_auto')!=='0')
+      SYNC.pullTutto().then(function(){ try{renderArchivio();}catch(e){} });
+  }
   if(t===&quot;magazzino&quot;)renderMagazzino();
   if(t===&quot;impostazioni&quot;){aggiornaUIListino();caricaPrezziAluImp();
     try{
@@ -7794,11 +7799,14 @@ function pezzoImgDataURL(p){
       sw=Math.min(cvs.width-sx,(box.x1-box.x0)+2*mg);sh=Math.min(cvs.height-sy,(box.y1-box.y0)+2*mg);
     }
     const out=document.createElement('canvas');
-    out.width=Math.max(120,Math.round(sw));out.height=Math.max(120,Math.round(sh));
+    // Immagine leggera per il preventivo: basta per il PDF e non gonfia l'archivio
+    // (i preventivi devono restare piccoli abbastanza da viaggiare verso il telefono)
+    const kImg=Math.min(1,520/Math.max(1,sw),340/Math.max(1,sh));
+    out.width=Math.max(120,Math.round(sw*kImg));out.height=Math.max(120,Math.round(sh*kImg));
     const ox=out.getContext('2d');
     ox.fillStyle=cvTec()?CV_TEC.carta:'#0d1422';ox.fillRect(0,0,out.width,out.height);
     ox.drawImage(cvs,sx,sy,sw,sh,0,0,out.width,out.height);
-    return out.toDataURL('image/jpeg',0.86);
+    return out.toDataURL('image/jpeg',0.8);
   }catch(e){return null;}
 }
 
@@ -8584,9 +8592,12 @@ var SYNC = (function(){
     var dati = localStorage.getItem(chiave);
     if(dati===null) return Promise.resolve({ok:true, skipped:true});
     var body = [{ chiave: chiave, dati: JSON.parse(dati||'null'), aggiornato_il: new Date().toISOString() }];
-    return fetch(getUrl()+'/rest/v1/'+TABELLA+'?on_conflict=chiave', {
-      method:'POST', headers:headers(), body:JSON.stringify(body), keepalive:true
-    }).then(function(r){
+    var testo = JSON.stringify(body);
+    // ATTENZIONE: keepalive regge al massimo 64 KB. Con i preventivi (disegni compresi)
+    // si supera subito e la richiesta fallisce sempre: i dati non salivano mai sul cloud.
+    var opzioni = { method:'POST', headers:headers(), body:testo };
+    if(testo.length < 60000) opzioni.keepalive = true;
+    return fetch(getUrl()+'/rest/v1/'+TABELLA+'?on_conflict=chiave', opzioni).then(function(r){
       if(r.ok) return { ok:true, status:r.status };
       // Cattura il messaggio di errore esatto da Supabase
       return r.text().then(function(txt){
@@ -10897,20 +10908,34 @@ function syncOra(scarica){
 // Auto-sync all'avvio: scarica i dati più recenti
 function autoSyncAvvio(){
   if(SYNC.configurato() &amp;&amp; localStorage.getItem('sync_auto')!=='0'){
-    SYNC.pullTutto().then(function(res){
+    return SYNC.pullTutto().then(function(res){
       var ok=res.every(function(r){return r.ok;});
       if(ok){
         // Se sono arrivati dati nuovi, ricarica le viste
         try{ renderArchivio(); }catch(e){}
       }
+      // e subito dopo mando su quello che c'è qui: aprendo il programma i due dispositivi si allineano
+      return SYNC.pushTutto().then(function(r2){ mostraEsitoSync(r2); return r2; });
     });
   }
+  return Promise.resolve([]);
+}
+// Esito della sincronizzazione mostrato nella riga di stato del Riepilogo
+function mostraEsitoSync(res){
+  var ko=(res||[]).filter(function(r){return !r.ok;});
+  var el=document.getElementById(&quot;stato-cantiere&quot;);if(!el)return;
+  var vecchio=el.querySelector(&quot;.esito-sync&quot;); if(vecchio) vecchio.remove();
+  var d=document.createElement(&quot;div&quot;);d.className=&quot;esito-sync&quot;;d.style.cssText=&quot;flex-basis:100%;font-weight:600;font-size:11px;margin-top:4px&quot;;
+  if(ko.length){ d.style.color=&quot;#f06b6b&quot;; d.textContent=&quot;⚠ Non sincronizzato col telefono: &quot;+(ko[0].error||ko[0].reason||(&quot;errore &quot;+(ko[0].status||&quot;?&quot;))); }
+  else { d.style.color=&quot;#55d39b&quot;; d.textContent=&quot;✓ Sincronizzato col telefono&quot;; }
+  el.appendChild(d);
 }
 // Auto-sync dopo salvataggio: carica sul cloud
 function autoSyncSalva(){
   if(SYNC.configurato() &amp;&amp; localStorage.getItem('sync_auto')!=='0'){
-    SYNC.pushTutto();
+    return SYNC.pushTutto().then(function(res){ mostraEsitoSync(res); return res; });
   }
+  return Promise.resolve([]);
 }
 
 // Riprende il lavoro in corso salvato in automatico (se c'è)
@@ -11280,9 +11305,12 @@ var SYNC = (function(){
     var dati = localStorage.getItem(chiave);
     if(dati===null) return Promise.resolve({ok:true, skipped:true});
     var body = [{ chiave: chiave, dati: JSON.parse(dati||'null'), aggiornato_il: new Date().toISOString() }];
-    return fetch(getUrl()+'/rest/v1/'+TABELLA+'?on_conflict=chiave', {
-      method:'POST', headers:headers(), body:JSON.stringify(body), keepalive:true
-    }).then(function(r){
+    var testo = JSON.stringify(body);
+    // ATTENZIONE: keepalive regge al massimo 64 KB. Con i preventivi (disegni compresi)
+    // si supera subito e la richiesta fallisce sempre: i dati non salivano mai sul cloud.
+    var opzioni = { method:'POST', headers:headers(), body:testo };
+    if(testo.length < 60000) opzioni.keepalive = true;
+    return fetch(getUrl()+'/rest/v1/'+TABELLA+'?on_conflict=chiave', opzioni).then(function(r){
       if(r.ok) return { ok:true, status:r.status };
       // Cattura il messaggio di errore esatto da Supabase
       return r.text().then(function(txt){
@@ -11525,7 +11553,12 @@ function showTab(t){
   $(&quot;tab-&quot;+t).classList.add(&quot;on&quot;);
   const idx=[&quot;nuovo&quot;,&quot;archivio&quot;,&quot;impostazioni&quot;].indexOf(t);
   document.querySelectorAll(&quot;.tab&quot;)[idx].classList.add(&quot;on&quot;);
-  if(t===&quot;archivio&quot;)renderArchivio();
+  if(t===&quot;archivio&quot;){
+    renderArchivio();
+    // guardo se dal telefono è arrivato qualche preventivo nuovo
+    if(typeof SYNC!==&quot;undefined&quot;&amp;&amp;SYNC.configurato()&amp;&amp;localStorage.getItem('sync_auto')!=='0')
+      SYNC.pullTutto().then(function(){ try{renderArchivio();}catch(e){} });
+  }
   if(t===&quot;impostazioni&quot;){renderRubrica();mostraLogoPrev();}
 }
 
@@ -11893,7 +11926,14 @@ function salvaPrev(){
   if(idxEx>=0){snap.id=arch[idxEx].id;arch[idxEx]=snap;}
   else arch.unshift(snap);
   if(!scriviArch(arch))return;
-  if(typeof autoSyncSalva===&quot;function&quot;)autoSyncSalva();
+  // Sincronizzazione: dico chiaramente se il preventivo è arrivato anche sul telefono
+  const pSync=(typeof autoSyncSalva===&quot;function&quot;)?autoSyncSalva():null;
+  if(pSync&amp;&amp;pSync.then)pSync.then(function(res){
+    const ko=(res||[]).filter(function(r){return !r.ok;});
+    if(!res||!res.length)return;
+    if(ko.length)msg(&quot;Salvato qui, ma NON sincronizzato: &quot;+(ko[0].error||ko[0].reason||(&quot;errore &quot;+(ko[0].status||&quot;?&quot;))),&quot;#f06b6b&quot;);
+    else msg(&quot;✓ Preventivo &quot;+numeroCorrente+&quot; salvato e sincronizzato col telefono&quot;);
+  });
   aggiornaStatoPrev();
   msg((idxEx>=0?&quot;✓ Preventivo &quot;+numeroCorrente+&quot; aggiornato!&quot;:&quot;✓ Preventivo &quot;+numeroCorrente+&quot; salvato!&quot;));
 }
@@ -12144,8 +12184,17 @@ function syncOra(scarica){
     else{setSyncStato(scarica?'✓ Scaricato — ricarico...':'✓ Caricato sul cloud','#55d39b');if(scarica)setTimeout(function(){location.reload();},800);}
   });
 }
-function autoSyncAvvio(){if(SYNC.configurato()&amp;&amp;localStorage.getItem('sync_auto')!=='0'){SYNC.pullTutto().then(function(res){if(res.every(function(r){return r.ok;})){try{renderArchivio();}catch(e){}}});}}
-function autoSyncSalva(){if(SYNC.configurato()&amp;&amp;localStorage.getItem('sync_auto')!=='0'){SYNC.pushTutto();}}
+function autoSyncAvvio(){
+  if(!SYNC.configurato()||localStorage.getItem('sync_auto')==='0')return Promise.resolve([]);
+  return SYNC.pullTutto().then(function(res){
+    if(res.every(function(r){return r.ok;})){try{renderArchivio();}catch(e){}}
+    return SYNC.pushTutto();   // all'apertura i due dispositivi si allineano nei due sensi
+  });
+}
+function autoSyncSalva(){
+  if(!SYNC.configurato()||localStorage.getItem('sync_auto')==='0')return Promise.resolve([]);
+  return SYNC.pushTutto();
+}
 
 window.addEventListener(&quot;DOMContentLoaded&quot;,()=>{
   caricaConfigSync();
@@ -12404,9 +12453,12 @@ var SYNC = (function(){
     var dati = localStorage.getItem(chiave);
     if(dati===null) return Promise.resolve({ok:true, skipped:true});
     var body = [{ chiave: chiave, dati: JSON.parse(dati||'null'), aggiornato_il: new Date().toISOString() }];
-    return fetch(getUrl()+'/rest/v1/'+TABELLA+'?on_conflict=chiave', {
-      method:'POST', headers:headers(), body:JSON.stringify(body), keepalive:true
-    }).then(function(r){
+    var testo = JSON.stringify(body);
+    // ATTENZIONE: keepalive regge al massimo 64 KB. Con i preventivi (disegni compresi)
+    // si supera subito e la richiesta fallisce sempre: i dati non salivano mai sul cloud.
+    var opzioni = { method:'POST', headers:headers(), body:testo };
+    if(testo.length < 60000) opzioni.keepalive = true;
+    return fetch(getUrl()+'/rest/v1/'+TABELLA+'?on_conflict=chiave', opzioni).then(function(r){
       if(r.ok) return { ok:true, status:r.status };
       // Cattura il messaggio di errore esatto da Supabase
       return r.text().then(function(txt){
@@ -13228,7 +13280,10 @@ function iduRestore(input){
         var u=unisci(leggi(ch),rem);
         try{ localStorage.setItem(ch,JSON.stringify(u.righe)); }catch(e){}
         var body=[{chiave:ch,dati:u.righe,aggiornato_il:new Date().toISOString()}];
-        return fetch(url()+"/rest/v1/"+TAB+"?on_conflict=chiave",{method:"POST",headers:headers(),body:JSON.stringify(body),keepalive:true})
+        var testo=JSON.stringify(body);
+        var opz={method:"POST",headers:headers(),body:testo};
+        if(testo.length<60000) opz.keepalive=true;   // sopra i 64 KB keepalive fa fallire la richiesta
+        return fetch(url()+"/rest/v1/"+TAB+"?on_conflict=chiave",opz)
           .then(function(r2){
             ultimo[ch]=new Date();
             avvisa(ch,r2.ok,r2.ok?"sincronizzato":"errore "+r2.status,u.cambiato);
