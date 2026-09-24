@@ -2786,20 +2786,41 @@ function preparaFoto(img){
  }catch(e){}
  return cv;
 }
-async function ocrFoto(file,onProg){
- const cv=preparaFoto(await conTempo(fileToImage(file),25000,'la foto non si apre'));
- // dal telefono si usa il dizionario "fast": pochi MB invece di decine, quindi parte davvero
- const opt=OCRBASE?{workerPath:OCRBASE+'worker.min.js',corePath:OCRBASE+'tesseract-core-simd-lstm.wasm.js',langPath:OCRBASE,gzip:true,cacheMethod:'none'}
-                  :{langPath:'https://tessdata.projectnaptha.com/4.0.0_fast',gzip:true};
+/* Tre modi di leggere, provati in fila: se uno non parte si passa al successivo,
+   così un telefono che non regge una versione del motore non resta bloccato.   */
+function ocrTentativi(){
+ const l=[];
+ if(OCRBASE){
+   const b=new URL(OCRBASE,location.href).href;   // assoluto: dentro il worker i percorsi relativi si perdono
+   l.push({nome:"lettore dell"+String.fromCharCode(39)+"app",
+     opt:{workerPath:b+'worker.min.js',corePath:b+'tesseract-core-simd-lstm.wasm.js',langPath:b,gzip:true,cacheMethod:'none'}});
+   l.push({nome:'lettore compatibile (senza SIMD)',
+     opt:{workerPath:b+'worker.min.js',corePath:b+'tesseract-core-lstm.wasm.js',langPath:b,gzip:true,cacheMethod:'none'}});
+ }
+ l.push({nome:'lettore online',opt:{langPath:'https://tessdata.projectnaptha.com/4.0.0_fast',gzip:true}});
+ return l;
+}
+async function ocrUnTentativo(cv,cfg,onProg,ms){
+ const opt=Object.assign({},cfg.opt);
  opt.logger=m=>{ if(!onProg||!m)return; onProg(Math.round((m.progress||0)*100), OCR_FASI[m.status]||m.status||''); };
  opt.errorHandler=()=>{};
- const w=await conTempo(Tesseract.createWorker('ita',1,opt),150000,
-   'il lettore non è riuscito a partire (connessione assente, lenta o bloccata)');
+ const w=await conTempo(Tesseract.createWorker('ita',1,opt),ms,'il '+cfg.nome+' non è partito');
  try{
    await w.setParameters({tessedit_pageseg_mode:'6'});
-   const res=await conTempo(w.recognize(cv),150000,'la lettura è andata troppo per le lunghe');
+   const res=await conTempo(w.recognize(cv),ms,'la lettura è andata troppo per le lunghe');
    return (res&&res.data&&res.data.text)||'';
  } finally { try{ await w.terminate(); }catch(e){} }
+}
+async function ocrFoto(file,onProg){
+ const cv=preparaFoto(await conTempo(fileToImage(file),25000,'la foto non si apre'));
+ const cfgs=ocrTentativi(); let ultimo=null;
+ for(let i=0;i<cfgs.length;i++){
+   try{
+     if(onProg)onProg(0,'avvio il '+cfgs[i].nome);
+     return await ocrUnTentativo(cv,cfgs[i],onProg,(i<cfgs.length-1)?60000:150000);
+   }catch(e){ ultimo=e; }
+ }
+ throw ultimo||new Error('lettura non riuscita');
 }
 /* rimette in riga quello che l'OCR spezza: numeri con lo spazio dentro, parole tagliate,
    righe dell'esercizio andate a capo senza serie e ripetizioni */
