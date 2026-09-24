@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.22.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.23.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.22.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.23.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -7496,32 +7496,51 @@ function staffeDima(c){
 }
 function svgDimaCosciale(sp,c){
   c=c||scalaCoscialeL(sp);
-  const pts=c.poly.map(v=>c.loc(v[0],v[1]));
-  const uMin=Math.min(...pts.map(q=>q.u)),uMax=Math.max(...pts.map(q=>q.u));
-  const VW=900,mL=34,mR=34,top=44;
-  const s=(VW-mL-mR)/Math.max(1,uMax-uMin);
-  const k=Math.max(1,150/Math.max(1,c.hC*s));               // altezza del profilo ingrandita se troppo sottile
-  const X=u=>mL+(u-uMin)*s,Y=v=>top+v*s*k,VH=Math.round(Y(c.hC)+46);
-  const poly=pts.map(q=>X(q.u).toFixed(1)+&quot;,&quot;+Y(q.v).toFixed(1)).join(&quot; &quot;);
-  const tick=staffeDima(c),stretto=tick.length>1&amp;&amp;Math.min(...tick.slice(1).map(t=>t.passo))*s<26;
-  let g=&quot;&quot;;
+  // cosciale visto dalla faccia interna, inclinato come quando è montato: la linea verde è l'appoggio della staffa (in bolla)
+  const sA=c.sinA,cA=c.cosA,xs=c.poly.map(v=>v[0]),ys=c.poly.map(v=>v[1]);
+  const xmin=Math.min(...xs),xmax=Math.max(...xs),ymin=Math.min(0,...ys),ymax=Math.max(...ys);
+  const VW=900,mL=60,mR=110,mT=40,mB=120,bw=Math.max(1,xmax-xmin),bh=Math.max(1,ymax-ymin);
+  const s=Math.min((VW-mL-mR)/bw,640/bh),VH=Math.round(bh*s+mT+mB);
+  const SX=x=>mL+(x-xmin)*s,SY=y=>mT+(ymax-y)*s,P=(x,y)=>[SX(x),SY(y)];
+  const nx=sA,ny=cA;                                         // normale verso il bordo inferiore (schermo)
+  const off=c.hC*s+34;                                        // catena delle misure sotto il cosciale
+  const f1=v=>v.toFixed(1),g1=x=>(Math.round(x*10)/10).toFixed(1)+&quot;°&quot;;
+  const rot=-c.dg;
+  let g=`<line x1=&quot;${f1(SX(xmin)-20)}&quot; y1=&quot;${f1(SY(0))}&quot; x2=&quot;${f1(SX(xmin)+Math.min(bw*s,260))}&quot; y2=&quot;${f1(SY(0))}&quot; stroke=&quot;#8a96b0&quot; stroke-width=&quot;1&quot; stroke-dasharray=&quot;6,4&quot;/>`;
+  g+=`<text x=&quot;${f1(SX(xmin)+Math.min(bw*s,260))}&quot; y=&quot;${f1(SY(0)-5)}&quot; font-size=&quot;12&quot; fill=&quot;#8a96b0&quot; text-anchor=&quot;end&quot;>pavimento</text>`;
+  g+=`<polygon points=&quot;${c.poly.map(v=>P(v[0],v[1]).map(f1).join(&quot;,&quot;)).join(&quot; &quot;)}&quot; fill=&quot;#cfc3ee&quot; stroke=&quot;#3b2a6e&quot; stroke-width=&quot;1.6&quot;/>`;
+  const toe=P(c.xT,0),dm=staffeDima(c);
+  const cat=[[toe[0]+nx*off,toe[1]+ny*off]];
+  g+=`<line x1=&quot;${f1(toe[0])}&quot; y1=&quot;${f1(toe[1])}&quot; x2=&quot;${f1(cat[0][0]+nx*6)}&quot; y2=&quot;${f1(cat[0][1]+ny*6)}&quot; stroke=&quot;#c0392b&quot; stroke-width=&quot;0.8&quot; stroke-dasharray=&quot;3,3&quot;/>`;
   c.staffe.forEach((st,j)=>{
-    const cs=[[st.x0,st.yTop],[st.x0+c.Lr,st.yTop],[st.x0+c.Lr,st.yTop-c.la],[st.x0,st.yTop-c.la]].map(v=>c.loc(v[0],v[1]));
-    g+=`<polygon points=&quot;${cs.map(q=>X(q.u).toFixed(1)+&quot;,&quot;+Y(q.v).toFixed(1)).join(&quot; &quot;)}&quot; fill=&quot;#55d39b99&quot; stroke=&quot;#1d6b4a&quot; stroke-width=&quot;1&quot;/>`;
-    g+=`<line x1=&quot;${X(cs[0].u).toFixed(1)}&quot; y1=&quot;${Y(cs[0].v).toFixed(1)}&quot; x2=&quot;${X(cs[1].u).toFixed(1)}&quot; y2=&quot;${Y(cs[1].v).toFixed(1)}&quot; stroke=&quot;#0b3b28&quot; stroke-width=&quot;2.2&quot;/>`;
-    const xt=X(st.u).toFixed(1),alto=stretto&amp;&amp;j%2;
-    g+=`<line x1=&quot;${xt}&quot; y1=&quot;${top-6}&quot; x2=&quot;${xt}&quot; y2=&quot;${Y(Math.max(0,st.v)).toFixed(1)}&quot; stroke=&quot;#1d6b4a&quot; stroke-width=&quot;0.8&quot; stroke-dasharray=&quot;2,2&quot;/>`;
-    g+=`<text x=&quot;${xt}&quot; y=&quot;${alto?top-20:top-9}&quot; font-size=&quot;10&quot; font-weight=&quot;700&quot; fill=&quot;#1d6b4a&quot; text-anchor=&quot;middle&quot;>L${st.i}</text>`;
+    const F=P(st.x0,st.yTop),R=P(st.x0+c.Lr,st.yTop);
+    const E=[F[0]-nx*st.v*s,F[1]-ny*st.v*s];                  // segno sul bordo superiore, in squadra sopra F
+    const C=[E[0]+nx*off,E[1]+ny*off];cat.push(C);
+    g+=`<line x1=&quot;${f1(E[0])}&quot; y1=&quot;${f1(E[1])}&quot; x2=&quot;${f1(C[0]+nx*6)}&quot; y2=&quot;${f1(C[1]+ny*6)}&quot; stroke=&quot;#1d6b4a&quot; stroke-width=&quot;0.7&quot; stroke-dasharray=&quot;3,3&quot; opacity=&quot;.7&quot;/>`;
+    g+=`<line x1=&quot;${f1(E[0]-nx*7)}&quot; y1=&quot;${f1(E[1]-ny*7)}&quot; x2=&quot;${f1(E[0]+nx*4)}&quot; y2=&quot;${f1(E[1]+ny*4)}&quot; stroke=&quot;#c0392b&quot; stroke-width=&quot;2&quot;/>`;
+    g+=`<line x1=&quot;${f1(F[0])}&quot; y1=&quot;${f1(F[1])}&quot; x2=&quot;${f1(R[0])}&quot; y2=&quot;${f1(R[1])}&quot; stroke=&quot;#138a52&quot; stroke-width=&quot;3.2&quot; stroke-linecap=&quot;round&quot;/>`;
+    g+=`<circle cx=&quot;${f1(F[0])}&quot; cy=&quot;${f1(F[1])}&quot; r=&quot;2.6&quot; fill=&quot;#c0392b&quot;/><circle cx=&quot;${f1(R[0])}&quot; cy=&quot;${f1(R[1])}&quot; r=&quot;2.6&quot; fill=&quot;#c0392b&quot;/>`;
+    g+=`<text x=&quot;${f1(E[0]-nx*11)}&quot; y=&quot;${f1(E[1]-ny*11)}&quot; font-size=&quot;12&quot; font-weight=&quot;700&quot; fill=&quot;#138a52&quot; text-anchor=&quot;middle&quot; transform=&quot;rotate(${f1(rot)} ${f1(E[0]-nx*11)} ${f1(E[1]-ny*11)})&quot;>L${st.i}</text>`;
+    if(j===0){ // quanto scendere in squadra dal bordo (uguale per tutte)
+      const mx=(E[0]+F[0])/2-cA*14,my=(E[1]+F[1])/2+sA*14;
+      g+=`<text x=&quot;${f1(mx)}&quot; y=&quot;${f1(my)}&quot; font-size=&quot;12&quot; font-weight=&quot;700&quot; fill=&quot;${st.v<0?&quot;#c0392b&quot;:&quot;#3b2a6e&quot;}&quot; text-anchor=&quot;end&quot;>↧ ${cmv(st.v)}</text>`;
+    }
   });
-  const T=c.tagli,g1=x=>(Math.round(x*10)/10).toFixed(1)+&quot;°&quot;;
-  return `<svg viewBox=&quot;0 0 ${VW} ${VH}&quot; width=&quot;100%&quot; style=&quot;display:block;background:#e9edf3;border-radius:8px&quot;>
-    <polygon points=&quot;${poly}&quot; fill=&quot;#b9a6e3&quot; stroke=&quot;#3b2a6e&quot; stroke-width=&quot;1.4&quot;/>
-    ${g}
-    <circle cx=&quot;${X(0)}&quot; cy=&quot;${Y(0)}&quot; r=&quot;3.5&quot; fill=&quot;#c0392b&quot;/>
-    <text x=&quot;${X(0)}&quot; y=&quot;${Y(c.hC)+16}&quot; font-size=&quot;11&quot; font-weight=&quot;700&quot; fill=&quot;#c0392b&quot;>PUNTA = 0 · piede sega ${g1(T.piede.sega)}</text>
-    <text x=&quot;${X(uMax)}&quot; y=&quot;${Y(c.hC)+16}&quot; font-size=&quot;11&quot; font-weight=&quot;700&quot; fill=&quot;#3b2a6e&quot; text-anchor=&quot;end&quot;>testa ${c.modo==='verticale'?&quot;verticale sega &quot;+g1(T.testa.sega):&quot;orizzontale sega &quot;+g1(T.testa.sega)} · barra ${cmU(c.lTaglio)}</text>
-    <text x=&quot;${VW/2}&quot; y=&quot;${VH-8}&quot; font-size=&quot;10&quot; fill=&quot;#91a2bb&quot; text-anchor=&quot;middle&quot;>faccia interna · bordo superiore in alto · aletta a ${g1(c.dg)} dal bordo${k>1.05?&quot; · altezza del profilo ingrandita ×&quot;+k.toFixed(1):&quot;&quot;}</text>
-  </svg>`;
+  // catena delle misure: punta → L1 → L2 … (distanze lungo il bordo superiore)
+  const A=cat[0],Z=cat[cat.length-1];
+  g+=`<line x1=&quot;${f1(A[0])}&quot; y1=&quot;${f1(A[1])}&quot; x2=&quot;${f1(Z[0])}&quot; y2=&quot;${f1(Z[1])}&quot; stroke=&quot;#1f3b73&quot; stroke-width=&quot;1.3&quot;/>`;
+  cat.forEach(q=>{g+=`<line x1=&quot;${f1(q[0]-nx*6)}&quot; y1=&quot;${f1(q[1]-ny*6)}&quot; x2=&quot;${f1(q[0]+nx*6)}&quot; y2=&quot;${f1(q[1]+ny*6)}&quot; stroke=&quot;#1f3b73&quot; stroke-width=&quot;1.6&quot;/>`;});
+  dm.forEach((t,k)=>{
+    const a=cat[k],b=cat[k+1],seg=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    const d=15+(seg<34&amp;&amp;k%2?15:0),tx=(a[0]+b[0])/2+nx*d,ty=(a[1]+b[1])/2+ny*d;
+    g+=`<text x=&quot;${f1(tx)}&quot; y=&quot;${f1(ty)}&quot; font-size=&quot;${seg<34?11:13}&quot; font-weight=&quot;700&quot; fill=&quot;#1f3b73&quot; text-anchor=&quot;middle&quot; dominant-baseline=&quot;middle&quot; transform=&quot;rotate(${f1(rot)} ${f1(tx)} ${f1(ty)})&quot;>${cmv(t.passo)}</text>`;
+  });
+  const T=c.tagli,top=P(Math.max(...xs),Math.max(...ys));
+  g+=`<circle cx=&quot;${f1(toe[0])}&quot; cy=&quot;${f1(toe[1])}&quot; r=&quot;4&quot; fill=&quot;#c0392b&quot;/>`;
+  g+=`<text x=&quot;${f1(toe[0]-8)}&quot; y=&quot;${f1(toe[1]+4)}&quot; font-size=&quot;13&quot; font-weight=&quot;700&quot; fill=&quot;#c0392b&quot; text-anchor=&quot;end&quot;>0</text><text x=&quot;${f1(toe[0]-8)}&quot; y=&quot;${f1(toe[1]-12)}&quot; font-size=&quot;12&quot; font-weight=&quot;700&quot; fill=&quot;#c0392b&quot; text-anchor=&quot;end&quot;>PUNTA</text>`;
+  g+=`<text x=&quot;${mL}&quot; y=&quot;${VH-26}&quot; font-size=&quot;13&quot; font-weight=&quot;700&quot; fill=&quot;#3b2a6e&quot;>piede: taglio orizzontale, sega ${g1(T.piede.sega)} · testa: ${c.modo==='verticale'?&quot;verticale, sega &quot;+g1(T.testa.sega):&quot;orizzontale, sega &quot;+g1(T.testa.sega)} · barra ${cmU(c.lTaglio)}</text>`;
+  g+=`<text x=&quot;${mL}&quot; y=&quot;${VH-8}&quot; font-size=&quot;12&quot; fill=&quot;#91a2bb&quot;>misure in cm lungo il bordo superiore, dalla punta a terra · ↧ = scendi in squadra dal bordo · linea verde = appoggio della staffa, in bolla</text>`;
+  return `<svg viewBox=&quot;0 0 ${VW} ${VH}&quot; width=&quot;100%&quot; style=&quot;display:block;background:#eef1f6;border-radius:8px&quot;>${g}</svg>`;
 }
 function htmlDimaCosciale(sp,c){
   c=c||scalaCoscialeL(sp);
@@ -7531,14 +7550,14 @@ function htmlDimaCosciale(sp,c){
   const th='style=&quot;padding:3px 5px;color:#8a96b0;font-weight:600;text-align:right&quot;';
   return `<div style=&quot;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start&quot;>
     <div style=&quot;flex:1 1 100%;min-width:0&quot;>${svgDimaCosciale(sp,c)}
-      <div class=&quot;nota-info&quot;>Cosciale steso sul banco, faccia interna verso di te, punta a terra a sinistra. Per ogni staffa: misura lungo il bordo superiore dalla punta, scendi in squadra della quota «sotto il bordo» e segna il punto; fai lo stesso col punto posteriore e unisci i due punti. Su quella linea va il piano dell'aletta${sm.reggini?&quot; (&quot;+esc(sm.reggini.profilo)+&quot;)&quot;:&quot;&quot;}: a scala montata è in bolla, alla quota alzata × n° gradino − spessore gradino (${cmU(c.sg)}). L'altro cosciale ha le stesse misure a specchio (punta a destra).</div>
+      <div class=&quot;nota-info&quot;>Il cosciale è visto dalla faccia interna, inclinato come quando è montato. Per ogni staffa: dalla punta a terra misura lungo il bordo superiore le quote della catena (sotto il disegno) e fai il segno rosso; da lì scendi in squadra di ↧ e segna il punto: è l'inizio della linea verde. Il secondo punto è la fine dell'aletta (tabella). La linea verde è l'appoggio della staffa${sm.reggini?&quot; (&quot;+esc(sm.reggini.profilo)+&quot;)&quot;:&quot;&quot;}: in bolla, a quota alzata × n° gradino − spessore gradino (${cmU(c.sg)}); sopra si fissa il gradino. L'altro cosciale ha le stesse misure a specchio.</div>
     </div>
     <div style=&quot;flex:1 1 100%;min-width:0;overflow-x:auto&quot;>
       <table style=&quot;width:100%;border-collapse:collapse;font-size:11.5px;color:#d0d8ea;text-align:right&quot;>
-        <thead><tr><th ${th}>staffa</th><th ${th}>dalla punta</th><th ${th}>passo</th><th ${th}>sotto il bordo</th><th ${th}>post. dalla punta</th><th ${th}>post. sotto</th></tr></thead>
+        <thead><tr><th ${th}>staffa</th><th ${th}>segno dalla punta</th><th ${th}>passo</th><th ${th}>↧ scendi</th><th ${th}>fine aletta dalla punta</th><th ${th}>fine ↧ scendi</th></tr></thead>
         <tbody>${righe.replace(/<td>/g,'<td style=&quot;padding:3px 5px;border-top:1px solid #172438&quot;>')}</tbody>
       </table>
-      <div style=&quot;font-size:10.5px;color:#91a2bb;margin-top:4px&quot;>misure in cm · «dalla punta» lungo il bordo superiore · «sotto il bordo» in squadra · passo costante ${cmU(c.I)}</div>
+      <div style=&quot;font-size:10.5px;color:#91a2bb;margin-top:4px&quot;>misure in cm · segni lungo il bordo superiore dalla punta a terra · ↧ = in squadra sotto il bordo · passo costante ${cmU(c.I)}</div>
     </div>
   </div>`;
 }
@@ -11228,6 +11247,35 @@ function autoSyncSalva(){
   return Promise.resolve([]);
 }
 
+// Avviso in cima al configuratore: c'è un lavoro non salvato della volta scorsa
+function mostraLavoroSospeso(){
+  const vecchio=document.getElementById('banner-sospeso');if(vecchio)vecchio.remove();
+  let v=null;try{v=JSON.parse(localStorage.getItem('fc_cantiere_sospeso')||'null');}catch(e){}
+  if(!v||!Array.isArray(v.pezzi)||!v.pezzi.length)return;
+  const w=document.getElementById('lista-pezzi');if(!w)return;
+  const quando=v.ts?new Date(v.ts).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+  const nome=v.modifica&amp;&amp;v.modifica.nome?'«'+esc(v.modifica.nome)+'» ':'';
+  const d=document.createElement('div');d.id='banner-sospeso';
+  d.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#0a1628;border:1.5px solid #64a8ff;border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:12px;color:#aac8f0';
+  d.innerHTML='📂 Lavoro non salvato '+nome+'('+v.pezzi.length+' manufatt'+(v.pezzi.length>1?'i':'o')+(quando?', '+quando:'')+')'+
+    '<button onclick=&quot;riprendiLavoroSospeso()&quot; style=&quot;margin-left:auto;padding:6px 10px;border-radius:8px;cursor:pointer;font-weight:700;font-size:11px;border:1.5px solid #64a8ff;background:#0d1f3a;color:#64a8ff&quot;>↩️ Riprendi</button>'+
+    '<button onclick=&quot;scartaLavoroSospeso()&quot; style=&quot;padding:6px 10px;border-radius:8px;cursor:pointer;font-weight:700;font-size:11px;border:1.5px solid #273851;background:transparent;color:#8a96b0&quot;>✕</button>';
+  w.parentNode.insertBefore(d,w);
+}
+function riprendiLavoroSospeso(){
+  let v=null;try{v=JSON.parse(localStorage.getItem('fc_cantiere_sospeso')||'null');}catch(e){}
+  if(!v||!Array.isArray(v.pezzi))return scartaLavoroSospeso();
+  pezzi=v.pezzi.map(p=>{migraCampiPezzo(p);aggiornaNAnte(p);return p;});
+  pezzoCnt=Math.max(parseInt(v.pezzoCnt)||1,1);
+  cantiereInModifica=(v.modifica&amp;&amp;v.modifica.id)?v.modifica:null;
+  allineaContatori();
+  scartaLavoroSospeso();
+  renderTutto();
+}
+function scartaLavoroSospeso(){
+  try{localStorage.removeItem('fc_cantiere_sospeso');}catch(e){}
+  const b=document.getElementById('banner-sospeso');if(b)b.remove();
+}
 // Riprende il lavoro in corso salvato in automatico (se c'è)
 function ripristinaCantiereCorrente(){
   try{
@@ -11239,6 +11287,15 @@ function ripristinaCantiereCorrente(){
     if(v.modifica&amp;&amp;v.modifica.id){
       const sn=loadArchivio().find(x=>x.id===v.modifica.id);
       if(sn&amp;&amp;JSON.stringify(sn.pezzi)===JSON.stringify(v.pezzi))return false;
+    }
+    // Programma appena aperto (non una ricarica della pagina): si parte dalla scheda nuova
+    // e il lavoro non salvato resta da parte, ripristinabile con &quot;Riprendi&quot;.
+    let ricarica=false;try{ricarica=sessionStorage.getItem('fc_sessione')==='1';}catch(e){}
+    if(!ricarica){
+      let conMat=!!(v.modifica&amp;&amp;v.modifica.id);
+      if(!conMat)try{conMat=v.pezzi.some(q=>{const c=JSON.parse(JSON.stringify(q));migraCampiPezzo(c);let n=0;walkPezzoMateriali(c,()=>n++);return n>0;});}catch(e){}
+      if(conMat){try{localStorage.setItem('fc_cantiere_sospeso',JSON.stringify(v));}catch(e){}}
+      return false;
     }
     pezzi=v.pezzi.map(p=>{migraCampiPezzo(p);aggiornaNAnte(p);return p;});
     pezzoCnt=Math.max(parseInt(v.pezzoCnt)||1,1);
@@ -11255,7 +11312,9 @@ window.addEventListener(&quot;DOMContentLoaded&quot;,()=>{
     pezzi=[nuovoPezzo(pezzoCnt++)];
     aggiornaNAnte(pezzi[0]);
   }
+  try{sessionStorage.setItem('fc_sessione','1');}catch(e){}
   renderTutto();
+  mostraLavoroSospeso();
   buildAnteprimaChips();
   ricalcolaListino();
   caricaConfigSync();
