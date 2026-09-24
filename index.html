@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.20.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.21.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.20.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.21.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -4549,8 +4549,8 @@ function disegnaScala(p,cvs,ctx,leg){
   const Hmm=sc.H*1000,Lmm=sc.L*1000,n=sc.n,a=sc.alzata,pd=sc.pedata;
   if(!(Hmm>0)||!(Lmm>0)){ctx.fillStyle=CVC(&quot;tenue&quot;);ctx.font=&quot;600 18px Arial&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci altezza e sviluppo&quot;,cW/2,cH/2);return;}
   const sm=p.scalaMats||{};
-  const padL=_cvMuto?16:64,padR=_cvMuto?16:86,padT=_cvMuto?16:40,padB=_cvMuto?16:52;
   const _ringOn=!!(p.scalaRing&amp;&amp;(p.scalaRing.sx||p.scalaRing.dx));
+  const padL=_cvMuto?16:64,padR=_cvMuto?16:86,padT=_cvMuto?16:(_ringOn?62:40),padB=_cvMuto?16:52;
   const conManc=!!(p.scalaHaMancorrente&amp;&amp;sm.mancorrente), Hfit=Hmm*(conManc?1.14:1)+(_ringOn?Math.max(0,numOk((p.scalaRing||{}).h,100)*10):0);
   const cosL=sc.montaggio==='L'?scalaCoscialeL(p,sc):null;   // cosciale con staffe a L interne
   const xMin=cosL&amp;&amp;sm.correnti?Math.min(0,...cosL.poly.map(v=>v[0])):0, xMax=cosL&amp;&amp;sm.correnti?Math.max(Lmm,...cosL.poly.map(v=>v[0])):Lmm;
@@ -4667,7 +4667,7 @@ function disegnaScala(p,cvs,ctx,leg){
       drawQuotaCv(ctx,X(Lmm)+48,Y(0),X(Lmm)+48,Y(Hmm),&quot;altezza &quot;+cmU(Hmm),10);
     }catch(e){}
   }
-  cvLabelQ(`${n} gradini: alzata ${cmv(a)} cm · pedata ${cmv(pd)} cm · pendenza ${(Math.atan(tanA)*180/Math.PI).toFixed(1)}°`,12,padT-12,&quot;#8fa3c8&quot;,&quot;left&quot;,13);
+  cvLabelQ(`${n} gradini: alzata ${cmv(a)} cm · pedata ${cmv(pd)} cm · pendenza ${(Math.atan(tanA)*180/Math.PI).toFixed(1)}°`,12,24,&quot;#8fa3c8&quot;,&quot;left&quot;,13);
   cvLabelFlush(ctx);
   if(leg){
     leg.innerHTML=`<span><span style=&quot;color:#f08a3c&quot;>■</span> ${n} gradini da ${cmv(a)} × ${cmv(pd)} cm</span>`+
@@ -5264,6 +5264,7 @@ function buildBodySoppalco(p){
         <input type=&quot;checkbox&quot; ${(p.sopScala||{}).haReggini!==false?'checked':''} onchange=&quot;setSopScala(${p.id},'haReggini',this.checked)&quot; style=&quot;width:16px;height:16px&quot;>Reggini sotto i gradini</label>`}
     </div>
     ${_rigaInfo(&quot;Alzata × pedata&quot;,cmv(scG.alzata)+&quot; × &quot;+cmv(scG.pedata)+&quot; cm · pendenza &quot;+(Math.atan2(scG.H,scG.L)*180/Math.PI).toFixed(1)+&quot;°&quot;)}
+    <button class=&quot;btn-add&quot; style=&quot;border-color:#9060e0;color:#9060e0;background:#0c0618;padding:8px;margin-top:8px&quot; onclick=&quot;apriDisegnoScalaSopp(${p.id})&quot;>🪜 Apri il disegno della scala (vista di fianco)</button>
     ${scG.montaggio==='L'?htmlTracciaturaScala(scPz,(campo,espr)=>`setSopScala(${p.id},'${campo}',${espr})`,{taglioSup:'taglioSup',taglioQ:'taglioSupQ',cosSopra:'cosSopra'}):&quot;&quot;}
     <div style=&quot;border-top:1px solid #2a2008;margin-top:8px;padding-top:8px&quot;>
       <div style=&quot;font-size:12px;font-weight:700;color:#b0620c;margin-bottom:6px&quot;>Ringhiera della scala (stesso stile del parapetto)</div>
@@ -5286,6 +5287,7 @@ function buildBodySoppalco(p){
     <div class=&quot;st&quot; style=&quot;color:${col}&quot;>📐 Disegno e quantità</div>
     <div id=&quot;dis-${p.id}&quot; class=&quot;tavola-dis&quot; data-h=&quot;300&quot; style=&quot;margin-top:4px&quot;></div>
     <div id=&quot;cvs-leg-${p.id}&quot; style=&quot;display:flex;flex-wrap:wrap;gap:9px;margin-top:8px;justify-content:center;font-size:12px;color:#8a96b0&quot;></div>
+    ${scG?`<button class=&quot;btn-add&quot; style=&quot;border-color:#9060e0;color:#9060e0;background:#0c0618;padding:8px;margin-top:8px&quot; onclick=&quot;apriDisegnoScalaSopp(${p.id})&quot;>🪜 Apri il disegno della scala (vista di fianco)</button>`:&quot;&quot;}
     ${buildAbaco(p)}
     ${_rigaInfo(&quot;Pilastri&quot;,s.nPil*s.nPz+&quot; × &quot;+cmv(s.hPil)+&quot; cm&quot;)}
     ${_rigaInfo(&quot;Travetti&quot;,s.nTrav*s.nPz+&quot; (uno ogni &quot;+cmv(s.passoTrav)+&quot; cm)&quot;)}
@@ -6582,9 +6584,12 @@ function disegnaSoppalco(p,cvs,ctx,leg){
     if(rl.sx){ctx.moveTo(X(scX0)-3,Y(s.P));ctx.lineTo(X(scX0)-3,Y(s.P+scSvil));}
     if(rl.dx){ctx.moveTo(X(scX0+scLarg)+3,Y(s.P));ctx.lineTo(X(scX0+scLarg)+3,Y(s.P+scSvil));}
     ctx.stroke();ctx.restore();
-    cvLabelQ(&quot;scala &quot;+scG.n+&quot; gradini&quot;,X(scX0+scLarg/2),Y(s.P+scSvil)+16,&quot;#6a3fb5&quot;,&quot;center&quot;,11);
+    // scritte a fianco della scala, dal lato con più spazio (fuori dalla pianta e lontano dalle quote)
+    const aDx=(scX0+scLarg/2)<s.L/2,xl=aDx?X(scX0+scLarg)+8:X(scX0)-8,al=aDx?&quot;left&quot;:&quot;right&quot;;
+    cvLabelQ(&quot;scala &quot;+scG.n+&quot; gradini&quot;,xl,Y(s.P+scSvil*0.6),&quot;#6a3fb5&quot;,al,11);
+    if(s.varco>0)cvLabelQ(&quot;varco &quot;+cmv(s.varco)+&quot; cm&quot;,xl,Y(s.P)+22,&quot;#b0620c&quot;,al,11);
   }
-  if(s.varco>0)cvLabelQ(&quot;varco &quot;+cmv(s.varco)+&quot; cm&quot;,X(s.varcoX+s.varco/2),Y(s.P)+(scG?30:18),&quot;#b0620c&quot;,&quot;center&quot;,11);
+  if(s.varco>0&amp;&amp;!scG)cvLabelQ(&quot;varco &quot;+cmv(s.varco)+&quot; cm&quot;,X(s.varcoX+s.varco/2),Y(s.P)+18,&quot;#b0620c&quot;,&quot;center&quot;,11);
   cvLabelQ(&quot;PIANTA&quot;,X(0),Y(0)-14,&quot;#8fa3c8&quot;,&quot;left&quot;,12);
   if(UPG.quote){try{drawQuotaCv(ctx,X(0),Y(s.P)+(scG?scSvil*scP+22:10),X(s.L),Y(s.P)+(scG?scSvil*scP+22:10),cmU(s.L),12);drawQuotaCv(ctx,X(s.L),Y(s.P),X(s.L),Y(0),cmU(s.P),14);}catch(e){}}
   // ── VISTA FRONTALE (destra): y = 0 in cima al parapetto, terra = hPar + H ──
@@ -6626,8 +6631,6 @@ function disegnaSoppalco(p,cvs,ctx,leg){
       ctx.moveTo(x1,FY(yy));ctx.lineTo(x2,FY(yy));
     }
     ctx.stroke();ctx.restore();
-    const rl=Object.assign({sx:false,dx:true},(p.sopScala||{}).ring||{});
-    if(rl.sx||rl.dx)cvLabelQ(&quot;ringhiera scala: &quot;+[rl.sx?&quot;sx&quot;:&quot;&quot;,rl.dx?&quot;dx&quot;:&quot;&quot;].filter(Boolean).join(&quot; + &quot;),FX(scX0+scLarg/2),FY(yG)+30,&quot;#b0620c&quot;,&quot;center&quot;,11);
   }
   cvLabelQ(&quot;VISTA FRONTALE&quot;,FX(0),FY(0)-14,&quot;#8fa3c8&quot;,&quot;left&quot;,12);
   if(UPG.quote){try{
@@ -6645,7 +6648,40 @@ function disegnaSoppalco(p,cvs,ctx,leg){
     addL(&quot;#55d39b&quot;,&quot;Travetti: &quot;+(M.travetti?esc(M.travetti.profilo):&quot;—&quot;)+&quot; × &quot;+s.nTrav+(s.travVerso==='profondita'?&quot; (profondità)&quot;:&quot; (larghezza)&quot;));
     if(s.tratti.length)addL(&quot;#b0620c&quot;,&quot;Parapetto: &quot;+[...new Set(s.tratti.map(t=>t.lato))].join(&quot;, &quot;));
     if(scG)addL(&quot;#9060e0&quot;,&quot;Scala: &quot;+scG.n+&quot; gradini &quot;+cmv(scG.alzata)+&quot;×&quot;+cmv(scG.pedata)+&quot; cm, larga &quot;+cmv(scG.W*1000)+&quot; cm&quot;);
+    const rlS=Object.assign({sx:false,dx:true},(p.sopScala||{}).ring||{});
+    if(scG&amp;&amp;(rlS.sx||rlS.dx))addL(&quot;#b0620c&quot;,&quot;Ringhiera scala: &quot;+[rlS.sx?&quot;sx&quot;:&quot;&quot;,rlS.dx?&quot;dx&quot;:&quot;&quot;].filter(Boolean).join(&quot; + &quot;));
   }
+}
+// Scala del soppalco vista di fianco, come nella scheda 🪜 Scala (con la ringhiera nello stile del parapetto)
+function scalaSoppalcoVista(p){
+  const sc=scalaSoppalcoPezzo(p);if(!sc)return null;
+  const S=p.sopScala||{},M=p.strMats||{},rl=Object.assign({sx:false,dx:true},S.ring||{});
+  sc.scalaRing={sx:!!rl.sx,dx:!!rl.dx,h:numOk(S.ringH,numOk(p.sopParH,100)),passo:numOk(p.sopParPasso,100),nCorr:soppCalc(p).nCorr||0};
+  sc.strMats={ringMont:M.parMont,ringCorrimano:M.parCorrimano,ringBase:M.parBase,ringCorrenti:M.parCorrenti};
+  sc.elemList=p.elemList||[];sc.traverse=p.traverse||[];
+  return sc;
+}
+function apriDisegnoScalaSopp(id){
+  const p=pezzi.find(x=>x.id===id),sc=p&amp;&amp;scalaSoppalcoVista(p);
+  if(!sc){alert(&quot;Attiva la scala e scrivi l'altezza del piano.&quot;);return;}
+  let ov=document.getElementById('scala-sopp-ov');if(ov)ov.remove();
+  const sv=new SvgCanvas(680,440),leg=document.createElement('div');
+  _disegnaSu(sc,sv,leg);
+  const g=scalaCalc(sc),c=g.montaggio==='L'?scalaCoscialeL(sc,g):null;
+  ov=document.createElement('div');ov.id='scala-sopp-ov';
+  ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(4,8,16,.92);overflow:auto;padding:12px';
+  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`<div style=&quot;max-width:900px;margin:0 auto;background:#0d1422;border:1.5px solid #9060e0;border-radius:12px;padding:10px&quot;>
+    <div style=&quot;display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px&quot;>
+      <b style=&quot;color:#9060e0;font-size:13px&quot;>🪜 ${esc(sc.nome)} — vista di fianco</b>
+      <button class=&quot;btn&quot; style=&quot;border-color:#9060e0;color:#9060e0;flex-shrink:0&quot; onclick=&quot;document.getElementById('scala-sopp-ov').remove()&quot;>✕ Chiudi</button>
+    </div>
+    <div class=&quot;tavola-dis&quot;>${sv.toSVG()}</div>
+    <div style=&quot;display:flex;flex-wrap:wrap;gap:9px;margin-top:8px;justify-content:center;font-size:12px;color:#8a96b0&quot;>${leg.innerHTML}</div>
+    ${c&amp;&amp;c.staffe[0]?`<div style=&quot;margin-top:8px&quot;>${_rigaInfo(&quot;Tagli cosciale&quot;,&quot;piede sega &quot;+(90-c.dg).toFixed(1)+&quot;° · testa &quot;+(c.modo==='verticale'?&quot;verticale sega &quot;+c.dg.toFixed(1)+&quot;°&quot;:&quot;orizzontale sega &quot;+(90-c.dg).toFixed(1)+&quot;°&quot;)+&quot; · barra &quot;+cmU(c.lTaglio))}
+      ${_rigaInfo(&quot;1ª L dalla punta a terra&quot;,&quot;X &quot;+cmU(c.staffe[0].X)+&quot; · Y &quot;+cmU(c.staffe[0].Y)+&quot; · poi ogni &quot;+cmU(c.I))}</div>`:&quot;&quot;}
+  </div>`;
+  document.body.appendChild(ov);
 }
 // Disegna una ringhiera virtuale (parapetto o ringhiera di scala) dentro un'altra vista.
 // xMap porta la x della ringhiera (mm, dal suo inizio) nel disegno; FYv la y (0 = sopra la ringhiera).
