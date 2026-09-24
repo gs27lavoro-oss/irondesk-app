@@ -2792,13 +2792,33 @@ function ocrTentativi(){
  const l=[];
  if(OCRBASE){
    const b=new URL(OCRBASE,location.href).href;   // assoluto: dentro il worker i percorsi relativi si perdono
-   l.push({nome:"lettore dell"+String.fromCharCode(39)+"app",
+   // 1) dizionario compresso  2) dizionario già aperto (se il server lo scompatta da solo il .gz manda in tilt il lettore)
+   // 3) motore senza SIMD, per i telefoni che non lo reggono
+   l.push({nome:"lettore dell"+String.fromCharCode(39)+"app",base:b,dizionario:b+'ita.traineddata.gz',
      opt:{workerPath:b+'worker.min.js',corePath:b+'tesseract-core-simd-lstm.wasm.js',langPath:b,gzip:true,cacheMethod:'none'}});
-   l.push({nome:'lettore compatibile (senza SIMD)',
-     opt:{workerPath:b+'worker.min.js',corePath:b+'tesseract-core-lstm.wasm.js',langPath:b,gzip:true,cacheMethod:'none'}});
+   l.push({nome:'lettore con dizionario non compresso',base:b,dizionario:b+'ita.traineddata',
+     opt:{workerPath:b+'worker.min.js',corePath:b+'tesseract-core-simd-lstm.wasm.js',langPath:b,gzip:false,cacheMethod:'none'}});
+   l.push({nome:'lettore compatibile (senza SIMD)',base:b,dizionario:b+'ita.traineddata',
+     opt:{workerPath:b+'worker.min.js',corePath:b+'tesseract-core-lstm.wasm.js',langPath:b,gzip:false,cacheMethod:'none'}});
  }
- l.push({nome:'lettore online',opt:{langPath:'https://tessdata.projectnaptha.com/4.0.0_fast',gzip:true}});
+ l.push({nome:'lettore online',dizionario:'https://tessdata.projectnaptha.com/4.0.0_fast/ita.traineddata.gz',
+   opt:{langPath:'https://tessdata.projectnaptha.com/4.0.0_fast',gzip:true}});
  return l;
+}
+/* Il dizionario lo scarico io, così vedo i MB che arrivano e mi accorgo subito
+   se il file non c'è o la rete è ferma (prima restava tutto appeso in silenzio). */
+async function scaldaDizionario(url,onProg){
+ const r=await conTempo(fetch(url,{cache:'force-cache'}),30000,'dizionario non raggiungibile');
+ if(!r.ok) throw new Error('dizionario non disponibile (errore '+r.status+')');
+ const tot=+(r.headers.get('content-length')||0);
+ if(!r.body||!r.body.getReader){ await conTempo(r.arrayBuffer(),60000,'dizionario troppo lento'); return; }
+ const rd=r.body.getReader(); let letti=0;
+ for(;;){
+   const p=await conTempo(rd.read(),30000,'dizionario troppo lento');
+   if(p.done)break;
+   letti+=p.value.length;
+   if(onProg)onProg(tot?Math.round(letti*100/tot):0,'scarico il dizionario italiano');
+ }
 }
 async function ocrUnTentativo(cv,cfg,onProg,ms){
  const opt=Object.assign({},cfg.opt);
@@ -2817,7 +2837,8 @@ async function ocrFoto(file,onProg){
  for(let i=0;i<cfgs.length;i++){
    try{
      if(onProg)onProg(0,'avvio il '+cfgs[i].nome);
-     return await ocrUnTentativo(cv,cfgs[i],onProg,(i<cfgs.length-1)?60000:150000);
+     if(cfgs[i].dizionario) await scaldaDizionario(cfgs[i].dizionario,onProg);
+     return await ocrUnTentativo(cv,cfgs[i],onProg,(i<cfgs.length-1)?45000:120000);
    }catch(e){ ultimo=e; }
  }
  throw ultimo||new Error('lettura non riuscita');
