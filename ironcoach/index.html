@@ -2792,12 +2792,12 @@ function ocrTentativi(){
  const l=[];
  if(OCRBASE){
    const b=new URL(OCRBASE,location.href).href;   // assoluto: dentro il worker i percorsi relativi si perdono
-   // 1) dizionario compresso  2) dizionario già aperto (se il server lo scompatta da solo il .gz manda in tilt il lettore)
-   // 3) motore senza SIMD, per i telefoni che non lo reggono
-   l.push({nome:"lettore dell"+String.fromCharCode(39)+"app",base:b,dizionario:b+'ita.traineddata.gz',
-     opt:{workerPath:b+'worker.min.js',corePath:b+'tesseract-core-simd-lstm.wasm.js',langPath:b,gzip:true,cacheMethod:'none'}});
-   l.push({nome:'lettore con dizionario non compresso',base:b,dizionario:b+'ita.traineddata',
+   // Ordine: dizionario già aperto (il .gz, se il server lo scompatta da solo, manda in tilt il lettore),
+   // poi il compresso per le vecchie installazioni, poi il motore senza SIMD per i telefoni che non lo reggono.
+   l.push({nome:"lettore dell"+String.fromCharCode(39)+"app",base:b,dizionario:b+'ita.traineddata',
      opt:{workerPath:b+'worker.min.js',corePath:b+'tesseract-core-simd-lstm.wasm.js',langPath:b,gzip:false,cacheMethod:'none'}});
+   l.push({nome:'lettore con dizionario compresso',base:b,dizionario:b+'ita.traineddata.gz',
+     opt:{workerPath:b+'worker.min.js',corePath:b+'tesseract-core-simd-lstm.wasm.js',langPath:b,gzip:true,cacheMethod:'none'}});
    l.push({nome:'lettore compatibile (senza SIMD)',base:b,dizionario:b+'ita.traineddata',
      opt:{workerPath:b+'worker.min.js',corePath:b+'tesseract-core-lstm.wasm.js',langPath:b,gzip:false,cacheMethod:'none'}});
  }
