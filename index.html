@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.19.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.20.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.19.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.20.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -3539,6 +3539,8 @@ function migraCampiPezzo(p){
     if(p.scalaPedataPiena===undefined)p.scalaPedataPiena=false;
     if(p.scalaLamSp===undefined)p.scalaLamSp=3;
     if(p.scalaLamTipo===undefined)p.scalaLamTipo='mandorlata';
+    if(p.scalaMontaggio===undefined)p.scalaMontaggio='sopra';
+    if(p.scalaTaglioSup===undefined)p.scalaTaglioSup='verticale';
     if(p.scalaLamRibordo===undefined)p.scalaLamRibordo=0;
     if(!p.scalaMats||typeof p.scalaMats!=='object')p.scalaMats={correnti:null,gradini:null,alzate:null,mancorrente:null,reggini:null};
   }
@@ -4550,16 +4552,41 @@ function disegnaScala(p,cvs,ctx,leg){
   const padL=_cvMuto?16:64,padR=_cvMuto?16:86,padT=_cvMuto?16:40,padB=_cvMuto?16:52;
   const _ringOn=!!(p.scalaRing&amp;&amp;(p.scalaRing.sx||p.scalaRing.dx));
   const conManc=!!(p.scalaHaMancorrente&amp;&amp;sm.mancorrente), Hfit=Hmm*(conManc?1.14:1)+(_ringOn?Math.max(0,numOk((p.scalaRing||{}).h,100)*10):0);
-  const s=Math.min((cW-padL-padR)/Lmm,(cH-padT-padB)/Hfit);
-  const ox=padL+(cW-padL-padR-Lmm*s)/2, base=cH-padB-(cH-padT-padB-Hfit*s)/2;
+  const cosL=sc.montaggio==='L'?scalaCoscialeL(p,sc):null;   // cosciale con staffe a L interne
+  const xMin=cosL&amp;&amp;sm.correnti?Math.min(0,...cosL.poly.map(v=>v[0])):0, xMax=cosL&amp;&amp;sm.correnti?Math.max(Lmm,...cosL.poly.map(v=>v[0])):Lmm;
+  const s=Math.min((cW-padL-padR)/(xMax-xMin),(cH-padT-padB)/Hfit);
+  const ox=padL+(cW-padL-padR-(xMax-xMin)*s)/2-xMin*s, base=cH-padB-(cH-padT-padB-Hfit*s)/2;
   const X=x=>ox+x*s, Y=y=>base-y*s;
   const tanA=Hmm/Lmm, cosA=Lmm/Math.hypot(Lmm,Hmm);
   // pavimento e piano d'arrivo
   ctx.strokeStyle=CVC(&quot;pav&quot;);ctx.lineWidth=2;
   ctx.beginPath();ctx.moveTo(X(-Lmm*0.06),Y(0));ctx.lineTo(X(Lmm*0.35),Y(0));ctx.stroke();
   ctx.beginPath();ctx.moveTo(X(Lmm),Y(Hmm));ctx.lineTo(X(Lmm)+48,Y(Hmm));ctx.stroke();
+  if(cosL){
+    // cosciale tagliato (piede orizzontale, testa verticale/orizzontale) visto dalla faccia interna
+    if(cosL.modo==='verticale'){ctx.strokeStyle=CVC(&quot;pav&quot;);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(X(Lmm),Y(Hmm));ctx.lineTo(X(Lmm),Y(Hmm)+Math.max(30,Hmm*0.08*s));ctx.stroke();}
+    if(sm.correnti){
+      ctx.fillStyle=cvTec()?CV_TEC.profilo:&quot;rgb(120,85,190)&quot;;ctx.beginPath();
+      cosL.poly.forEach((v,k)=>k?ctx.lineTo(X(v[0]),Y(v[1])):ctx.moveTo(X(v[0]),Y(v[1])));
+      ctx.closePath();ctx.fill();ctx.strokeStyle=CVC(&quot;contorno&quot;);ctx.lineWidth=1;ctx.stroke();
+    } else {
+      ctx.strokeStyle=cvTec()?CV_TEC.tenue:&quot;#9060e0&quot;;ctx.setLineDash([6,4]);ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(X(0),Y(a*0.5));ctx.lineTo(X(Lmm),Y(Hmm+a*0.5));ctx.stroke();ctx.setLineDash([]);
+    }
+    // staffe a L (aletta verticale saldata sul cosciale) e gradini appoggiati sopra
+    ctx.fillStyle=cvTec()?&quot;#2a2c30&quot;:&quot;#55d39b&quot;;
+    cosL.staffe.forEach(st=>ctx.fillRect(X(st.x0),Y(st.yTop),Math.max(cosL.Lr*s,1.5),Math.max(cosL.la*s,1.5)));
+    const sgD=Math.max(cosL.sg,6),colG=sc.gradTipo==='legno'?&quot;#b07a3a&quot;:&quot;#f08a3c&quot;;
+    ctx.fillStyle=cvTec()?&quot;rgba(42,44,48,.18)&quot;:colG+&quot;99&quot;;ctx.strokeStyle=cvTec()?&quot;#2a2c30&quot;:colG;ctx.lineWidth=1.2;
+    for(let i=1;i<=n;i++){ctx.fillRect(X((i-1)*pd),Y(i*a),pd*s,sgD*s);ctx.strokeRect(X((i-1)*pd),Y(i*a),pd*s,sgD*s);}
+    if(UPG.quote&amp;&amp;cosL.staffe[0]&amp;&amp;sm.correnti){
+      const s1=cosL.staffe[0];
+      try{drawQuotaCv(ctx,X(cosL.xT),Y(0)+40,X(s1.x0),Y(0)+40,&quot;1ª L: X &quot;+cmU(s1.X)+&quot; · Y &quot;+cmU(s1.Y),0);}catch(e){}
+      cvLabelQ(&quot;α &quot;+cosL.dg.toFixed(1)+&quot;°&quot;,X(cosL.xT)+30,Y(0)-8,&quot;#9060e0&quot;,&quot;left&quot;,12);
+      cvLabelQ(&quot;cosciale &quot;+cmU(cosL.lTaglio)+&quot; · L ogni &quot;+cmU(cosL.I),X(Lmm*0.55),Y(Hmm*0.55)+Math.max(40,cosL.hv*s)+8,&quot;#b090f0&quot;,&quot;left&quot;,12);
+    }
+  } else if(sm.correnti){
   // cosciale: banda sotto la linea degli spigoli interni, tagliata a pavimento e in verticale in cima
-  if(sm.correnti){
     const hC=Math.max(eLarg(sm.correnti),10), dv=hC/cosA, x0=Math.min(Lmm,dv/tanA);
     const g=ctx.createLinearGradient(X(0),Y(0),X(0)+Math.sin(Math.atan(tanA))*hC*s,Y(0)+cosA*hC*s);
     g.addColorStop(0,&quot;rgb(150,110,230)&quot;);g.addColorStop(1,&quot;rgb(80,55,140)&quot;);
@@ -4571,11 +4598,13 @@ function disegnaScala(p,cvs,ctx,leg){
     ctx.beginPath();ctx.moveTo(X(0),Y(0));ctx.lineTo(X(Lmm),Y(Hmm));ctx.stroke();ctx.setLineDash([]);
   }
   // profilo dei gradini: alzata, pedata, alzata, pedata…
+  if(!cosL){
   ctx.strokeStyle=CVC(&quot;scala&quot;);ctx.lineWidth=3;ctx.lineJoin=&quot;round&quot;;ctx.beginPath();
   ctx.moveTo(X(0),Y(0));
   for(let i=0;i<n;i++){ctx.lineTo(X(i*pd),Y((i+1)*a));ctx.lineTo(X((i+1)*pd),Y((i+1)*a));}
   ctx.stroke();
-  if(sc.gradTipo==='lamiera'){ // lamiera piegata: pedata + alzata in un pezzo (tratteggio sottile sotto)
+  }
+  if(!cosL&amp;&amp;sc.gradTipo==='lamiera'){ // lamiera piegata: pedata + alzata in un pezzo (tratteggio sottile sotto)
     ctx.strokeStyle=cvTec()?&quot;rgba(42,44,48,.4)&quot;:&quot;rgba(232,160,32,.45)&quot;;ctx.lineWidth=1;ctx.beginPath();
     for(let i=0;i<n;i++){ctx.moveTo(X(i*pd)+3,Y(i*a)-2);ctx.lineTo(X(i*pd)+3,Y((i+1)*a)+3);ctx.lineTo(X((i+1)*pd),Y((i+1)*a)+3);}
     ctx.stroke();
@@ -4642,7 +4671,8 @@ function disegnaScala(p,cvs,ctx,leg){
   cvLabelFlush(ctx);
   if(leg){
     leg.innerHTML=`<span><span style=&quot;color:#f08a3c&quot;>■</span> ${n} gradini da ${cmv(a)} × ${cmv(pd)} cm</span>`+
-      `<span><span style=&quot;color:#b090f0&quot;>■</span> ${sc.nCorr} coscial${sc.nCorr>1?&quot;i&quot;:&quot;e&quot;} ${sm.correnti?esc(sm.correnti.profilo)+&quot; · &quot;+cmv(sc.D*1000)+&quot; cm&quot;:&quot;—&quot;}</span>`+
+      `<span><span style=&quot;color:#b090f0&quot;>■</span> ${sc.nCorr} coscial${sc.nCorr>1?&quot;i&quot;:&quot;e&quot;} ${sm.correnti?esc(sm.correnti.profilo)+&quot; · &quot;+cmv(cosL?cosL.lTaglio:sc.D*1000)+&quot; cm&quot;:&quot;—&quot;}</span>`+
+      (cosL?`<span><span style=&quot;color:#55d39b&quot;>■</span> ${cosL.nLtot} staffe a L${sm.reggini?&quot; &quot;+esc(sm.reggini.profilo):&quot;&quot;} · interasse ${cmv(cosL.I)} cm</span>`:&quot;&quot;)+
       `<span><span style=&quot;color:#64a8ff&quot;>■</span> larghezza ${cmv(sc.W*1000)} cm</span>`+
       (p.scalaHaMancorrente&amp;&amp;sm.mancorrente?`<span><span style=&quot;color:#64a8ff&quot;>■</span> mancorrente ${esc(sm.mancorrente.profilo)}</span>`:&quot;&quot;)+
       (_ringOn?`<span><span style=&quot;color:#b0620c&quot;>■</span> Ringhiera ${[(p.scalaRing.sx?&quot;sx&quot;:&quot;&quot;),(p.scalaRing.dx?&quot;dx&quot;:&quot;&quot;)].filter(Boolean).join(&quot; + &quot;)} · h ${numOk(p.scalaRing.h,100)} cm</span>`:&quot;&quot;);
@@ -4687,6 +4717,9 @@ function buildBodyScala(p){
     const ribPx=Math.min(30,(parseFloat(p.scalaLamRibordo)||0)*pxMm);
     gradinoDis=`<path d=&quot;M ${kxL+3} ${kyB} L ${kxL+3} ${kyT-3} L ${kxR} ${kyT-3}&quot; fill=&quot;none&quot; stroke=&quot;#f08a3c&quot; stroke-width=&quot;6&quot; stroke-linejoin=&quot;round&quot; stroke-linecap=&quot;round&quot;/>
       ${ribPx>0?`<line x1=&quot;${kxR}&quot; y1=&quot;${kyT-3}&quot; x2=&quot;${kxR}&quot; y2=&quot;${(kyT-3+ribPx).toFixed(1)}&quot; stroke=&quot;#f08a3c&quot; stroke-width=&quot;6&quot; stroke-linecap=&quot;round&quot;/>`:&quot;&quot;}`;
+  } else if(gradTipo==='legno'){
+    const hPx=Math.max(4,Math.min(34,numOk(p.scalaSpessGrad,0)*pxMm));
+    gradinoDis=`<rect x=&quot;${kxL}&quot; y=&quot;${(kyT-hPx).toFixed(1)}&quot; width=&quot;${kxR-kxL}&quot; height=&quot;${hPx.toFixed(1)}&quot; fill=&quot;#b07a3a55&quot; stroke=&quot;#b07a3a&quot; stroke-width=&quot;1.5&quot; rx=&quot;2&quot;/>`;
   } else if(matGrad){
     const wPx=Math.max(8,Math.min(kxR-kxL,pedataProf*pxMm)),hPx=Math.max(8,Math.min(34,spessGrad*pxMm));
     const nDis=p.scalaPedataPiena?Math.min(nTubi,14):1;
@@ -4759,11 +4792,22 @@ function buildBodyScala(p){
         <option value=&quot;3&quot;${nCorr===3?&quot; selected&quot;:&quot;&quot;}>3 — laterali + centro</option>
       </select>`)}
     ${latoBtn(p.id,`sca-${p.id}-correnti`,&quot;Cosciali (×&quot;+nCorr+&quot;)&quot;,sm.correnti,&quot;#9060e0&quot;)}
+    ${riga(&quot;Montaggio gradini&quot;,[['sopra','▲ Sopra il cosciale'],['L','⌐ Su staffe a L interne']].map(o=>`<button onclick=&quot;setScalaProp(${p.id},'scalaMontaggio','${o[0]}')&quot;
+        style=&quot;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:10px;font-weight:700;border:1.5px solid ${sc.montaggio===o[0]?&quot;#55d39b&quot;:&quot;#172438&quot;};background:${sc.montaggio===o[0]?&quot;#061208&quot;:&quot;#0d1422&quot;};color:${sc.montaggio===o[0]?&quot;#55d39b&quot;:&quot;#91a2bb&quot;}&quot;>${o[1]}</button>`).join(&quot;&quot;))}
     ${riga(&quot;Tipo gradino&quot;,`<button onclick=&quot;setScalaProp(${p.id},'scalaGradTipo','tubo')&quot;
         style=&quot;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:10px;font-weight:700;border:1.5px solid ${gradTipo==='tubo'?&quot;#f08a3c&quot;:&quot;#172438&quot;};background:${gradTipo==='tubo'?&quot;#1a1205&quot;:&quot;#0d1422&quot;};color:${gradTipo==='tubo'?&quot;#f08a3c&quot;:&quot;#91a2bb&quot;}&quot;>▬ Tubolari</button>
       <button onclick=&quot;setScalaProp(${p.id},'scalaGradTipo','lamiera')&quot;
-        style=&quot;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:10px;font-weight:700;border:1.5px solid ${gradTipo==='lamiera'?&quot;#f08a3c&quot;:&quot;#172438&quot;};background:${gradTipo==='lamiera'?&quot;#1a1205&quot;:&quot;#0d1422&quot;};color:${gradTipo==='lamiera'?&quot;#f08a3c&quot;:&quot;#91a2bb&quot;}&quot;>◣ Lamiera piegata</button>`)}
-    ${gradTipo==='tubo'?`
+        style=&quot;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:10px;font-weight:700;border:1.5px solid ${gradTipo==='lamiera'?&quot;#f08a3c&quot;:&quot;#172438&quot;};background:${gradTipo==='lamiera'?&quot;#1a1205&quot;:&quot;#0d1422&quot;};color:${gradTipo==='lamiera'?&quot;#f08a3c&quot;:&quot;#91a2bb&quot;}&quot;>◣ Lamiera piegata</button>
+      <button onclick=&quot;setScalaProp(${p.id},'scalaGradTipo','legno')&quot;
+        style=&quot;padding:5px 11px;border-radius:8px;cursor:pointer;font-size:10px;font-weight:700;border:1.5px solid ${gradTipo==='legno'?&quot;#f08a3c&quot;:&quot;#172438&quot;};background:${gradTipo==='legno'?&quot;#1a1205&quot;:&quot;#0d1422&quot;};color:${gradTipo==='legno'?&quot;#f08a3c&quot;:&quot;#91a2bb&quot;}&quot;>🪵 Legno / altro</button>`)}
+    ${gradTipo==='legno'?`<div style=&quot;background:#0b1020;border:1px dashed #f08a3c60;border-radius:8px;padding:8px;margin-bottom:5px&quot;>
+      <div class=&quot;g2&quot;>
+        <div><label class=&quot;fl&quot;>Spessore gradino (mm)</label>
+          <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${numOk(p.scalaSpessGrad,'')}&quot; min=&quot;0&quot; step=&quot;1&quot; inputmode=&quot;decimal&quot; style=&quot;border-color:#f08a3c&quot;
+            onchange=&quot;setScalaProp(${p.id},'scalaSpessGrad',Math.max(0,parseFloat(this.value)||0))&quot;></div>
+        <div style=&quot;font-size:11px;color:#aab4d0;line-height:1.6;align-self:end&quot;>${n*nPz} gradini da ${cmv(W*1000)} × ${cmv(sc.pedata)} cm (min.) · forniti a parte, fuori distinta ferro</div>
+      </div>
+    </div>`:gradTipo==='tubo'?`
       ${latoBtn(p.id,`sca-${p.id}-gradini`,&quot;Gradini (×&quot;+(p.scalaPedataPiena?n*nTubi:n)+&quot;)&quot;,sm.gradini,&quot;#f08a3c&quot;)}
       ${riga(&quot;Pedata piena&quot;,toggle('scalaPedataPiena',!!p.scalaPedataPiena,&quot;✓ &quot;+nTubi+&quot; tubi per gradino&quot;,&quot;1 tubo per gradino&quot;)+`<span style=&quot;font-size:10px;color:#91a2bb&quot;>affianca i tubolari fino a coprire la pedata</span>`)}
       ${matGrad?`<div style=&quot;font-size:11px;padding:0 8px 6px;color:${coperta?&quot;#55d39b&quot;:&quot;#e0a050&quot;}&quot;>${coperta?&quot;✓ Pedata coperta&quot;:&quot;⚠️ Il profilo copre &quot;+pedataProf+&quot; mm su &quot;+Math.round(sc.pedata)+&quot; mm di pedata: attiva Pedata piena o usa la lamiera&quot;}${facceGrad?` · <a href=&quot;#&quot; onclick=&quot;ruotaGradinoScala(${p.id});return false&quot; style=&quot;color:#f08a3c&quot;>⟳ ruota profilo (pedata ${spessGrad} mm)</a>`:&quot;&quot;}</div>`:&quot;&quot;}
@@ -4789,7 +4833,10 @@ function buildBodyScala(p){
         <div style=&quot;font-size:11px;color:#aab4d0;line-height:1.6;align-self:end&quot;>Sviluppo ${Math.round(sc.lamSviluppo)} × ${Math.round(W*1000)} mm · ${sc.lamPesoGrad.toFixed(2)} kg/gradino</div>
       </div>
     </div>`}
-    ${riga(&quot;Reggini&quot;,toggle('scalaHaReggini',!!p.scalaHaReggini,&quot;✓ Inclusi&quot;,&quot;Non inclusi&quot;)+(p.scalaHaReggini?`<span style=&quot;font-size:10px;color:#91a2bb&quot;>lunghezza (cm)</span>
+    ${sc.montaggio==='L'?riga(&quot;Staffe a L&quot;,`<span style=&quot;font-size:10px;color:#91a2bb&quot;>lunghezza (cm)</span>
+        <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${cmv(rL*1000)}&quot; step=&quot;1&quot; min=&quot;1&quot; inputmode=&quot;decimal&quot; style=&quot;border-color:#55d39b;width:64px&quot;
+          onchange=&quot;setScalaProp(${p.id},'scalaRegginoL',(parseFloat(this.value)>0?parseFloat(this.value)/100:${rL}))&quot;>
+        ${latoBtn(p.id,`sca-${p.id}-reggini`,&quot;Angolare L (×&quot;+scalaCoscialeL(p,sc).nLtot+&quot;)&quot;,sm.reggini,&quot;#55d39b&quot;)}`):riga(&quot;Reggini&quot;,toggle('scalaHaReggini',!!p.scalaHaReggini,&quot;✓ Inclusi&quot;,&quot;Non inclusi&quot;)+(p.scalaHaReggini?`<span style=&quot;font-size:10px;color:#91a2bb&quot;>lunghezza (cm)</span>
         <input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${cmv(rL*1000)}&quot; step=&quot;1&quot; min=&quot;1&quot; inputmode=&quot;decimal&quot; style=&quot;border-color:#55d39b;width:64px&quot;
           onchange=&quot;setScalaProp(${p.id},'scalaRegginoL',(parseFloat(this.value)>0?parseFloat(this.value)/100:${rL}))&quot;>
         ${latoBtn(p.id,`sca-${p.id}-reggini`,&quot;Reggini (×&quot;+nRegg+&quot;)&quot;,sm.reggini,&quot;#55d39b&quot;)}`:&quot;&quot;))}
@@ -4800,6 +4847,7 @@ function buildBodyScala(p){
         ${latoBtn(p.id,`sca-${p.id}-mancorrente`,&quot;Mancorrente (×&quot;+(parseInt(p.scalaNManc)||2)+&quot;)&quot;,sm.mancorrente,&quot;#64a8ff&quot;)}`:&quot;&quot;))}
   </div>
 
+  ${sc.montaggio==='L'?htmlTracciaturaScala(p,(campo,espr)=>`setScalaProp(${p.id},'${campo}',${espr})`,{taglioSup:'scalaTaglioSup',taglioQ:'scalaTaglioSupQ',cosSopra:'scalaCosSopra'}):&quot;&quot;}
   <details class=&quot;dett&quot;${(!coperta&amp;&amp;gradTipo==='tubo'&amp;&amp;matGrad)?&quot; open&quot;:&quot;&quot;}>
     <summary>🦶 Sezione del gradino</summary>
     <div class=&quot;dett-body&quot;>${svgStep}</div>
@@ -4861,6 +4909,7 @@ function buildBodyScala(p){
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#64a8ff&quot;>
     <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>📋 Distinta di taglio</div>
     ${buildDistinta(p)}
+    ${gradTipo==='legno'?`<div class=&quot;costi-riga&quot; style=&quot;margin-top:6px&quot;><span>Gradini in legno${numOk(p.scalaSpessGrad,0)>0?&quot; sp.&quot;+numOk(p.scalaSpessGrad,0)+&quot; mm&quot;:&quot;&quot;} — ${n*nPz} pz da ${cmv(W*1000)} × ${cmv(sc.pedata)} cm (min.)</span><b>a parte</b></div>`:&quot;&quot;}
     ${gradTipo==='lamiera'?`<div class=&quot;costi-riga&quot; style=&quot;margin-top:6px&quot;><span>Gradini in lamiera ${esc(p.scalaLamTipo||'mandorlata')} sp.${sc.lamSp} — ${n*nPz} pz da ${Math.round(sc.lamSviluppo)}×${Math.round(W*1000)} mm · ${sc.lamPeso.toFixed(1)} kg</span><b>€ ${fmtP(sc.lamCosto)}</b></div>`:&quot;&quot;}
   </div>`;
 }
@@ -5188,20 +5237,34 @@ function buildBodySoppalco(p){
     </div>
     <div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Gradini</label>
       <div style=&quot;display:flex;gap:6px;flex-wrap:wrap&quot;>
-        <button onclick=&quot;setSopScala(${p.id},'gradTipo','tubo')&quot; style=&quot;flex:1;padding:7px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1.5px solid ${scG.gradTipo!=='lamiera'?'#f08a3c':'#172438'};color:${scG.gradTipo!=='lamiera'?'#f08a3c':'#91a2bb'};background:${scG.gradTipo!=='lamiera'?'#1a1205':'transparent'}&quot;>Tubolari</button>
+        <button onclick=&quot;setSopScala(${p.id},'gradTipo','tubo')&quot; style=&quot;flex:1;padding:7px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1.5px solid ${scG.gradTipo==='tubo'?'#f08a3c':'#172438'};color:${scG.gradTipo==='tubo'?'#f08a3c':'#91a2bb'};background:${scG.gradTipo==='tubo'?'#1a1205':'transparent'}&quot;>Tubolari</button>
         <button onclick=&quot;setSopScala(${p.id},'gradTipo','lamiera')&quot; style=&quot;flex:1;padding:7px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1.5px solid ${scG.gradTipo==='lamiera'?'#f08a3c':'#172438'};color:${scG.gradTipo==='lamiera'?'#f08a3c':'#91a2bb'};background:${scG.gradTipo==='lamiera'?'#1a1205':'transparent'}&quot;>Lamiera piegata</button>
+        <button onclick=&quot;setSopScala(${p.id},'gradTipo','legno')&quot; style=&quot;flex:1;padding:7px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1.5px solid ${scG.gradTipo==='legno'?'#f08a3c':'#172438'};color:${scG.gradTipo==='legno'?'#f08a3c':'#91a2bb'};background:${scG.gradTipo==='legno'?'#1a1205':'transparent'}&quot;>Legno / altro</button>
       </div></div>
+    <div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Montaggio gradini</label>
+      <div style=&quot;display:flex;gap:6px;flex-wrap:wrap&quot;>
+        ${[['sopra','Sopra il cosciale'],['L','Su staffe a L interne']].map(o=>`<button onclick=&quot;setSopScala(${p.id},'montaggio','${o[0]}')&quot; style=&quot;flex:1;padding:7px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1.5px solid ${scG.montaggio===o[0]?'#55d39b':'#172438'};color:${scG.montaggio===o[0]?'#55d39b':'#91a2bb'};background:${scG.montaggio===o[0]?'#061208':'transparent'}&quot;>${o[1]}</button>`).join(&quot;&quot;)}
+      </div></div>
+    ${scG.gradTipo==='legno'?`<div class=&quot;g2 mb8&quot;><div><label class=&quot;fl&quot;>Spessore gradino in legno (mm)</label>
+        <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;1&quot; value=&quot;${numOk((p.sopScala||{}).spessGrad,'')}&quot; style=&quot;border-color:#f08a3c&quot;
+          onchange=&quot;setSopScala(${p.id},'spessGrad',Math.max(0,parseFloat(this.value)||0))&quot;></div>
+      <div style=&quot;font-size:11px;color:#aab4d0;align-self:end&quot;>${scG.n*scG.nPz} gradini da ${cmv(scG.W*1000)} × ${cmv(scG.pedata)} cm · forniti a parte</div></div>`:&quot;&quot;}
     ${latoBtn(p.id,`sos-${p.id}-correnti`,&quot;Cosciali&quot;,(p.sopScala.mats||{}).correnti,&quot;#f08a3c&quot;)}
-    ${scG.gradTipo!=='lamiera'?latoBtn(p.id,`sos-${p.id}-gradini`,&quot;Gradini&quot;,(p.sopScala.mats||{}).gradini,&quot;#f08a3c&quot;):&quot;&quot;}
-    ${scG.gradTipo!=='lamiera'&amp;&amp;(p.sopScala||{}).haAlzate?latoBtn(p.id,`sos-${p.id}-alzate`,&quot;Alzate&quot;,(p.sopScala.mats||{}).alzate,&quot;#f08a3c&quot;):&quot;&quot;}
-    ${(p.sopScala||{}).haReggini!==false?latoBtn(p.id,`sos-${p.id}-reggini`,&quot;Reggini&quot;,(p.sopScala.mats||{}).reggini,&quot;#f08a3c&quot;):&quot;&quot;}
+    ${scG.gradTipo==='tubo'?latoBtn(p.id,`sos-${p.id}-gradini`,&quot;Gradini&quot;,(p.sopScala.mats||{}).gradini,&quot;#f08a3c&quot;):&quot;&quot;}
+    ${scG.gradTipo==='tubo'&amp;&amp;(p.sopScala||{}).haAlzate?latoBtn(p.id,`sos-${p.id}-alzate`,&quot;Alzate&quot;,(p.sopScala.mats||{}).alzate,&quot;#f08a3c&quot;):&quot;&quot;}
+    ${scG.montaggio==='L'?`<div class=&quot;g2 mb8&quot;><div><label class=&quot;fl&quot;>Lunghezza staffa a L (cm)</label>
+        <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;1&quot; step=&quot;1&quot; value=&quot;${cmv(numOk((p.sopScala||{}).regginoL,0.10)*1000)}&quot; style=&quot;border-color:#55d39b&quot;
+          onchange=&quot;setSopScala(${p.id},'regginoL',(parseFloat(this.value)>0?parseFloat(this.value)/100:0.10))&quot;></div><div></div></div>
+      ${latoBtn(p.id,`sos-${p.id}-reggini`,&quot;Angolare L (×&quot;+scalaCoscialeL(scPz,scG).nLtot+&quot;)&quot;,(p.sopScala.mats||{}).reggini,&quot;#55d39b&quot;)}`
+      :((p.sopScala||{}).haReggini!==false?latoBtn(p.id,`sos-${p.id}-reggini`,&quot;Reggini&quot;,(p.sopScala.mats||{}).reggini,&quot;#f08a3c&quot;):&quot;&quot;)}
     <div style=&quot;display:flex;gap:14px;flex-wrap:wrap;margin:8px 0&quot;>
       <label style=&quot;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:${(p.sopScala||{}).haAlzate?'#f08a3c':'#8a96b0'}&quot;>
         <input type=&quot;checkbox&quot; ${(p.sopScala||{}).haAlzate?'checked':''} onchange=&quot;setSopScala(${p.id},'haAlzate',this.checked)&quot; style=&quot;width:16px;height:16px&quot;>Alzate chiuse</label>
-      <label style=&quot;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:${(p.sopScala||{}).haReggini!==false?'#f08a3c':'#8a96b0'}&quot;>
-        <input type=&quot;checkbox&quot; ${(p.sopScala||{}).haReggini!==false?'checked':''} onchange=&quot;setSopScala(${p.id},'haReggini',this.checked)&quot; style=&quot;width:16px;height:16px&quot;>Reggini sotto i gradini</label>
+      ${scG.montaggio==='L'?&quot;&quot;:`<label style=&quot;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:${(p.sopScala||{}).haReggini!==false?'#f08a3c':'#8a96b0'}&quot;>
+        <input type=&quot;checkbox&quot; ${(p.sopScala||{}).haReggini!==false?'checked':''} onchange=&quot;setSopScala(${p.id},'haReggini',this.checked)&quot; style=&quot;width:16px;height:16px&quot;>Reggini sotto i gradini</label>`}
     </div>
     ${_rigaInfo(&quot;Alzata × pedata&quot;,cmv(scG.alzata)+&quot; × &quot;+cmv(scG.pedata)+&quot; cm · pendenza &quot;+(Math.atan2(scG.H,scG.L)*180/Math.PI).toFixed(1)+&quot;°&quot;)}
+    ${scG.montaggio==='L'?htmlTracciaturaScala(scPz,(campo,espr)=>`setSopScala(${p.id},'${campo}',${espr})`,{taglioSup:'taglioSup',taglioQ:'taglioSupQ',cosSopra:'cosSopra'}):&quot;&quot;}
     <div style=&quot;border-top:1px solid #2a2008;margin-top:8px;padding-top:8px&quot;>
       <div style=&quot;font-size:12px;font-weight:700;color:#b0620c;margin-bottom:6px&quot;>Ringhiera della scala (stesso stile del parapetto)</div>
       <div style=&quot;display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px&quot;>
@@ -7301,8 +7364,126 @@ function scalaCalc(p){
   const lamPeso=gradTipo==='lamiera'?lamPesoGrad*n*nPz:0;
   const lamArea=gradTipo==='lamiera'?lamAreaGrad*n*nPz:0;
   const lamCosto=lamPeso*numOk(p.lamiera_prezzoKg,UPG.lamPrezzoKg); // il TUO prezzo lamiera (€/kg)
-  return {H,L,W,n,D,alzata,pedata,nCorr,nPz,gradTipo,nTubi,pedataProf,
+  const montaggio=p.scalaMontaggio==='L'?'L':'sopra';
+  return {H,L,W,n,D,alzata,pedata,nCorr,nPz,gradTipo,nTubi,pedataProf,montaggio,
     lamSp,lamRib,lamSviluppo,lamAreaGrad,lamPesoGrad,lamPeso,lamArea,lamCosto};
+}
+
+// ── Cosciale con staffe a L saldate sulla faccia interna (gradini appoggiati sulle L) ──
+// Vista laterale, si sale verso destra: x=0 piede della prima alzata, y=0 pavimento (mm).
+// Gradino i=1..n: piano di calpestio a y=i·a, da x=(i-1)·p a x=i·p; l'ultimo è a filo del piano d'arrivo (fronte a x=P).
+// Cosciale = fascia tra due rette parallele di pendenza m=H/P, alta hv=h/cosα in verticale.
+// Staffa i: aletta orizzontale con il piano a y=i·a−sg, lunga Lr, centrata sulla pedata → tutte uguali, traslate di (p,a).
+function scalaCoscialeL(p,sc){
+  sc=sc||scalaCalc(p);
+  const sm=p.scalaMats||{},av=[];
+  const H=sc.H*1000,P=sc.L*1000,n=sc.n,a=sc.alzata,pd=sc.pedata;
+  const alfa=Math.atan2(H,P),sinA=Math.sin(alfa),cosA=Math.cos(alfa),m=H/P,dg=alfa*180/Math.PI;
+  const mc=sm.correnti,hC=mc?eLarg(mc):0,bC=mc?eProf(mc):0;      // sezione: h nel piano della scala, b spessore
+  if(!mc)av.push(&quot;Scegli il profilo dei cosciali: senza la sezione non si possono calcolare tagli e staffe.&quot;);
+  let sg=0;                                                      // spessore del gradino (mm)
+  if(sc.gradTipo==='lamiera')sg=sc.lamSp;
+  else if(sc.gradTipo==='legno'){sg=numOk(p.scalaSpessGrad,0);if(!(sg>0))av.push(&quot;Scrivi lo spessore del gradino in legno: serve per la quota delle L.&quot;);}
+  else if(sm.gradini)sg=eProf(sm.gradini);
+  else av.push(&quot;Scegli il profilo dei gradini: serve il suo spessore per la quota delle L.&quot;);
+  const mL=sm.reggini,la=mL?eLarg(mL):0,lb=mL?eProf(mL):0;       // aletta verticale (saldata) e orizzontale (appoggio)
+  if(!mL)av.push(&quot;Scegli l'angolare delle staffe a L (es. 40x40x4).&quot;);
+  const Lr=(parseFloat(p.scalaRegginoL)||0.10)*1000;
+  if(Lr>pd+0.5)av.push(`Staffa lunga ${cmU(Lr)}: supera la pedata (${cmU(pd)}).`);
+  const hv=hC/cosA;                                              // altezza verticale della fascia
+  const eAuto=hv/2-sg-la/2-a/2;                                  // L centrata nell'altezza del cosciale
+  const eMan=p.scalaCosSopra, manuale=eMan!==''&amp;&amp;eMan!=null&amp;&amp;isFinite(parseFloat(eMan));
+  const e=manuale?parseFloat(eMan):eAuto;                        // bordo sup. sopra lo spigolo del gradino
+  const cUp=a+e,cLo=cUp-hv;                                      // y = m·x + c (bordo superiore / inferiore)
+  const xT=-cUp/m,xH=-cLo/m;                                     // punta e tallone a pavimento
+  const modo=p.scalaTaglioSup==='orizzontale'?'orizzontale':'verticale';
+  const q=Math.max(0,numOk(p.scalaTaglioSupQ,0));
+  let poly,top={},Ytop=H;
+  if(modo==='verticale'){
+    const yU=H+cUp,yLw=H+cLo;
+    if(yLw>=H)av.push(&quot;Il cosciale sta tutto sopra il piano d'arrivo: abbassalo (bordo sopra il gradino).&quot;);
+    if(yU>H+0.5&amp;&amp;yLw<H){
+      const xA=(H-cUp)/m;
+      poly=[[xT,0],[xA,H],[P,H],[P,yLw],[xH,0]];
+      top={vert:H-yLw,spian:P-xA};
+    } else {poly=[[xT,0],[P,yU],[P,yLw],[xH,0]];top={vert:hv,spian:0};}
+  } else {
+    Ytop=H-q;
+    poly=[[xT,0],[(Ytop-cUp)/m,Ytop],[(Ytop-cLo)/m,Ytop],[xH,0]];
+    top={oriz:hC/sinA};
+  }
+  const lung=(A,B)=>Math.hypot(B[0]-A[0],B[1]-A[1]);
+  const bordoSup=lung(poly[0],poly[1]),bordoInf=lung(poly[poly.length-2],poly[poly.length-1]);
+  const tt=poly.map(v=>v[0]*cosA+v[1]*sinA);
+  const lTaglio=Math.max(...tt)-Math.min(...tt);                // lunghezza della barra lungo l'asse
+  // staffe: riferimento = spigolo anteriore del piano dell'aletta (quello che tocca il naso del gradino)
+  const loc=(x,y)=>({X:x-xT,Y:y,u:(x-xT)*cosA+y*sinA,v:(x-xT)*sinA-y*cosA});
+  const staffe=[];
+  for(let i=1;i<=n;i++){
+    const yTop=i*a-sg,x0=(i-0.5)*pd-Lr/2;
+    if(yTop-la<0||yTop>Ytop+0.01)continue;                       // sotto il pavimento o sopra il taglio in testa
+    staffe.push(Object.assign({i,x0,yTop},loc(x0,yTop)));
+  }
+  if(modo==='orizzontale'&amp;&amp;staffe.length<n)av.push(`${n-staffe.length} gradin${n-staffe.length>1?&quot;i&quot;:&quot;o&quot;} in cima stanno sopra il taglio: vanno fissati al solaio.`);
+  const I=Math.hypot(pd,a);                                      // interasse diagonale costante
+  const s1=staffe[0]||null;
+  const vTop=s1?s1.v:0,vBot=s1?s1.v+Lr*sinA+la*cosA:0;          // profondità sotto il bordo superiore
+  if(mc&amp;&amp;mL&amp;&amp;s1&amp;&amp;(vTop<-0.5||vBot>hC+0.5))
+    av.push(`La staffa non sta nel cosciale (serve ${cmU(Lr*sinA+la*cosA)} di faccia, il profilo ne ha ${cmU(hC)}): accorcia la L o usa un cosciale più alto${manuale?&quot;, o rimetti la L centrata&quot;:&quot;&quot;}.`);
+  const perGrad=sc.nCorr===1?2:2+2*Math.max(0,sc.nCorr-2);       // L per gradino (il centrale le ha sui due lati)
+  return {alfa,dg,sinA,cosA,m,H,P,hC,bC,hv,sg,la,lb,Lr,e,eAuto,manuale,cUp,cLo,xT,xH,modo,q,Ytop,poly,top,
+    bordoSup,bordoInf,lTaglio,D:Math.hypot(H,P),I,staffe,vTop,vBot,perGrad,
+    nLCos:staffe.length,nLtot:staffe.length*perGrad*sc.nPz,
+    tagli:{piede:{col:dg,sega:90-dg,faccia:hC/sinA},
+      testa:modo==='verticale'?{col:90-dg,sega:dg,faccia:top.vert,spian:top.spian}:{col:dg,sega:90-dg,faccia:top.oriz}},
+    ingombro:sc.nCorr>=2?sc.W*1000+2*bC:sc.W*1000,avvisi:av};
+}
+// Riquadro &quot;Tracciatura cosciale&quot; (scheda Scala e scala del soppalco). on(campo,espr) = onchange del chiamante.
+function htmlTracciaturaScala(sp,on,K){
+  const sc=scalaCalc(sp),c=scalaCoscialeL(sp,sc),g1=x=>(Math.round(x*10)/10).toFixed(1)+&quot;°&quot;;
+  const cella=(v,l,col)=>`<div><div style=&quot;color:${col};font-weight:700;font-size:14px&quot;>${v}</div><div style=&quot;color:#91a2bb;font-size:10px&quot;>${l}</div></div>`;
+  const T=c.tagli,s1=c.staffe[0];
+  const avv=c.avvisi.map(a=>`<div style=&quot;margin-top:6px;background:#1a0808;border:1px solid #f06b6b;border-radius:8px;padding:7px 9px;font-size:11px;color:#ff9a9a&quot;>⚠️ ${esc(a)}</div>`).join(&quot;&quot;);
+  return `<div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#55d39b&quot;>
+    <div class=&quot;st&quot; style=&quot;color:#55d39b&quot;>📐 Tracciatura del cosciale (staffe a L interne)</div>
+    <div class=&quot;g3 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Taglio in testa</label>
+        <select class=&quot;fs&quot; style=&quot;border-color:#55d39b&quot; onchange=&quot;${on(K.taglioSup,&quot;this.value&quot;)}&quot;>
+          <option value=&quot;verticale&quot;${c.modo==='verticale'?&quot; selected&quot;:&quot;&quot;}>Verticale (a muro / trave)</option>
+          <option value=&quot;orizzontale&quot;${c.modo==='orizzontale'?&quot; selected&quot;:&quot;&quot;}>Orizzontale (sotto il solaio)</option>
+        </select></div>
+      ${c.modo==='orizzontale'?`<div><label class=&quot;fl&quot;>Taglio sotto il piano d'arrivo (cm)</label>
+        <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.5&quot; value=&quot;${cmv(c.q)}&quot; inputmode=&quot;decimal&quot; style=&quot;border-color:#55d39b&quot;
+          onchange=&quot;${on(K.taglioQ,&quot;Math.max(0,(parseFloat(this.value)||0)*10)&quot;)}&quot;></div>`:&quot;&quot;}
+      <div><label class=&quot;fl&quot;>Bordo cosciale sopra il naso (cm)</label>
+        <input class=&quot;fi&quot; type=&quot;number&quot; step=&quot;0.5&quot; value=&quot;${c.manuale?cmv(c.e):&quot;&quot;}&quot; placeholder=&quot;auto ${cmv(c.eAuto)}&quot; inputmode=&quot;decimal&quot; style=&quot;border-color:#55d39b&quot;
+          onchange=&quot;${on(K.cosSopra,&quot;(this.value===''?'':(parseFloat(this.value)||0)*10)&quot;)}&quot;></div>
+    </div>
+    <div style=&quot;background:#0b1422;border-radius:9px;padding:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center&quot;>
+      ${cella(g1(c.dg),&quot;α pendenza = arctan(H/P)&quot;,&quot;#9060e0&quot;)}
+      ${cella(cmU(c.D),&quot;diagonale √(H²+P²)&quot;,&quot;#b090f0&quot;)}
+      ${cella(cmU(c.lTaglio),&quot;barra da tagliare&quot;,&quot;#f08a3c&quot;)}
+      ${cella(cmU(c.bordoSup),&quot;bordo superiore&quot;,&quot;#8a96b0&quot;)}
+      ${cella(cmU(c.bordoInf),&quot;bordo inferiore&quot;,&quot;#8a96b0&quot;)}
+      ${cella(cmU(c.I),&quot;interasse L √(p²+a²)&quot;,&quot;#55d39b&quot;)}
+    </div>
+    ${_rigaInfo(&quot;✂️ Piede a pavimento (orizzontale)&quot;,`${g1(T.piede.col)} sul cosciale · sega a ${g1(T.piede.sega)} · taglio ${cmU(T.piede.faccia)}`)}
+    ${c.modo==='verticale'
+      ?_rigaInfo(&quot;✂️ Testa verticale (a muro)&quot;,`${g1(T.testa.col)} sul cosciale · sega a ${g1(T.testa.sega)} · taglio ${cmU(T.testa.faccia)}`)
+        +(T.testa.spian>0?_rigaInfo(&quot;✂️ Spianatura a filo piano d'arrivo&quot;,`orizzontale · sega a ${g1(90-c.dg)} · ${cmU(T.testa.spian)}`):&quot;&quot;)
+      :_rigaInfo(`✂️ Testa orizzontale (${c.q>0?cmU(c.q)+&quot; sotto il piano&quot;:&quot;a filo piano&quot;})`,`${g1(T.testa.col)} sul cosciale · sega a ${g1(T.testa.sega)} · taglio ${cmU(T.testa.faccia)}`)}
+    ${_rigaInfo(&quot;Staffe a L&quot;,`${c.nLCos} per cosciale · ${c.nLtot} in tutto · ${cmU(c.Lr)} di lunghezza`)}
+    ${s1?_rigaInfo(&quot;1ª L dalla punta a terra&quot;,`X ${cmU(s1.X)} · Y ${cmU(s1.Y)} (piano dell'aletta)`)
+      +_rigaInfo(&quot;Sul cosciale&quot;,`${cmU(s1.u)} lungo il bordo sup. · ${cmU(s1.v)} sotto il bordo (uguale per tutte)`):&quot;&quot;}
+    ${_rigaInfo(&quot;Posizione cosciale&quot;,`bordo sup. ${c.e>=0?cmU(c.e)+&quot; sopra&quot;:cmU(-c.e)+&quot; sotto&quot;} lo spigolo del gradino${c.manuale?&quot;&quot;:&quot; (L centrata)&quot;}`)}
+    ${_rigaInfo(&quot;Larghezza&quot;,`gradino ${cmU(sc.W*1000)} tra i cosciali · ingombro ${cmU(c.ingombro)}`)}
+    <details class=&quot;dett&quot; style=&quot;margin-top:6px&quot;><summary>📏 Quote di tutte le L lungo il cosciale</summary>
+      <div class=&quot;dett-body&quot; style=&quot;display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:4px;font-size:11px;color:#aab4d0&quot;>
+        ${c.staffe.map(st=>`<div>L${st.i}: <b style=&quot;color:#55d39b&quot;>${cmv(st.u)}</b></div>`).join(&quot;&quot;)}
+      </div></details>
+    <div class=&quot;nota-info&quot;>Traccia lungo il bordo superiore dalla punta a terra, poi scendi di ${cmU(c.vTop)} in squadra: è lo spigolo anteriore dell'aletta. L'aletta si traccia a ${g1(c.dg)} dal bordo del cosciale (verso il basso andando in salita): così a scala montata è in bolla. Le altre L seguono ogni ${cmU(c.I)}.</div>
+    ${avv}
+  </div>`;
 }
 
 // Ruota il profilo del gradino: scambia la faccia frontale (pedata) con quella di profondità (spessore)
@@ -7855,6 +8036,8 @@ function inviaPREV(snapId){
       const sc=scalaCalc(p);
       const righeS=visti.map(t=>({ruolo:'',testo:t}));
       if(sc.gradTipo==='lamiera')righeS.push({ruolo:'',testo:'gradini in lamiera '+(p.scalaLamTipo||'mandorlata')+' sp.'+sc.lamSp+' mm pressopiegata'});
+      if(sc.gradTipo==='legno')righeS.push({ruolo:'',testo:'gradini in legno'+(numOk(p.scalaSpessGrad,0)>0?' sp.'+numOk(p.scalaSpessGrad,0)+' mm':'')+' ('+sc.n*sc.nPz+' pz)'});
+      if(sc.montaggio==='L')righeS.push({ruolo:'',testo:'gradini appoggiati su staffe a L saldate sulla faccia interna dei cosciali'});
       let descS='Scala a cosciali: altezza '+cmv(sc.H*1000)+' cm, sviluppo '+cmv(sc.L*1000)+' cm, larghezza '+cmv(sc.W*1000)+' cm — '+sc.n+' gradini'+(sc.gradTipo==='lamiera'?' in lamiera pressopiegata':'');
       if(nPzU>1)descS+=' (×'+nPzU+' pezzi uguali)';
       return{nome:p.nome||'Scala',tipo:p.tipo,larg:p.scalaW,alt:p.scalaH,nBattenti:1,nPezziUguali:nPzU,
@@ -8132,12 +8315,14 @@ function walkPezzoMateriali(p,addG){
     }));
     const sc=scalaCalc(p),sm=p.scalaMats||{};
     const rL=(parseFloat(p.scalaRegginoL)||0.10)*1000;
-    A(sm.correnti,sc.D*1000,sc.nCorr*sc.nPz,&quot;cosciale&quot;);
+    const cosL=sc.montaggio==='L'?scalaCoscialeL(p,sc):null;  // cosciale tagliato con staffe a L interne
+    A(sm.correnti,cosL&amp;&amp;sm.correnti?cosL.lTaglio:sc.D*1000,sc.nCorr*sc.nPz,&quot;cosciale&quot;);
     if(sc.gradTipo==='tubo'){
       A(sm.gradini,sc.W*1000,sc.n*sc.nTubi*sc.nPz,&quot;gradino&quot;);
       if(p.scalaHaAlzate)A(sm.alzate,sc.W*1000,sc.n*sc.nPz,&quot;alzata&quot;);
     }
-    if(p.scalaHaReggini)A(sm.reggini,rL,sc.n*sc.nCorr*sc.nPz,&quot;reggino&quot;);
+    if(cosL)A(sm.reggini,rL,cosL.nLtot,&quot;staffa a L&quot;);
+    else if(p.scalaHaReggini)A(sm.reggini,rL,sc.n*sc.nCorr*sc.nPz,&quot;reggino&quot;);
     if(p.scalaHaMancorrente)A(sm.mancorrente,sc.D*1000,(parseInt(p.scalaNManc)||2)*sc.nPz,&quot;mancorrente&quot;);
     return;
   }
@@ -10615,7 +10800,10 @@ function scalaSoppalcoPezzo(p){
     scalaH:s.H/1000,scalaL:svilCm/100,scalaW:Wcm/100,scalaN:nGr,
     scalaNCorrenti:Math.max(1,parseInt(S.nCosciali)||2),
     scalaGradTipo:S.gradTipo||'tubo',scalaPedataPiena:!!S.pedataPiena,
-    scalaHaAlzate:!!S.haAlzate,scalaHaReggini:S.haReggini!==false,scalaRegginoL:0.10,
+    scalaHaAlzate:!!S.haAlzate,scalaHaReggini:S.haReggini!==false,scalaRegginoL:numOk(S.regginoL,0.10),
+    scalaMontaggio:S.montaggio==='L'?'L':'sopra',scalaSpessGrad:numOk(S.spessGrad,0),
+    scalaTaglioSup:S.taglioSup==='orizzontale'?'orizzontale':'verticale',scalaTaglioSupQ:numOk(S.taglioSupQ,0),
+    scalaCosSopra:(S.cosSopra===undefined?'':S.cosSopra),
     scalaHaMancorrente:false,scalaNManc:0,
     scalaLamSp:numOk(S.lamSp,3),scalaLamTipo:S.lamTipo||'mandorlata',scalaLamRibordo:0,
     scalaMats:Object.assign({correnti:null,gradini:null,alzate:null,mancorrente:null,reggini:null},S.mats||{}),
