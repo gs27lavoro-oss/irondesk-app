@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.24.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.25.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.24.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.25.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -4555,14 +4555,15 @@ function disegnaScala(p,cvs,ctx,leg){
   const pn=sc.pian,Hp=pn.on?pn.h:0,Pp=pn.on?pn.p:0;            // pianerottolo: la rampa parte dal suo piano
   const conManc=!!(p.scalaHaMancorrente&amp;&amp;sm.mancorrente), Hfit=Hp+Hmm*(conManc?1.14:1)+(_ringOn?Math.max(0,numOk((p.scalaRing||{}).h,100)*10):0);
   const cosL=sc.montaggio==='L'?scalaCoscialeL(p,sc):null;   // cosciale con staffe a L interne
-  const xMin=Math.min(-Pp,cosL&amp;&amp;sm.correnti?Math.min(0,...cosL.poly.map(v=>v[0])):0), xMax=cosL&amp;&amp;sm.correnti?Math.max(Lmm,...cosL.poly.map(v=>v[0])):Lmm;
+  const A=pn.acc,accIn=A.on&amp;&amp;(A.lato==='linea'),accU=A.on&amp;&amp;(A.lato==='u_sx'||A.lato==='u_dx');
+  const xMin=Math.min(-Pp-(accIn?A.L:0),cosL&amp;&amp;sm.correnti?Math.min(0,...cosL.poly.map(v=>v[0])):0), xMax=cosL&amp;&amp;sm.correnti?Math.max(Lmm,accU?A.L:0,...cosL.poly.map(v=>v[0])):Math.max(Lmm,accU?A.L:0);
   const s=Math.min((cW-padL-padR)/(xMax-xMin),(cH-padT-padB)/Hfit);
   const ox=padL+(cW-padL-padR-(xMax-xMin)*s)/2-xMin*s, base=cH-padB-(cH-padT-padB-Hfit*s)/2;
   const X=x=>ox+x*s, Y=y=>base-(y+Hp)*s;
   const tanA=Hmm/Lmm, cosA=Lmm/Math.hypot(Lmm,Hmm);
   // pavimento e piano d'arrivo
   ctx.strokeStyle=CVC(&quot;pav&quot;);ctx.lineWidth=2;
-  ctx.beginPath();ctx.moveTo(X(-Pp-Lmm*0.06),Y(-Hp));ctx.lineTo(X(Lmm*0.35),Y(-Hp));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(X(xMin-Lmm*0.04),Y(-Hp));ctx.lineTo(X(Lmm*0.35),Y(-Hp));ctx.stroke();
   if(pn.on){
     if(pn.ferro){ // pianerottolo in ferro: piano, telaio e gambe visti di fianco
       const hT=Math.max(pn.hT||40,20),wG=Math.max(((sm.pianGambe?eLarg(sm.pianGambe):40)||40)*s,2);
@@ -4578,6 +4579,18 @@ function disegnaScala(p,cvs,ctx,leg){
       for(let yy=Y(0)+hm,r=0;yy<Y(-Hp)-0.5;yy+=hm,r++){ctx.moveTo(X(-Pp),yy);ctx.lineTo(X(0),yy);}
       for(let yy=Y(0),r=0;yy<Y(-Hp)-0.5;yy+=hm,r++){for(let xx=X(-Pp)+(r%2?hm*1.25:hm*2.5);xx<X(0);xx+=hm*2.5){ctx.moveTo(xx,yy);ctx.lineTo(xx,Math.min(yy+hm,Y(-Hp)));}}
       ctx.stroke();ctx.strokeStyle=CVC(&quot;contorno&quot;);ctx.strokeRect(X(-Pp),Y(0),Pp*s,Hp*s);
+    }
+    // gradini d'accesso: in linea o a U si vedono di fianco; a 90° si vedono di fronte (gradini impilati)
+    if(A.on&amp;&amp;sc.acc){
+      if(accIn)_disegnaRampaLato(ctx,X,Y,sc.acc,-Pp-A.L,1,-Hp,1,A.tipo==='muratura');
+      else if(accU)_disegnaRampaLato(ctx,X,Y,sc.acc,A.L,-1,-Hp,0.45,A.tipo==='muratura');
+      else {
+        const gA=scalaCalc(sc.acc),sgA=Math.max(scalaCoscialeL(sc.acc,gA).sg||0,30);
+        ctx.fillStyle=A.tipo==='muratura'?(cvTec()?&quot;#d6d0c4&quot;:&quot;#b88a6a&quot;):(cvTec()?&quot;rgba(42,44,48,.25)&quot;:&quot;rgba(232,160,32,.75)&quot;);
+        ctx.strokeStyle=CVC(&quot;contorno&quot;);ctx.lineWidth=1;
+        for(let i=1;i<=A.n;i++){const yT=-Hp+i*A.alzata;ctx.fillRect(X(-Pp),Y(yT),A.W*s>Pp*s?Pp*s:A.W*s,Math.max(sgA*s,2));ctx.strokeRect(X(-Pp),Y(yT),A.W*s>Pp*s?Pp*s:A.W*s,Math.max(sgA*s,2));}
+      }
+      cvLabelQ(&quot;accesso &quot;+(LATI_ACC.find(x=>x[0]===A.lato)||[&quot;&quot;,&quot;&quot;])[1].toLowerCase()+&quot; · &quot;+A.n+&quot; alzate da &quot;+cmv(A.alzata)+&quot; cm&quot;,X(xMin),Y(0)-12,&quot;#c95f25&quot;,&quot;left&quot;,11);
     }
   }
   ctx.beginPath();ctx.moveTo(X(Lmm),Y(Hmm));ctx.lineTo(X(Lmm)+48,Y(Hmm));ctx.stroke();
@@ -4686,11 +4699,11 @@ function disegnaScala(p,cvs,ctx,leg){
       drawQuotaCv(ctx,X(Lmm)+48,Y(-Hp),X(Lmm)+48,Y(Hmm),&quot;altezza &quot;+cmU(Hmm+Hp),10);
       if(pn.on){
         drawQuotaCv(ctx,X(-Pp),Y(-Hp),X(0),Y(-Hp),&quot;pianerottolo &quot;+cmU(Pp),14);
-        drawQuotaCv(ctx,X(-Pp)-14,Y(-Hp),X(-Pp)-14,Y(0),cmU(Hp),10);
+        drawQuotaCv(ctx,X(xMin)-14,Y(-Hp),X(xMin)-14,Y(0),cmU(Hp),10);
       }
     }catch(e){}
   }
-  cvLabelQ(`${n} gradini: alzata ${cmv(a)} cm · pedata ${cmv(pd)} cm · pendenza ${(Math.atan(tanA)*180/Math.PI).toFixed(1)}°${pn.on?&quot; · pianerottolo &quot;+(pn.ferro?&quot;in ferro&quot;:&quot;in muratura&quot;)+&quot; · ingombro &quot;+cmU(pn.ingombro):&quot;&quot;}`,12,24,&quot;#8fa3c8&quot;,&quot;left&quot;,13);
+  cvLabelQ(`${n} gradini: alzata ${cmv(a)} cm · pedata ${cmv(pd)} cm · pendenza ${(Math.atan(tanA)*180/Math.PI).toFixed(1)}°${pn.on?&quot; · ingombro &quot;+Math.round(pn.ingombroU/10)+&quot;×&quot;+Math.round(pn.ingombroV/10)+&quot; cm&quot;:&quot;&quot;}`,12,24,&quot;#8fa3c8&quot;,&quot;left&quot;,13);
   cvLabelFlush(ctx);
   if(leg){
     leg.innerHTML=`<span><span style=&quot;color:#f08a3c&quot;>■</span> ${n} gradini da ${cmv(a)} × ${cmv(pd)} cm</span>`+
@@ -4698,6 +4711,7 @@ function disegnaScala(p,cvs,ctx,leg){
       (cosL?`<span><span style=&quot;color:#55d39b&quot;>■</span> ${cosL.nLtot} staffe a L${sm.reggini?&quot; &quot;+esc(sm.reggini.profilo):&quot;&quot;} · interasse ${cmv(cosL.I)} cm</span>`:&quot;&quot;)+
       `<span><span style=&quot;color:#64a8ff&quot;>■</span> larghezza ${cmv(sc.W*1000)} cm</span>`+
       (pn.on?`<span><span style=&quot;color:#c95f25&quot;>■</span> pianerottolo ${pn.ferro?&quot;in ferro&quot;:&quot;in muratura&quot;} ${cmv(pn.Wp)} × ${cmv(pn.p)} cm · h ${cmv(pn.h)} cm</span>`:&quot;&quot;)+
+      (pn.acc.on?`<span><span style=&quot;color:#c95f25&quot;>■</span> gradini d'accesso ${(LATI_ACC.find(x=>x[0]===pn.acc.lato)||[&quot;&quot;,&quot;&quot;])[1].toLowerCase()}: ${pn.acc.n} da ${cmv(pn.acc.alzata)} × ${cmv(pn.acc.pedata)} cm${pn.acc.tipo==='muratura'?&quot; (muratura)&quot;:&quot;&quot;}</span>`:&quot;&quot;)+
       (p.scalaHaMancorrente&amp;&amp;sm.mancorrente?`<span><span style=&quot;color:#64a8ff&quot;>■</span> mancorrente ${esc(sm.mancorrente.profilo)}</span>`:&quot;&quot;)+
       (_ringOn?`<span><span style=&quot;color:#b0620c&quot;>■</span> Ringhiera ${[(p.scalaRing.sx?&quot;sx&quot;:&quot;&quot;),(p.scalaRing.dx?&quot;dx&quot;:&quot;&quot;)].filter(Boolean).join(&quot; + &quot;)} · h ${numOk(p.scalaRing.h,100)} cm</span>`:&quot;&quot;);
   }
@@ -4808,7 +4822,7 @@ function buildBodyScala(p){
     ${buildAbaco(p)}
   </div>
 
-  ${htmlPianerottolo(p,(campo,espr)=>`setScalaPian(${p.id},'${campo}',${espr})`,`sca-${p.id}-`)}
+  ${htmlPianerottolo(p,(campo,espr)=>`setScalaPian(${p.id},'${campo}',${espr})`,`sca-${p.id}-`,`uguagliaAlzate(${p.id},false)`)}
 
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#64a8ff&quot;>
     <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>🔩 Materiali</div>
@@ -5269,7 +5283,7 @@ function buildBodySoppalco(p){
         <button onclick=&quot;setSopScala(${p.id},'gradTipo','lamiera')&quot; style=&quot;flex:1;padding:7px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1.5px solid ${scG.gradTipo==='lamiera'?'#f08a3c':'#172438'};color:${scG.gradTipo==='lamiera'?'#f08a3c':'#91a2bb'};background:${scG.gradTipo==='lamiera'?'#1a1205':'transparent'}&quot;>Lamiera piegata</button>
         <button onclick=&quot;setSopScala(${p.id},'gradTipo','legno')&quot; style=&quot;flex:1;padding:7px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1.5px solid ${scG.gradTipo==='legno'?'#f08a3c':'#172438'};color:${scG.gradTipo==='legno'?'#f08a3c':'#91a2bb'};background:${scG.gradTipo==='legno'?'#1a1205':'transparent'}&quot;>Legno / altro</button>
       </div></div>
-    ${htmlPianerottolo(scPz,(campo,espr)=>`setSopScalaPian(${p.id},'${campo}',${espr})`,`sos-${p.id}-`)}
+    ${htmlPianerottolo(scPz,(campo,espr)=>`setSopScalaPian(${p.id},'${campo}',${espr})`,`sos-${p.id}-`,`uguagliaAlzate(${p.id},true)`)}
     <div class=&quot;mb8&quot;><label class=&quot;fl&quot;>Montaggio gradini</label>
       <div style=&quot;display:flex;gap:6px;flex-wrap:wrap&quot;>
         ${[['sopra','Sopra il cosciale'],['L','Su staffe a L interne']].map(o=>`<button onclick=&quot;setSopScala(${p.id},'montaggio','${o[0]}')&quot; style=&quot;flex:1;padding:7px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1.5px solid ${scG.montaggio===o[0]?'#55d39b':'#172438'};color:${scG.montaggio===o[0]?'#55d39b':'#91a2bb'};background:${scG.montaggio===o[0]?'#061208':'transparent'}&quot;>${o[1]}</button>`).join(&quot;&quot;)}
@@ -6565,9 +6579,14 @@ function disegnaSoppalco(p,cvs,ctx,leg){
   const scLarg=scG?scG.W*1000:0,scRamp=scG?scG.L*1000:0,scPian=scG&amp;&amp;scG.pian.on?scG.pian.p:0,scSvil=scRamp+scPian;
   const scX0=Math.min(Math.max(s.varco>0?s.varcoX:(s.L-scLarg)/2,0),Math.max(0,s.L-scLarg));
   // ── PIANTA (sinistra): y = 0 retro, y = P fronte; la scala esce davanti ──
-  const Ptot=s.P+(scG?scSvil:0);
-  const scP=Math.min((half-pad*2)/s.L,(cH-pad*2-26)/Ptot);
-  const px0=20+(half-s.L*scP)/2,py0=pad+16+(cH-pad*2-26-Ptot*scP)/2;
+  // pianerottolo e gradini d'accesso in pianta: (u,v) della scala → (x,y) del soppalco
+  const pnS=scG?scG.pian:null,MS=(u,v)=>[scX0+(pnS.vR0+pnS.Wr)-v,s.P+scRamp-u];
+  const bxS=b=>{const a=MS(b[0],b[2]),c=MS(b[1],b[3]);return [Math.min(a[0],c[0]),Math.max(a[0],c[0]),Math.min(a[1],c[1]),Math.max(a[1],c[1])];};
+  const fpP=pnS&amp;&amp;pnS.on?bxS(pnS.fp.pian):null,fpA=pnS&amp;&amp;pnS.acc.on&amp;&amp;pnS.fp.acc?bxS(pnS.fp.acc):null;
+  const xLo=Math.min(0,...[fpP,fpA].filter(Boolean).map(b=>b[0])),xHi=Math.max(s.L,...[fpP,fpA].filter(Boolean).map(b=>b[1]));
+  const Ptot=Math.max(s.P+(scG?scRamp:0),...[fpP,fpA].filter(Boolean).map(b=>b[3]));
+  const scP=Math.min((half-pad*2)/(xHi-xLo),(cH-pad*2-26)/Ptot);
+  const px0=20+(half-(xHi-xLo)*scP)/2-xLo*scP,py0=pad+16+(cH-pad*2-26-Ptot*scP)/2;
   const X=x=>px0+x*scP,Y=y=>py0+y*scP;
   if(s.muro)muroTratteggio(ctx,X(0)-6,Y(0)-9,s.L*scP+12,8);
   if(s.piano!=='nessuno'){ctx.fillStyle=CVC('piano');ctx.fillRect(X(0),Y(0),s.L*scP,s.P*scP);}
@@ -6603,14 +6622,19 @@ function disegnaSoppalco(p,cvs,ctx,leg){
   if(scG&amp;&amp;scLarg>0&amp;&amp;scSvil>0){
     ctx.save();
     ctx.fillStyle=cvTec()?&quot;#d3d7de&quot;:&quot;rgba(150,110,230,.18)&quot;;
-    ctx.fillRect(X(scX0),Y(s.P),scLarg*scP,scSvil*scP);
-    ctx.strokeStyle=CVC('contorno');ctx.lineWidth=1;ctx.strokeRect(X(scX0),Y(s.P),scLarg*scP,scSvil*scP);
+    ctx.fillRect(X(scX0),Y(s.P),scLarg*scP,scRamp*scP);
+    ctx.strokeStyle=CVC('contorno');ctx.lineWidth=1;ctx.strokeRect(X(scX0),Y(s.P),scLarg*scP,scRamp*scP);
+    const rS=(b,fill)=>{ctx.fillStyle=fill;ctx.fillRect(X(b[0]),Y(b[2]),(b[1]-b[0])*scP,(b[3]-b[2])*scP);ctx.strokeRect(X(b[0]),Y(b[2]),(b[1]-b[0])*scP,(b[3]-b[2])*scP);};
+    if(fpP)rS(fpP,cvTec()?&quot;#e6ddd0&quot;:&quot;rgba(192,128,64,.25)&quot;);
+    if(fpA){rS(fpA,cvTec()?&quot;#dfe8e2&quot;:&quot;rgba(80,192,144,.22)&quot;);
+      const A=pnS.acc,vert=A.dir[0]!==0;ctx.beginPath();
+      for(let k=1;k<A.n;k++){if(vert){const y=fpA[2]+(fpA[3]-fpA[2])*k/A.n;ctx.moveTo(X(fpA[0]),Y(y));ctx.lineTo(X(fpA[1]),Y(y));}else{const x=fpA[0]+(fpA[1]-fpA[0])*k/A.n;ctx.moveTo(X(x),Y(fpA[2]));ctx.lineTo(X(x),Y(fpA[3]));}}
+      ctx.stroke();}
     ctx.beginPath();
     for(let k=1;k<scG.n;k++){const y=s.P+scRamp*k/scG.n;ctx.moveTo(X(scX0),Y(y));ctx.lineTo(X(scX0+scLarg),Y(y));}
-    if(scPian>0){ // pianerottolo alla base: rettangolo con la croce
-      ctx.moveTo(X(scX0),Y(s.P+scRamp));ctx.lineTo(X(scX0+scLarg),Y(s.P+scRamp));
-      ctx.moveTo(X(scX0),Y(s.P+scRamp));ctx.lineTo(X(scX0+scLarg),Y(s.P+scSvil));
-      ctx.moveTo(X(scX0+scLarg),Y(s.P+scRamp));ctx.lineTo(X(scX0),Y(s.P+scSvil));
+    if(fpP){ // pianerottolo alla base: rettangolo con la croce
+      ctx.moveTo(X(fpP[0]),Y(fpP[2]));ctx.lineTo(X(fpP[1]),Y(fpP[3]));
+      ctx.moveTo(X(fpP[1]),Y(fpP[2]));ctx.lineTo(X(fpP[0]),Y(fpP[3]));
     }
     ctx.stroke();
     // ringhiere della scala in pianta
@@ -6687,6 +6711,7 @@ function disegnaSoppalco(p,cvs,ctx,leg){
     if(s.tratti.length)addL(&quot;#b0620c&quot;,&quot;Parapetto: &quot;+[...new Set(s.tratti.map(t=>t.lato))].join(&quot;, &quot;));
     if(scG)addL(&quot;#9060e0&quot;,&quot;Scala: &quot;+scG.n+&quot; gradini &quot;+cmv(scG.alzata)+&quot;×&quot;+cmv(scG.pedata)+&quot; cm, larga &quot;+cmv(scG.W*1000)+&quot; cm&quot;);
     if(scG&amp;&amp;scG.pian.on)addL(&quot;#c95f25&quot;,&quot;Pianerottolo &quot;+(scG.pian.ferro?&quot;in ferro&quot;:&quot;in muratura&quot;)+&quot; &quot;+cmv(scG.pian.Wp)+&quot;×&quot;+cmv(scG.pian.p)+&quot; cm, h &quot;+cmv(scG.pian.h)+&quot; cm&quot;);
+    if(scG&amp;&amp;scG.pian.acc.on)addL(&quot;#55d39b&quot;,&quot;Gradini d'accesso &quot;+(LATI_ACC.find(x=>x[0]===scG.pian.acc.lato)||[&quot;&quot;,&quot;&quot;])[1].toLowerCase()+&quot;: &quot;+scG.pian.acc.n+&quot; da &quot;+cmv(scG.pian.acc.alzata)+&quot; cm&quot;);
     const rlS=Object.assign({sx:false,dx:true},(p.sopScala||{}).ring||{});
     if(scG&amp;&amp;(rlS.sx||rlS.dx))addL(&quot;#b0620c&quot;,&quot;Ringhiera scala: &quot;+[rlS.sx?&quot;sx&quot;:&quot;&quot;,rlS.dx?&quot;dx&quot;:&quot;&quot;].filter(Boolean).join(&quot; + &quot;));
   }
@@ -6723,8 +6748,9 @@ function apriFinestraScala(sc){
     <div style=&quot;flex:1 1 380px;min-width:0&quot;>
     <div class=&quot;tavola-dis&quot;>${sv.toSVG()}</div>
     <div style=&quot;display:flex;flex-wrap:wrap;gap:9px;margin-top:8px;justify-content:center;font-size:12px;color:#8a96b0&quot;>${leg.innerHTML}</div>
+    ${g.pian.on?`<div style=&quot;margin-top:10px&quot;><div style=&quot;font-size:12px;font-weight:700;color:#8a96b0;margin-bottom:4px&quot;>🗺️ Pianta della scala</div>${svgPiantaScala(sc)}</div>`:&quot;&quot;}
     </div>
-    ${c?`<div style=&quot;flex:1.6 1 520px;min-width:0&quot;><div style=&quot;font-size:13px;font-weight:700;color:#55d39b;margin-bottom:6px&quot;>📏 Dima del cosciale — guida per il banco</div>${htmlDimaCosciale(sc,c)}${c.avvisi.map(a=>`<div style=&quot;margin-top:6px;background:#1a0808;border:1px solid #f06b6b;border-radius:8px;padding:7px 9px;font-size:11px;color:#ff9a9a&quot;>⚠️ ${esc(a)}</div>`).join(&quot;&quot;)}</div>`:&quot;&quot;}
+    ${c?`<div style=&quot;flex:1.6 1 520px;min-width:0&quot;><div style=&quot;font-size:13px;font-weight:700;color:#55d39b;margin-bottom:6px&quot;>📏 Dima del cosciale — guida per il banco</div>${htmlDimaCosciale(sc,c)}${g.acc&amp;&amp;g.pian.acc.tipo!=='muratura'?`<div style=&quot;font-size:13px;font-weight:700;color:#55d39b;margin:12px 0 6px&quot;>📏 Dima del cosciale dei gradini d'accesso</div>${htmlDimaCosciale(g.acc)}`:&quot;&quot;}${c.avvisi.map(a=>`<div style=&quot;margin-top:6px;background:#1a0808;border:1px solid #f06b6b;border-radius:8px;padding:7px 9px;font-size:11px;color:#ff9a9a&quot;>⚠️ ${esc(a)}</div>`).join(&quot;&quot;)}</div>`:&quot;&quot;}
     </div>
     ${c&amp;&amp;c.staffe[0]?`<div style=&quot;margin-top:8px&quot;>${_rigaInfo(&quot;Tagli cosciale&quot;,&quot;piede sega &quot;+(90-c.dg).toFixed(1)+&quot;° · testa &quot;+(c.modo==='verticale'?&quot;verticale sega &quot;+c.dg.toFixed(1)+&quot;°&quot;:&quot;orizzontale sega &quot;+(90-c.dg).toFixed(1)+&quot;°&quot;)+&quot; · barra &quot;+cmU(c.lTaglio))}
       ${_rigaInfo(&quot;1ª L dalla punta a terra&quot;,&quot;X &quot;+cmU(c.staffe[0].X)+&quot; · Y &quot;+cmU(c.staffe[0].Y)+&quot; · poi ogni &quot;+cmU(c.I))}</div>`:&quot;&quot;}
@@ -7448,11 +7474,14 @@ function scalaCalc(p){
   const lamSviluppo=pedata+alzata+lamRib; // mm
   const lamAreaGrad=(lamSviluppo/1000)*W;    // m² per gradino
   const lamPesoGrad=lamAreaGrad*lamSp*7.85;  // kg per gradino (7.85 kg/m² per mm)
-  const lamPeso=gradTipo==='lamiera'?lamPesoGrad*n*nPz:0;
-  const lamArea=gradTipo==='lamiera'?lamAreaGrad*n*nPz:0;
-  const lamCosto=lamPeso*numOk(p.lamiera_prezzoKg,UPG.lamPrezzoKg); // il TUO prezzo lamiera (€/kg)
+  let lamPeso=gradTipo==='lamiera'?lamPesoGrad*n*nPz:0;
+  let lamArea=gradTipo==='lamiera'?lamAreaGrad*n*nPz:0;
+  let lamCosto=lamPeso*numOk(p.lamiera_prezzoKg,UPG.lamPrezzoKg); // il TUO prezzo lamiera (€/kg)
   const montaggio=p.scalaMontaggio==='L'?'L':'sopra';
-  return {H,Htot,pian,L,W,n,D,alzata,pedata,nCorr,nPz,gradTipo,nTubi,pedataProf,montaggio,
+  // gradini d'accesso al pianerottolo: una scala vera (il suo pezzo non ha pianerottolo → niente ricorsione)
+  const acc=pian.acc.on?scalaAccPezzo(p,pian):null;
+  if(acc&amp;&amp;pian.acc.tipo!=='muratura'&amp;&amp;gradTipo==='lamiera'){const ga=scalaCalc(acc);lamPeso+=ga.lamPeso;lamArea+=ga.lamArea;lamCosto+=ga.lamCosto;}
+  return {H,Htot,pian,acc,L,W,n,D,alzata,pedata,nCorr,nPz,gradTipo,nTubi,pedataProf,montaggio,
     lamSp,lamRib,lamSviluppo,lamAreaGrad,lamPesoGrad,lamPeso,lamArea,lamCosto};
 }
 
@@ -7460,16 +7489,47 @@ function scalaCalc(p){
 // Misure in mm. Il pianerottolo sta a quota zero, largo quanto la scala (ingombro dei cosciali
 // se le staffe sono interne) e profondo P; la rampa parte dal suo piano, a quota H_pianerottolo.
 // In ferro: telaio perimetrale (2 fronti + 2 fianchi tra i fronti), 4 gambe, traversi facoltativi, piano in lamiera o fornito a parte.
-const PIAN_DEF={on:false,tipo:'ferro',h:'',p:'',piano:'lamiera',lamSp:4,nTrav:0};
+const PIAN_DEF={on:false,tipo:'ferro',h:'',p:'',piano:'lamiera',lamSp:4,nTrav:0,larg:'',accLato:'linea',accTipo:'scala',accLarg:'',accPed:''};
+const LATI_ACC=[['linea',&quot;In linea (di fronte alla rampa)&quot;],['sx',&quot;A sinistra, a 90°&quot;],['dx',&quot;A destra, a 90°&quot;],['u_sx',&quot;A U, a sinistra della rampa&quot;],['u_dx',&quot;A U, a destra della rampa&quot;],['nessuno',&quot;Nessuno (accesso da altro)&quot;]];
+// Pianta della scala in coordinate (u,v) in mm: u = verso di salita della rampa (0 = bordo del pianerottolo
+// dove parte la rampa), v = verso sinistra di chi sale. Ogni ingombro è [u0,u1,v0,v1].
 function scalaPianCalc(p,Wmm,Htotmm,Lmm){
-  const R=Object.assign({},PIAN_DEF,p.scalaPian||{}),av=[];
+  const R=Object.assign({},PIAN_DEF,p.scalaPian||{}),av=[],info=[];
   const hIns=Math.max(0,numOk(R.h,0)),pIns=Math.max(0,numOk(R.p,0)),richiesto=!!R.on;
   let on=richiesto&amp;&amp;hIns>0&amp;&amp;pIns>0;
   if(richiesto&amp;&amp;!on)av.push(&quot;Scrivi altezza e profondità del pianerottolo: senza queste misure la scala resta calcolata senza.&quot;);
   if(on&amp;&amp;hIns>Htotmm-300){av.push(&quot;Il pianerottolo è troppo alto rispetto all'altezza da salire: controlla le misure.&quot;);on=false;}
   const tipo=R.tipo==='muratura'?'muratura':'ferro',ferro=on&amp;&amp;tipo==='ferro';
   const sm=p.scalaMats||{},mc=sm.correnti,nCorr=Math.max(1,parseInt(p.scalaNCorrenti)||2);
-  const Wp=(p.scalaMontaggio==='L'&amp;&amp;mc&amp;&amp;nCorr>=2)?Wmm+2*eProf(mc):Wmm;   // largo quanto la scala finita
+  const extra=(p.scalaMontaggio==='L'&amp;&amp;mc&amp;&amp;nCorr>=2)?2*eProf(mc):0;     // cosciali ai lati dei gradini
+  const Wr=Wmm+extra;                                                     // ingombro della rampa
+  // ── gradini d'accesso: dal pavimento al piano del pianerottolo, sono una scala vera (stessi materiali) ──
+  const lato=LATI_ACC.some(x=>x[0]===R.accLato)?R.accLato:'linea';
+  const alzI=parseFloat(p.scalaAlzataIdeale)||175;
+  const nAcc=on?Math.max(1,Math.round(hIns/alzI)):0;
+  const accOn=on&amp;&amp;nAcc>=2&amp;&amp;lato!=='nessuno';
+  const laterale=lato==='sx'||lato==='dx',aU=lato==='u_sx'||lato==='u_dx';
+  const nMain=Math.max(1,parseInt(p.scalaN)||15),pedMain=(Lmm||0)/nMain,alzMain=on?(Htotmm-hIns)/nMain:0;
+  const pedAcc=numOk(R.accPed,0)>0?numOk(R.accPed,0):pedMain;
+  const wTread=numOk(R.accLarg,0)>0?numOk(R.accLarg,0):(laterale?Math.max(300,Math.min(Wmm,pIns-extra)):Wmm);
+  const Wa=wTread+extra,La=nAcc*pedAcc,aAcc=nAcc?hIns/nAcc:0;
+  const Wp=numOk(R.larg,0)>0?Math.max(numOk(R.larg,0),Wr):((aU&amp;&amp;accOn)?Wr+Wa:Wr);
+  const vR0=(lato==='u_dx'&amp;&amp;accOn)?Wp-Wr:0;                               // la rampa si sposta se l'accesso è a U a destra
+  const fp={ramp:[0,Lmm||0,vR0,vR0+Wr],pian:[-pIns,0,0,Wp],acc:null};
+  let dirAcc=null;
+  if(accOn){
+    if(lato==='linea'){fp.acc=[-pIns-La,-pIns,vR0,vR0+Wa];dirAcc=[1,0];}
+    else if(lato==='sx'){fp.acc=[-pIns,-pIns+Wa,Wp,Wp+La];dirAcc=[0,-1];}
+    else if(lato==='dx'){fp.acc=[-pIns,-pIns+Wa,-La,0];dirAcc=[0,1];}
+    else if(lato==='u_sx'){fp.acc=[0,La,vR0+Wr,vR0+Wr+Wa];dirAcc=[-1,0];}
+    else {fp.acc=[0,La,0,Wa];dirAcc=[-1,0];}
+    if(laterale&amp;&amp;Wa>pIns+1)av.push(`La rampa d'accesso (${cmU(Wa)}) è più larga del pianerottolo (${cmU(pIns)}): allunga il pianerottolo o stringi la rampa.`);
+    if(aU&amp;&amp;Wp<Wr+Wa-1)av.push(`A U il pianerottolo deve essere largo almeno ${cmU(Wr+Wa)} (rampa + accesso).`);
+    if(Math.abs(aAcc-alzMain)>10)info.push(`Alzata dei gradini d'accesso ${cmU(aAcc)} e della rampa ${cmU(alzMain)}: meglio tutte uguali (tasto ⚖️).`);
+  }
+  const box=[fp.ramp,on?fp.pian:null,fp.acc].filter(Boolean);
+  const uMin=Math.min(...box.map(b=>b[0])),uMax=Math.max(...box.map(b=>b[1])),vMin=Math.min(...box.map(b=>b[2])),vMax=Math.max(...box.map(b=>b[3]));
+  // ── struttura del pianerottolo in ferro ──
   const mT=sm.pianTelaio,mG=sm.pianGambe,hT=mT?eLarg(mT):0,bT=mT?eProf(mT):0;
   const piano=R.piano==='nessuno'?'nessuno':'lamiera';
   const spP=ferro&amp;&amp;piano==='lamiera'?Math.max(0,numOk(R.lamSp,4)):0;
@@ -7480,9 +7540,37 @@ function scalaPianCalc(p,Wmm,Htotmm,Lmm){
   if(ferro&amp;&amp;!mT)av.push(&quot;Scegli il profilo del telaio del pianerottolo.&quot;);
   if(ferro&amp;&amp;!mG)av.push(&quot;Scegli il profilo delle gambe del pianerottolo.&quot;);
   if(ferro&amp;&amp;mT&amp;&amp;!(lGamba>0))av.push(&quot;Il pianerottolo è più basso del telaio: niente gambe, il telaio appoggia a terra.&quot;);
-  return {richiesto,on,tipo,ferro,muratura:on&amp;&amp;tipo==='muratura',h:on?hIns:0,p:on?pIns:0,hIns,pIns,Wp,
+  // alzate tutte uguali: n° totale dall'alzata desiderata, pianerottolo a un multiplo esatto
+  const Nt=Math.max(2,Math.round(Htotmm/alzI)),aT=Htotmm/Nt,kEq=Math.min(Nt-1,Math.max(1,Math.round(hIns/aT)));
+  return {richiesto,on,tipo,ferro,muratura:on&amp;&amp;tipo==='muratura',h:on?hIns:0,p:on?pIns:0,hIns,pIns,Wp,Wr,vR0,
     piano,spP,hT,bT,lGamba,lFianco,lTrav,nTrav,area,lamKg,lamCosto:lamKg*prezzoKg,prezzoKg,
-    ingombro:(on?pIns:0)+(Lmm||0),avvisi:av};
+    acc:{on:accOn,lato,tipo:R.accTipo==='muratura'?'muratura':'scala',n:nAcc,alzata:aAcc,pedata:pedAcc,L:La,W:Wa,wTread,dir:dirAcc,
+      pendenza:La>0?Math.atan2(hIns,La)*180/Math.PI:0,passo:2*aAcc+pedAcc},
+    fp,ingombro:uMax-uMin,ingombroU:uMax-uMin,ingombroV:vMax-vMin,box:[uMin,uMax,vMin,vMax],
+    eq:{Nt,alzata:aT,h:kEq*aT,nAcc:kEq,nRamp:Nt-kEq},avvisi:av,info};
+}
+// Gradini d'accesso come scala vera: stesso sistema (cosciali, gradini, staffe, materiali) della rampa
+function scalaAccPezzo(p,pn){
+  const A=pn.acc;
+  return migraCampiPezzo({id:p.id,nome:(p.nome||&quot;Scala&quot;)+&quot; · gradini d'accesso&quot;,tipo:'scala',larg:'1',alt:'1',
+    nPezziUguali:parseInt(p.nPezziUguali)||1,scalaH:pn.h/1000,scalaL:A.L/1000,scalaW:A.wTread/1000,scalaN:A.n,
+    scalaNCorrenti:p.scalaNCorrenti,scalaAlzataIdeale:p.scalaAlzataIdeale,scalaGradTipo:p.scalaGradTipo||'tubo',scalaPedataPiena:!!p.scalaPedataPiena,
+    scalaHaAlzate:!!p.scalaHaAlzate,scalaHaReggini:p.scalaHaReggini!==false,scalaRegginoL:p.scalaRegginoL,
+    scalaHaMancorrente:false,scalaNManc:0,scalaLamSp:p.scalaLamSp,scalaLamTipo:p.scalaLamTipo,scalaLamRibordo:p.scalaLamRibordo,lamiera_prezzoKg:p.lamiera_prezzoKg,
+    scalaMontaggio:p.scalaMontaggio,scalaSpessGrad:p.scalaSpessGrad,scalaTaglioSup:'verticale',scalaTaglioSupQ:0,scalaCosSopra:'',
+    scalaPian:{on:false},scalaRing:{sx:false,dx:false,h:100,passo:100,nCorr:0},
+    scalaMats:Object.assign({},p.scalaMats||{}),elemList:[],traverse:[],ante:[],facce:[],ferr:{},strMats:{},zinc_caldo:false,vern_polvere:false});
+}
+// ⚖️ Alzate tutte uguali: pianerottolo a un multiplo esatto dell'alzata, rampa col resto
+function uguagliaAlzate(id,sopp){
+  pezzi=pezzi.map(p=>{
+    if(p.id!==id)return p;
+    if(sopp){const sc=scalaSoppalcoPezzo(p);if(!sc)return p;const e=scalaCalc(sc).pian.eq;
+      const S=Object.assign({},p.sopScala);S.pian=Object.assign({},PIAN_DEF,S.pian||{},{h:Math.round(e.h*10)/10});S.nGradini=e.nRamp;return {...p,sopScala:S};}
+    const e=scalaCalc(p).pian.eq;
+    return {...p,scalaPian:Object.assign({},PIAN_DEF,p.scalaPian||{},{h:Math.round(e.h*10)/10}),scalaN:e.nRamp};
+  });
+  renderTutto();
 }
 function setScalaPian(id,campo,val){
   pezzi=pezzi.map(p=>{
@@ -7505,7 +7593,7 @@ function setSopScalaPian(id,campo,val){
   renderTutto();
 }
 // Riquadro del pianerottolo (scheda Scala e scala del soppalco). on(campo,espr) = onchange; pref = chiave materiali.
-function htmlPianerottolo(sp,on,pref){
+function htmlPianerottolo(sp,on,pref,eq){
   const sc=scalaCalc(sp),pn=sc.pian,R=Object.assign({},PIAN_DEF,sp.scalaPian||{}),sm=sp.scalaMats||{},col='#c95f25';
   const angPrima=Math.atan2(sc.Htot,sc.L)*180/Math.PI,ang=Math.atan2(sc.H,sc.L)*180/Math.PI;
   const cella=(v,l,c)=>`<div><div style=&quot;color:${c};font-weight:700;font-size:14px&quot;>${v}</div><div style=&quot;color:#91a2bb;font-size:10px&quot;>${l}</div></div>`;
@@ -7562,10 +7650,103 @@ function htmlPianerottolo(sp,on,pref){
         ${pn.nTrav>0?_rigaInfo(&quot;Traversi&quot;,`${pn.nTrav} × ${cmU(pn.lTrav)}`):&quot;&quot;}
         ${pn.spP>0?_rigaInfo(&quot;Piano in lamiera sp. &quot;+fmtN(pn.spP)+&quot; mm&quot;,`${pn.area.toFixed(2)} m² · ${pn.lamKg.toFixed(1)} kg`):_rigaInfo(&quot;Piano&quot;,&quot;fornito a parte (fuori distinta)&quot;)}`;
       } else h+=`<div class=&quot;nota-info&quot; style=&quot;color:#c95f25&quot;>🧱 Struttura di fondo in muratura (esclusa da distinta ferro): la rampa appoggia sul piano del blocco a ${cmU(pn.h)}.</div>`;
+      const A=pn.acc;
+      h+=`<div style=&quot;border-top:1px solid #3a2a18;margin-top:10px;padding-top:8px&quot;>
+        <div style=&quot;font-size:12px;font-weight:700;color:${col};margin-bottom:6px&quot;>🪜 Gradini d'accesso al pianerottolo</div>`;
+      if(A.n<2)h+=`<div class=&quot;nota-info&quot;>Il pianerottolo è alto quanto un gradino (${cmU(pn.h)}): ci si sale direttamente, senza gradini d'accesso.</div>`;
+      else{
+        h+=`<div class=&quot;g3 mb8&quot;>
+          <div><label class=&quot;fl&quot;>Da che lato</label>
+            <select class=&quot;fs&quot; style=&quot;border-color:${col}&quot; onchange=&quot;${on('accLato','this.value')}&quot;>
+              ${LATI_ACC.map(o=>`<option value=&quot;${o[0]}&quot;${A.lato===o[0]?&quot; selected&quot;:&quot;&quot;}>${o[1]}</option>`).join(&quot;&quot;)}
+            </select></div>
+          <div><label class=&quot;fl&quot;>Gradini d'accesso</label>
+            <select class=&quot;fs&quot; style=&quot;border-color:${col}&quot; onchange=&quot;${on('accTipo','this.value')}&quot;>
+              <option value=&quot;scala&quot;${A.tipo==='scala'?&quot; selected&quot;:&quot;&quot;}>Come la scala (in distinta)</option>
+              <option value=&quot;muratura&quot;${A.tipo==='muratura'?&quot; selected&quot;:&quot;&quot;}>In muratura (esclusi)</option>
+            </select></div>
+          <div><label class=&quot;fl&quot;>Larghezza gradini (mm)</label>
+            <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;300&quot; step=&quot;10&quot; value=&quot;${numOk(R.accLarg,0)>0?R.accLarg:''}&quot; placeholder=&quot;auto ${Math.round(A.wTread)}&quot; inputmode=&quot;decimal&quot; style=&quot;border-color:${col}&quot;
+              onchange=&quot;${on('accLarg',&quot;(this.value===''?'':Math.max(300,parseFloat(this.value)||0))&quot;)}&quot;></div>
+        </div>
+        <div class=&quot;g3 mb8&quot;>
+          <div><label class=&quot;fl&quot;>Pedata (mm)</label>
+            <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;150&quot; step=&quot;5&quot; value=&quot;${numOk(R.accPed,0)>0?R.accPed:''}&quot; placeholder=&quot;auto ${Math.round(A.pedata)}&quot; inputmode=&quot;decimal&quot; style=&quot;border-color:${col}&quot;
+              onchange=&quot;${on('accPed',&quot;(this.value===''?'':Math.max(150,parseFloat(this.value)||0))&quot;)}&quot;></div>
+          <div><label class=&quot;fl&quot;>Larghezza pianerottolo (mm)</label>
+            <input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;300&quot; step=&quot;10&quot; value=&quot;${numOk(R.larg,0)>0?R.larg:''}&quot; placeholder=&quot;auto ${Math.round(pn.Wp)}&quot; inputmode=&quot;decimal&quot; style=&quot;border-color:${col}&quot;
+              onchange=&quot;${on('larg',&quot;(this.value===''?'':Math.max(300,parseFloat(this.value)||0))&quot;)}&quot;></div>
+          <div style=&quot;align-self:end&quot;>${eq?`<button class=&quot;btn&quot; style=&quot;border-color:#55d39b;color:#55d39b;width:100%&quot; onclick=&quot;${eq}&quot; title=&quot;Pianerottolo a ${cmU(pn.eq.h)}: ${pn.eq.Nt} alzate uguali da ${cmU(pn.eq.alzata)}&quot;>⚖️ Alzate tutte uguali</button>`:&quot;&quot;}</div>
+        </div>`;
+        if(A.on)h+=`<div style=&quot;background:#0b1422;border-radius:9px;padding:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center&quot;>
+          ${cella(A.n+&quot; × &quot;+cmv(A.alzata),&quot;alzate d'accesso (cm)&quot;,&quot;#f08a3c&quot;)}
+          ${cella(cmU(A.pedata),&quot;pedata&quot;,&quot;#64a8ff&quot;)}
+          ${cella(A.pendenza.toFixed(1)+&quot;°&quot;,&quot;pendenza&quot;,&quot;#55d39b&quot;)}
+          ${cella(cmU(A.L),&quot;sviluppo&quot;,&quot;#9060e0&quot;)}
+          ${cella(cmU(A.passo),&quot;passo 2a+p&quot;,A.passo>=600&amp;&amp;A.passo<=650?&quot;#55d39b&quot;:&quot;#e0a050&quot;)}
+          ${cella(cmv(pn.ingombroU)+&quot; × &quot;+cmv(pn.ingombroV),&quot;ingombro totale (cm)&quot;,&quot;#c95f25&quot;)}
+        </div>
+        <div class=&quot;nota-info&quot;>${A.tipo==='muratura'?&quot;Gradini d'accesso in muratura: esclusi dalla distinta ferro.&quot;:&quot;I gradini d'accesso sono una scala vera: stessi cosciali, gradini, staffe e montaggio della rampa, contati in distinta come «gradini d'accesso». La dima del loro cosciale è nella finestra del disegno.&quot;}</div>`;
+        h+=pn.info.map(t=>`<div style=&quot;margin-top:6px;background:#0a1628;border:1px solid #64a8ff;border-radius:8px;padding:7px 9px;font-size:11px;color:#9cc4f0&quot;>ℹ️ ${esc(t)}</div>`).join(&quot;&quot;);
+      }
+      h+=`</div>`;
+      h+=`<div style=&quot;margin-top:10px&quot;><div style=&quot;font-size:12px;font-weight:700;color:#8a96b0;margin-bottom:4px&quot;>🗺️ Pianta della scala</div>${svgPiantaScala(sp)}</div>`;
     }
     h+=avv;
   }
   return h+`</div>`;
+}
+// Una rampa vista di fianco dentro un altro disegno: x → u0 + dir·x, y → y0 + y (stile semplice)
+function _disegnaRampaLato(ctx,X,Y,pz,u0,dir,y0,alpha,muratura){
+  const g=scalaCalc(pz),sm=pz.scalaMats||{},Hh=g.H*1000,Ll=g.L*1000,a=g.alzata,pd=g.pedata;
+  const P=(x,y)=>[X(u0+dir*x),Y(y0+y)];
+  ctx.save();ctx.globalAlpha=alpha||1;ctx.lineWidth=1;
+  if(muratura){ // gradini in muratura: blocco a gradoni
+    ctx.fillStyle=cvTec()?&quot;#d6d0c4&quot;:&quot;#b88a6a&quot;;ctx.beginPath();ctx.moveTo(...P(0,0));
+    for(let i=0;i<g.n;i++){ctx.lineTo(...P(i*pd,(i+1)*a));ctx.lineTo(...P((i+1)*pd,(i+1)*a));}
+    ctx.lineTo(...P(Ll,0));ctx.closePath();ctx.fill();ctx.strokeStyle=CVC(&quot;contorno&quot;);ctx.stroke();ctx.restore();return;
+  }
+  const colG=g.gradTipo==='legno'?&quot;#b07a3a&quot;:&quot;#f08a3c&quot;;
+  if(g.montaggio==='L'){
+    const c=scalaCoscialeL(pz,g);
+    if(sm.correnti){ctx.fillStyle=cvTec()?CV_TEC.profilo:&quot;rgb(120,85,190)&quot;;ctx.beginPath();c.poly.forEach((v,k)=>k?ctx.lineTo(...P(v[0],v[1])):ctx.moveTo(...P(v[0],v[1])));ctx.closePath();ctx.fill();ctx.strokeStyle=CVC(&quot;contorno&quot;);ctx.stroke();}
+    const sgD=Math.max(c.sg,6);
+    for(let i=1;i<=g.n;i++){const a0=P((i-1)*pd,i*a),a1=P(i*pd,i*a-sgD);
+      ctx.fillStyle=cvTec()?&quot;rgba(42,44,48,.18)&quot;:colG+&quot;99&quot;;ctx.fillRect(Math.min(a0[0],a1[0]),a0[1],Math.abs(a1[0]-a0[0]),a1[1]-a0[1]);
+      ctx.strokeStyle=cvTec()?&quot;#2a2c30&quot;:colG;ctx.strokeRect(Math.min(a0[0],a1[0]),a0[1],Math.abs(a1[0]-a0[0]),a1[1]-a0[1]);}
+  } else {
+    if(sm.correnti){const hC=Math.max(eLarg(sm.correnti),10),cosA=Ll/Math.hypot(Ll,Hh),tanA=Hh/Ll,dv=hC/cosA,x0=Math.min(Ll,dv/tanA);
+      ctx.fillStyle=cvTec()?CV_TEC.profilo:&quot;rgb(120,85,190)&quot;;ctx.beginPath();ctx.moveTo(...P(0,0));ctx.lineTo(...P(Ll,Hh));ctx.lineTo(...P(Ll,Math.max(0,Hh-dv)));ctx.lineTo(...P(x0,0));ctx.closePath();ctx.fill();ctx.strokeStyle=CVC(&quot;contorno&quot;);ctx.stroke();}
+    ctx.strokeStyle=CVC(&quot;scala&quot;);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(...P(0,0));
+    for(let i=0;i<g.n;i++){ctx.lineTo(...P(i*pd,(i+1)*a));ctx.lineTo(...P((i+1)*pd,(i+1)*a));}
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+// Pianta della scala: u verso destra (salita della rampa), v verso l'alto (sinistra di chi sale)
+function svgPiantaScala(sp){
+  const sc=scalaCalc(sp),pn=sc.pian;if(!pn.on)return &quot;&quot;;
+  const [u0,u1,v0,v1]=pn.box,VW=680,m=46;
+  const k=Math.min((VW-2*m)/Math.max(1,u1-u0),300/Math.max(1,v1-v0)),VH=Math.round((v1-v0)*k+2*m);
+  const X=u=>m+(u-u0)*k,Y=v=>m+(v1-v)*k,f1=x=>x.toFixed(1);
+  const rett=(b,fill,st)=>`<rect x=&quot;${f1(X(b[0]))}&quot; y=&quot;${f1(Y(b[3]))}&quot; width=&quot;${f1((b[1]-b[0])*k)}&quot; height=&quot;${f1((b[3]-b[2])*k)}&quot; fill=&quot;${fill}&quot; stroke=&quot;${st}&quot; stroke-width=&quot;1.4&quot;/>`;
+  const linee=(b,n,dir)=>{let g=&quot;&quot;;for(let i=1;i<n;i++){
+      if(dir[0]!==0){const u=dir[0]>0?b[0]+(b[1]-b[0])*i/n:b[1]-(b[1]-b[0])*i/n;g+=`<line x1=&quot;${f1(X(u))}&quot; y1=&quot;${f1(Y(b[2]))}&quot; x2=&quot;${f1(X(u))}&quot; y2=&quot;${f1(Y(b[3]))}&quot; stroke=&quot;#6a5a9a&quot; stroke-width=&quot;1&quot;/>`;}
+      else {const v=dir[1]>0?b[2]+(b[3]-b[2])*i/n:b[3]-(b[3]-b[2])*i/n;g+=`<line x1=&quot;${f1(X(b[0]))}&quot; y1=&quot;${f1(Y(v))}&quot; x2=&quot;${f1(X(b[1]))}&quot; y2=&quot;${f1(Y(v))}&quot; stroke=&quot;#6a5a9a&quot; stroke-width=&quot;1&quot;/>`;}
+    }return g;};
+  const freccia=(b,dir,t)=>{const cu=(b[0]+b[1])/2,cv=(b[2]+b[3])/2,L=Math.min(b[1]-b[0],b[3]-b[2])*0.3+ (dir[0]?(b[1]-b[0])*0.25:(b[3]-b[2])*0.25);
+    const xa=X(cu-dir[0]*L/2),ya=Y(cv-dir[1]*L/2),xb=X(cu+dir[0]*L/2),yb=Y(cv+dir[1]*L/2);
+    return `<line x1=&quot;${f1(xa)}&quot; y1=&quot;${f1(ya)}&quot; x2=&quot;${f1(xb)}&quot; y2=&quot;${f1(yb)}&quot; stroke=&quot;#c0392b&quot; stroke-width=&quot;2&quot; marker-end=&quot;url(#frS${sp.id})&quot;/><text x=&quot;${f1(X(cu))}&quot; y=&quot;${f1(Y(cv)+(dir[0]?16:4))}&quot; dx=&quot;${dir[0]?0:10}&quot; font-size=&quot;11&quot; font-weight=&quot;700&quot; fill=&quot;#c0392b&quot; text-anchor=&quot;${dir[0]?&quot;middle&quot;:&quot;start&quot;}&quot;>${t}</text>`;};
+  const A=pn.acc,fp=pn.fp;
+  let g=`<defs><marker id=&quot;frS${sp.id}&quot; markerWidth=&quot;8&quot; markerHeight=&quot;8&quot; refX=&quot;6&quot; refY=&quot;4&quot; orient=&quot;auto&quot;><path d=&quot;M0,0 L8,4 L0,8 z&quot; fill=&quot;#c0392b&quot;/></marker></defs>`;
+  g+=rett(fp.pian,pn.ferro?&quot;#e3cdb0&quot;:&quot;#d8c3ae&quot;,&quot;#7a5020&quot;);
+  g+=`<line x1=&quot;${f1(X(fp.pian[0]))}&quot; y1=&quot;${f1(Y(fp.pian[2]))}&quot; x2=&quot;${f1(X(fp.pian[1]))}&quot; y2=&quot;${f1(Y(fp.pian[3]))}&quot; stroke=&quot;#7a5020&quot; stroke-width=&quot;0.8&quot;/><line x1=&quot;${f1(X(fp.pian[0]))}&quot; y1=&quot;${f1(Y(fp.pian[3]))}&quot; x2=&quot;${f1(X(fp.pian[1]))}&quot; y2=&quot;${f1(Y(fp.pian[2]))}&quot; stroke=&quot;#7a5020&quot; stroke-width=&quot;0.8&quot;/>`;
+  g+=rett(fp.ramp,&quot;#ddd5f3&quot;,&quot;#3b2a6e&quot;)+linee(fp.ramp,sc.n,[1,0])+freccia(fp.ramp,[1,0],&quot;sale &quot;+sc.n);
+  if(A.on&amp;&amp;fp.acc)g+=rett(fp.acc,A.tipo==='muratura'?&quot;#d8c3ae&quot;:&quot;#d5ecdf&quot;,A.tipo==='muratura'?&quot;#7a5020&quot;:&quot;#1d6b4a&quot;)+linee(fp.acc,A.n,A.dir)+freccia(fp.acc,A.dir,&quot;sale &quot;+A.n);
+  g+=`<text x=&quot;${f1(X((fp.pian[0]+fp.pian[1])/2))}&quot; y=&quot;${f1(Y((fp.pian[2]+fp.pian[3])/2)+4)}&quot; font-size=&quot;11&quot; font-weight=&quot;700&quot; fill=&quot;#7a5020&quot; text-anchor=&quot;middle&quot;>pianerottolo ${cmv(pn.h)}</text>`;
+  g+=`<line x1=&quot;${f1(X(u0))}&quot; y1=&quot;${VH-16}&quot; x2=&quot;${f1(X(u1))}&quot; y2=&quot;${VH-16}&quot; stroke=&quot;#1f3b73&quot; stroke-width=&quot;1.2&quot;/><text x=&quot;${f1((X(u0)+X(u1))/2)}&quot; y=&quot;${VH-4}&quot; font-size=&quot;12&quot; font-weight=&quot;700&quot; fill=&quot;#1f3b73&quot; text-anchor=&quot;middle&quot;>${cmU(u1-u0)}</text>`;
+  g+=`<line x1=&quot;${VW-16}&quot; y1=&quot;${f1(Y(v1))}&quot; x2=&quot;${VW-16}&quot; y2=&quot;${f1(Y(v0))}&quot; stroke=&quot;#1f3b73&quot; stroke-width=&quot;1.2&quot;/><text x=&quot;${VW-4}&quot; y=&quot;${f1((Y(v1)+Y(v0))/2)}&quot; font-size=&quot;12&quot; font-weight=&quot;700&quot; fill=&quot;#1f3b73&quot; text-anchor=&quot;middle&quot; transform=&quot;rotate(-90 ${VW-4} ${f1((Y(v1)+Y(v0))/2)})&quot;>${cmU(v1-v0)}</text>`;
+  return `<svg viewBox=&quot;0 0 ${VW} ${VH}&quot; width=&quot;100%&quot; style=&quot;display:block;background:#eef1f6;border-radius:8px;max-width:680px&quot;>${g}</svg>`;
 }
 // ── Cosciale con staffe a L saldate sulla faccia interna (gradini appoggiati sulle L) ──
 // Vista laterale, si sale verso destra: x=0 piede della prima alzata, y=0 pavimento (mm).
@@ -8311,6 +8492,7 @@ function inviaPREV(snapId){
       if(sc.gradTipo==='lamiera')righeS.push({ruolo:'',testo:'gradini in lamiera '+(p.scalaLamTipo||'mandorlata')+' sp.'+sc.lamSp+' mm pressopiegata'});
       if(sc.gradTipo==='legno')righeS.push({ruolo:'',testo:'gradini in legno'+(numOk(p.scalaSpessGrad,0)>0?' sp.'+numOk(p.scalaSpessGrad,0)+' mm':'')+' ('+sc.n*sc.nPz+' pz)'});
       if(sc.montaggio==='L')righeS.push({ruolo:'',testo:'gradini appoggiati su staffe a L saldate sulla faccia interna dei cosciali'});
+      if(sc.pian.acc.on)righeS.push({ruolo:'',testo:'gradini d\'accesso al pianerottolo '+(LATI_ACC.find(x=>x[0]===sc.pian.acc.lato)||['',''])[1].toLowerCase()+': '+sc.pian.acc.n+' alzate da '+cmv(sc.pian.acc.alzata)+' cm'+(sc.pian.acc.tipo==='muratura'?' in muratura (esclusi da distinta ferro)':'')});
       if(sc.pian.on)righeS.push({ruolo:'',testo:'pianerottolo iniziale '+cmv(sc.pian.Wp)+'×'+cmv(sc.pian.p)+' cm h '+cmv(sc.pian.h)+' cm '+(sc.pian.ferro?'in ferro'+(sc.pian.spP>0?' con piano in lamiera sp.'+fmtN(sc.pian.spP)+' mm':''):'— struttura di fondo in muratura (esclusa da distinta ferro)')});
       let descS='Scala a cosciali: altezza '+cmv(sc.Htot*1000)+' cm'+(sc.pian.on?' (rampa '+cmv(sc.H*1000)+' cm su pianerottolo '+(sc.pian.ferro?'in ferro':'in muratura')+' h '+cmv(sc.pian.h)+' cm)':'')+', sviluppo '+cmv(sc.L*1000)+' cm'+(sc.pian.on?' + pianerottolo '+cmv(sc.pian.p)+' cm':'')+', larghezza '+cmv(sc.W*1000)+' cm — '+sc.n+' gradini'+(sc.gradTipo==='lamiera'?' in lamiera pressopiegata':'');
       if(nPzU>1)descS+=' (×'+nPzU+' pezzi uguali)';
@@ -8603,6 +8785,7 @@ function walkPezzoMateriali(p,addG){
       A(sm.pianGambe,pn.lGamba,4*sc.nPz,&quot;pianerottolo · gamba&quot;);
       if(pn.nTrav>0)A(sm.pianTraversi||sm.pianTelaio,pn.lTrav,pn.nTrav*sc.nPz,&quot;pianerottolo · traverso&quot;);
     }
+    if(sc.acc&amp;&amp;pn.acc.tipo!=='muratura')walkPezzoMateriali(sc.acc,addG);   // gradini d'accesso: cosciali, gradini, staffe…
     else if(p.scalaHaReggini)A(sm.reggini,rL,sc.n*sc.nCorr*sc.nPz,&quot;reggino&quot;);
     if(p.scalaHaMancorrente)A(sm.mancorrente,sc.D*1000,(parseInt(p.scalaNManc)||2)*sc.nPz,&quot;mancorrente&quot;);
     return;
