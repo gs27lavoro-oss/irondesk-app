@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.25.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.26.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.25.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.26.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -12496,13 +12496,19 @@ function buildHTML(){
     }
     <!-- TRATTAMENTI A PESO -->
     ${(()=>{const t=trattamenti();const r=[];
-      if(t.zinc.on&amp;&amp;t.kg>0)r.push([&quot;Zincatura a caldo&quot;,t.zinc]);
-      if(t.vern.on&amp;&amp;t.kg>0&amp;&amp;t.vern.eurKg>0)r.push([&quot;Verniciatura a polvere&quot;,t.vern]);
+      // Nel preventivo del cliente si scrive SOLO il trattamento scelto: niente peso, niente €/kg,
+      // niente totale di riga. I prezzi compaiono solo se è acceso &quot;prezzo per voce&quot;.
+      if(t.zinc.on)r.push([&quot;Zincatura a caldo&quot;,t.zinc]);
+      if(t.vern.on)r.push([&quot;Verniciatura a polvere&quot;,t.vern]);
       if(!r.length)return &quot;&quot;;
+      const conPrezzi=prezziVoce();
       return `<h2 style=&quot;font-size:15px;margin:16px 0 8px;border-bottom:1.5px solid #333;padding-bottom:3px&quot;>Trattamenti superficiali</h2>
       <table style=&quot;width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px&quot;>
-        ${r.map(x=>`<tr><td style=&quot;padding:5px 0;border-bottom:1px solid #e5e5e5&quot;>${x[0]} — peso struttura ${String(Math.round(t.kg*10)/10).replace(&quot;.&quot;,&quot;,&quot;)} kg × € ${fmtE(x[1].eurKg)}/kg</td>
-          <td style=&quot;padding:5px 0;border-bottom:1px solid #e5e5e5;text-align:right;font-weight:700;color:#804000;white-space:nowrap&quot;>€ ${fmtE(x[1].costo)}</td></tr>`).join(&quot;&quot;)}
+        ${r.map(x=>{
+          const dett=(conPrezzi&amp;&amp;t.kg>0&amp;&amp;x[1].eurKg>0)?` — peso struttura ${String(Math.round(t.kg*10)/10).replace(&quot;.&quot;,&quot;,&quot;)} kg × € ${fmtE(x[1].eurKg)}/kg`:&quot;&quot;;
+          const prz=(conPrezzi&amp;&amp;x[1].costo>0)?`<td style=&quot;padding:5px 0;border-bottom:1px solid #e5e5e5;text-align:right;font-weight:700;color:#804000;white-space:nowrap&quot;>€ ${fmtE(x[1].costo)}</td>`:&quot;&quot;;
+          return `<tr><td style=&quot;padding:5px 0;border-bottom:1px solid #e5e5e5&quot;>${x[0]}${dett}</td>${prz}</tr>`;
+        }).join(&quot;&quot;)}
       </table>`;})()}
     <!-- POSA -->
     ${mostraPosa&amp;&amp;sv(&quot;prev-posa&quot;)?`
