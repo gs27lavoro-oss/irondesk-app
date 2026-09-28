@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.26.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.27.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.26.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.27.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -9682,29 +9682,124 @@ function apriPianoTaglio(){
 
 // Apre una &quot;finestra&quot; di stampa che funziona OVUNQUE: browser (popup) e app
 // desktop/iframe dove window.open è bloccato (pannello interno con iframe).
-function apriFinestraStampa(){
+/* ═══ STAMPA CHE FUNZIONA OVUNQUE ═══
+   Browser, app desktop (.exe) e app del telefono. Niente finestre nuove: sul
+   telefono non si aprono e il tasto &quot;Stampa&quot; non faceva niente. Il documento
+   finisce in un pannello dentro la pagina (nella pagina PRINCIPALE, anche
+   quando siamo dentro un riquadro di IronDesk) e la stampa parte da lì:
+   sul telefono attraverso il ponte nativo AndroidPrint, altrove con print(). */
+function docPrincipale(){
+  var d=document,w=window;
   try{
-    const w=window.open(&quot;&quot;,&quot;_blank&quot;,&quot;width=820,height=950&quot;);
-    if(w&amp;&amp;w.document)return w;
+    var p=window;
+    while(p.parent&amp;&amp;p.parent!==p&amp;&amp;p.parent.document&amp;&amp;p.parent.document.body){ p=p.parent; }
+    if(p.document&amp;&amp;p.document.body){ d=p.document; w=p; }
   }catch(e){}
-  const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(5,8,15,.94);z-index:99999;display:flex;flex-direction:column';
-  const bar=document.createElement('div');
+  return {doc:d,win:w};
+}
+function stampaOra(win){
+  var w=win||window;
+  try{ var A=w.AndroidPrint||window.AndroidPrint; if(A&amp;&amp;typeof A.stampa==='function'){ A.stampa(); return 'telefono'; } }catch(e){}
+  try{ w.focus(); }catch(e){}
+  try{ w.print(); return 'print'; }catch(e){}
+  try{ window.print(); return 'print'; }catch(e){}
+  return '';
+}
+/* le regole del documento stampato valgono solo dentro il pannello */
+function cssPannello(css,root){
+  var out='',i=0,s=String(css||'');
+  var prefissa=function(sel){
+    return sel.split(',').map(function(x){
+      x=x.trim(); if(!x)return '';
+      if(/^(html|body)$/i.test(x))return root;
+      if(x.charAt(0)==='@')return x;
+      return root+' '+x;
+    }).filter(Boolean).join(',');
+  };
+  while(i<s.length){
+    var apre=s.indexOf('{',i); if(apre<0)break;
+    var sel=s.slice(i,apre).trim();
+    if(sel.charAt(0)==='@'){
+      var liv=1,j=apre+1;
+      while(j<s.length&amp;&amp;liv>0){ if(s.charAt(j)==='{')liv++; else if(s.charAt(j)==='}')liv--; j++; }
+      out+=sel+'{'+cssPannello(s.slice(apre+1,j-1),root)+'}';
+      i=j;
+    }else{
+      var chiude=s.indexOf('}',apre);
+      if(chiude<0)chiude=s.length;
+      out+=prefissa(sel)+'{'+s.slice(apre+1,chiude)+'}';
+      i=chiude+1;
+    }
+  }
+  return out;
+}
+function apriFinestraStampa(){
+  var T=docPrincipale(), doc=T.doc, win=T.win;
+  var vecchi=doc.querySelectorAll('.pannello-stampa');
+  for(var k=0;k<vecchi.length;k++)vecchi[k].remove();
+  if(!doc.getElementById('css-stampa-globale')){
+    var st=doc.createElement('style'); st.id='css-stampa-globale';
+    st.textContent='@media print{'
+      +'body.in-stampa>*:not(.pannello-stampa){display:none!important}'
+      +'body.in-stampa{background:#fff!important;margin:0!important;padding:0!important}'
+      +'body.in-stampa .pannello-stampa{position:static!important;inset:auto!important;width:auto!important;height:auto!important;'
+      +'background:#fff!important;display:block!important;overflow:visible!important}'
+      +'body.in-stampa .barra-stampa{display:none!important}'
+      +'body.in-stampa .foglio-stampa{max-width:none!important;overflow:visible!important;padding:0!important;margin:0!important;height:auto!important}'
+      +'}';
+    doc.head.appendChild(st);
+  }
+  var ov=doc.createElement('div');
+  ov.className='pannello-stampa';
+  ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(5,8,15,.94);z-index:2147483000;display:flex;flex-direction:column';
+  var bar=doc.createElement('div');
+  bar.className='barra-stampa';
   bar.style.cssText='display:flex;gap:10px;justify-content:flex-end;padding:10px 14px;background:#142238;border-bottom:1px solid #273851;flex-shrink:0';
-  const btnP=document.createElement('button');
-  btnP.textContent='🖨️ Stampa / Salva PDF';
-  btnP.style.cssText='padding:9px 18px;border:none;border-radius:8px;background:#f08a3c;color:#fff;font-weight:700;font-size:14px;cursor:pointer';
-  const btnC=document.createElement('button');
-  btnC.textContent='✕ Chiudi';
-  btnC.style.cssText='padding:9px 18px;border:1.5px solid #91a2bb;border-radius:8px;background:none;color:#e8eef7;font-weight:700;font-size:14px;cursor:pointer';
-  const fr=document.createElement('iframe');
-  fr.style.cssText='flex:1;border:none;background:#fff;width:100%';
-  bar.appendChild(btnP);bar.appendChild(btnC);
-  ov.appendChild(bar);ov.appendChild(fr);
-  document.body.appendChild(ov);
-  btnC.onclick=function(){ov.remove();};
-  btnP.onclick=function(){try{fr.contentWindow.focus();fr.contentWindow.print();}catch(e){}};
-  return fr.contentWindow;
+  var btnP=doc.createElement('button');
+  btnP.textContent='\uD83D\uDDA8\uFE0F Stampa / Salva PDF';
+  btnP.style.cssText='padding:10px 18px;border:none;border-radius:8px;background:#f08a3c;color:#fff;font-weight:700;font-size:14px;cursor:pointer';
+  var btnC=doc.createElement('button');
+  btnC.textContent='\u2715 Chiudi';
+  btnC.style.cssText='padding:10px 18px;border:1.5px solid #91a2bb;border-radius:8px;background:none;color:#e8eef7;font-weight:700;font-size:14px;cursor:pointer';
+  var foglio=doc.createElement('div');
+  foglio.className='foglio-stampa';
+  foglio.style.cssText='flex:1;overflow:auto;background:#fff;color:#111;padding:16px;-webkit-overflow-scrolling:touch';
+  bar.appendChild(btnP); bar.appendChild(btnC);
+  ov.appendChild(bar); ov.appendChild(foglio);
+  doc.body.appendChild(ov);
+  var chiudi=function(){ doc.body.classList.remove('in-stampa'); ov.remove(); };
+  btnC.onclick=chiudi;
+  var lancia=function(){
+    doc.body.classList.add('in-stampa');
+    setTimeout(function(){
+      var esito=stampaOra(win);
+      setTimeout(function(){ doc.body.classList.remove('in-stampa'); },1200);
+      if(!esito){ btnP.textContent='\u26a0 Stampa non disponibile qui'; }
+    },40);
+  };
+  btnP.onclick=lancia;
+  var finta={ _buf:'' };
+  finta.document={
+    write:function(h){ finta._buf+=String(h); },
+    close:function(){
+      var html=finta._buf, stile='';
+      html=html.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi,function(m,c){ stile+=c+'\n'; return ''; });
+      html=html.replace(/<script[\s\S]*?<\/script>/gi,'');
+      var m=html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+      var corpo=m?m[1]:html.replace(/[\s\S]*?<body[^>]*>/i,'').replace(/<\/html>[\s\S]*$/i,'');
+      foglio.innerHTML='<style>'+cssPannello(stile,'.pannello-stampa .foglio-stampa')+'</style>'+corpo;
+      var dentro=foglio.querySelectorAll('.no-print');
+      for(var i=0;i<dentro.length;i++){
+        dentro[i].removeAttribute('onclick');
+        dentro[i].onclick=lancia;
+      }
+      try{ foglio.scrollTop=0; }catch(e){}
+    }
+  };
+  finta.focus=function(){};
+  finta.print=lancia;
+  finta.close=chiudi;
+  return finta;
 }
 function stampaDistintaTaglio(){
   renderRiepilogo();
@@ -12560,29 +12655,124 @@ function chiudiAnteprima(){$(&quot;popup-ante&quot;).classList.remove(&quot;on&q
 
 // Finestra di stampa che funziona anche dove window.open è bloccato (exe/iframe):
 // se il popup non si apre, mostra un pannello interno con anteprima e pulsanti.
-function apriFinestraStampa(){
+/* ═══ STAMPA CHE FUNZIONA OVUNQUE ═══
+   Browser, app desktop (.exe) e app del telefono. Niente finestre nuove: sul
+   telefono non si aprono e il tasto &quot;Stampa&quot; non faceva niente. Il documento
+   finisce in un pannello dentro la pagina (nella pagina PRINCIPALE, anche
+   quando siamo dentro un riquadro di IronDesk) e la stampa parte da lì:
+   sul telefono attraverso il ponte nativo AndroidPrint, altrove con print(). */
+function docPrincipale(){
+  var d=document,w=window;
   try{
-    const w=window.open(&quot;&quot;,&quot;_blank&quot;,&quot;width=820,height=950&quot;);
-    if(w&amp;&amp;w.document)return w;
+    var p=window;
+    while(p.parent&amp;&amp;p.parent!==p&amp;&amp;p.parent.document&amp;&amp;p.parent.document.body){ p=p.parent; }
+    if(p.document&amp;&amp;p.document.body){ d=p.document; w=p; }
   }catch(e){}
-  const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(5,8,15,.94);z-index:99999;display:flex;flex-direction:column';
-  const bar=document.createElement('div');
+  return {doc:d,win:w};
+}
+function stampaOra(win){
+  var w=win||window;
+  try{ var A=w.AndroidPrint||window.AndroidPrint; if(A&amp;&amp;typeof A.stampa==='function'){ A.stampa(); return 'telefono'; } }catch(e){}
+  try{ w.focus(); }catch(e){}
+  try{ w.print(); return 'print'; }catch(e){}
+  try{ window.print(); return 'print'; }catch(e){}
+  return '';
+}
+/* le regole del documento stampato valgono solo dentro il pannello */
+function cssPannello(css,root){
+  var out='',i=0,s=String(css||'');
+  var prefissa=function(sel){
+    return sel.split(',').map(function(x){
+      x=x.trim(); if(!x)return '';
+      if(/^(html|body)$/i.test(x))return root;
+      if(x.charAt(0)==='@')return x;
+      return root+' '+x;
+    }).filter(Boolean).join(',');
+  };
+  while(i<s.length){
+    var apre=s.indexOf('{',i); if(apre<0)break;
+    var sel=s.slice(i,apre).trim();
+    if(sel.charAt(0)==='@'){
+      var liv=1,j=apre+1;
+      while(j<s.length&amp;&amp;liv>0){ if(s.charAt(j)==='{')liv++; else if(s.charAt(j)==='}')liv--; j++; }
+      out+=sel+'{'+cssPannello(s.slice(apre+1,j-1),root)+'}';
+      i=j;
+    }else{
+      var chiude=s.indexOf('}',apre);
+      if(chiude<0)chiude=s.length;
+      out+=prefissa(sel)+'{'+s.slice(apre+1,chiude)+'}';
+      i=chiude+1;
+    }
+  }
+  return out;
+}
+function apriFinestraStampa(){
+  var T=docPrincipale(), doc=T.doc, win=T.win;
+  var vecchi=doc.querySelectorAll('.pannello-stampa');
+  for(var k=0;k<vecchi.length;k++)vecchi[k].remove();
+  if(!doc.getElementById('css-stampa-globale')){
+    var st=doc.createElement('style'); st.id='css-stampa-globale';
+    st.textContent='@media print{'
+      +'body.in-stampa>*:not(.pannello-stampa){display:none!important}'
+      +'body.in-stampa{background:#fff!important;margin:0!important;padding:0!important}'
+      +'body.in-stampa .pannello-stampa{position:static!important;inset:auto!important;width:auto!important;height:auto!important;'
+      +'background:#fff!important;display:block!important;overflow:visible!important}'
+      +'body.in-stampa .barra-stampa{display:none!important}'
+      +'body.in-stampa .foglio-stampa{max-width:none!important;overflow:visible!important;padding:0!important;margin:0!important;height:auto!important}'
+      +'}';
+    doc.head.appendChild(st);
+  }
+  var ov=doc.createElement('div');
+  ov.className='pannello-stampa';
+  ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(5,8,15,.94);z-index:2147483000;display:flex;flex-direction:column';
+  var bar=doc.createElement('div');
+  bar.className='barra-stampa';
   bar.style.cssText='display:flex;gap:10px;justify-content:flex-end;padding:10px 14px;background:#142238;border-bottom:1px solid #273851;flex-shrink:0';
-  const btnP=document.createElement('button');
-  btnP.textContent='🖨️ Stampa / Salva PDF';
-  btnP.style.cssText='padding:9px 18px;border:none;border-radius:8px;background:#f08a3c;color:#fff;font-weight:700;font-size:14px;cursor:pointer';
-  const btnC=document.createElement('button');
-  btnC.textContent='✕ Chiudi';
-  btnC.style.cssText='padding:9px 18px;border:1.5px solid #91a2bb;border-radius:8px;background:none;color:#e8eef7;font-weight:700;font-size:14px;cursor:pointer';
-  const fr=document.createElement('iframe');
-  fr.style.cssText='flex:1;border:none;background:#fff;width:100%';
-  bar.appendChild(btnP);bar.appendChild(btnC);
-  ov.appendChild(bar);ov.appendChild(fr);
-  document.body.appendChild(ov);
-  btnC.onclick=function(){ov.remove();};
-  btnP.onclick=function(){try{fr.contentWindow.focus();fr.contentWindow.print();}catch(e){}};
-  return fr.contentWindow;
+  var btnP=doc.createElement('button');
+  btnP.textContent='\uD83D\uDDA8\uFE0F Stampa / Salva PDF';
+  btnP.style.cssText='padding:10px 18px;border:none;border-radius:8px;background:#f08a3c;color:#fff;font-weight:700;font-size:14px;cursor:pointer';
+  var btnC=doc.createElement('button');
+  btnC.textContent='\u2715 Chiudi';
+  btnC.style.cssText='padding:10px 18px;border:1.5px solid #91a2bb;border-radius:8px;background:none;color:#e8eef7;font-weight:700;font-size:14px;cursor:pointer';
+  var foglio=doc.createElement('div');
+  foglio.className='foglio-stampa';
+  foglio.style.cssText='flex:1;overflow:auto;background:#fff;color:#111;padding:16px;-webkit-overflow-scrolling:touch';
+  bar.appendChild(btnP); bar.appendChild(btnC);
+  ov.appendChild(bar); ov.appendChild(foglio);
+  doc.body.appendChild(ov);
+  var chiudi=function(){ doc.body.classList.remove('in-stampa'); ov.remove(); };
+  btnC.onclick=chiudi;
+  var lancia=function(){
+    doc.body.classList.add('in-stampa');
+    setTimeout(function(){
+      var esito=stampaOra(win);
+      setTimeout(function(){ doc.body.classList.remove('in-stampa'); },1200);
+      if(!esito){ btnP.textContent='\u26a0 Stampa non disponibile qui'; }
+    },40);
+  };
+  btnP.onclick=lancia;
+  var finta={ _buf:'' };
+  finta.document={
+    write:function(h){ finta._buf+=String(h); },
+    close:function(){
+      var html=finta._buf, stile='';
+      html=html.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi,function(m,c){ stile+=c+'\n'; return ''; });
+      html=html.replace(/<script[\s\S]*?<\/script>/gi,'');
+      var m=html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+      var corpo=m?m[1]:html.replace(/[\s\S]*?<body[^>]*>/i,'').replace(/<\/html>[\s\S]*$/i,'');
+      foglio.innerHTML='<style>'+cssPannello(stile,'.pannello-stampa .foglio-stampa')+'</style>'+corpo;
+      var dentro=foglio.querySelectorAll('.no-print');
+      for(var i=0;i<dentro.length;i++){
+        dentro[i].removeAttribute('onclick');
+        dentro[i].onclick=lancia;
+      }
+      try{ foglio.scrollTop=0; }catch(e){}
+    }
+  };
+  finta.focus=function(){};
+  finta.print=lancia;
+  finta.close=chiudi;
+  return finta;
 }
 function stampaPrev(){
   const w=apriFinestraStampa();
