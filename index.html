@@ -9741,7 +9741,9 @@ function apriFinestraStampa(){
     var st=doc.createElement('style'); st.id='css-stampa-globale';
     st.textContent='@media print{'
       +'body.in-stampa>*:not(.pannello-stampa){display:none!important}'
-      +'body.in-stampa{background:#fff!important;margin:0!important;padding:0!important}'
+      +'html,body.in-stampa{background:#fff!important;margin:0!important;padding:0!important}'
+      +'html,body.in-stampa{height:auto!important;max-height:none!important;overflow:visible!important}'
+      +'body.in-stampa .foglio-stampa{background:#fff!important;color:#000!important}'
       +'body.in-stampa .pannello-stampa{position:static!important;inset:auto!important;width:auto!important;height:auto!important;'
       +'background:#fff!important;display:block!important;overflow:visible!important}'
       +'body.in-stampa .barra-stampa{display:none!important}'
@@ -9768,15 +9770,26 @@ function apriFinestraStampa(){
   bar.appendChild(btnP); bar.appendChild(btnC);
   ov.appendChild(bar); ov.appendChild(foglio);
   doc.body.appendChild(ov);
-  var chiudi=function(){ doc.body.classList.remove('in-stampa'); ov.remove(); };
+  var chiudi=function(){ if(typeof ripristina==='function')ripristina(); doc.body.classList.remove('in-stampa'); ov.remove(); };
   btnC.onclick=chiudi;
+  var tRip=null;
+  var ripristina=function(){
+    clearTimeout(tRip);
+    doc.body.classList.remove('in-stampa');
+    try{ win.removeEventListener('afterprint',ripristina); }catch(e){}
+    try{ win.removeEventListener('focus',ripristina); }catch(e){}
+  };
   var lancia=function(){
     doc.body.classList.add('in-stampa');
+    // La pagina resta pronta per la carta finche la stampa non e finita: sul telefono
+    // il sistema fotografa la pagina dopo qualche secondo, non subito (prima usciva nera).
+    try{ win.addEventListener('afterprint',ripristina); }catch(e){}
+    try{ win.addEventListener('focus',ripristina); }catch(e){}
+    clearTimeout(tRip); tRip=setTimeout(ripristina,120000);
     setTimeout(function(){
       var esito=stampaOra(win);
-      setTimeout(function(){ doc.body.classList.remove('in-stampa'); },1200);
-      if(!esito){ btnP.textContent='\u26a0 Stampa non disponibile qui'; }
-    },40);
+      if(!esito){ ripristina(); btnP.textContent='\u26a0 Stampa non disponibile qui'; }
+    },60);
   };
   btnP.onclick=lancia;
   var finta={ _buf:'' };
@@ -12554,10 +12567,10 @@ function buildHTML(){
     <div style=&quot;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:16px&quot;>
       <div style=&quot;flex:1;min-width:0&quot;>
         ${cfg.logo?`<img src=&quot;${cfg.logo}&quot; style=&quot;max-height:60px;max-width:220px;margin-bottom:6px&quot;>`:&quot;&quot;}
-        ${cfg.nome?`<div style=&quot;font-size:17px;font-weight:700&quot;>${cfg.nome}</div>`:&quot;&quot;}
         ${cfg.prof?`<div style=&quot;font-size:11px;color:#555&quot;>${cfg.prof}</div>`:&quot;&quot;}
+        <!-- nome e telefono NON qui: si leggono in fondo, sulla firma, senza ripetizioni -->
         <div style=&quot;font-size:11px;color:#555;margin-top:3px;line-height:1.5&quot;>
-          ${cfg.ind?cfg.ind+&quot;<br>&quot;:&quot;&quot;}${cfg.piva?&quot;P.IVA/C.F. &quot;+cfg.piva+&quot;<br>&quot;:&quot;&quot;}${cfg.tel?&quot;Tel. &quot;+cfg.tel+&quot; &quot;:&quot;&quot;}${cfg.email?&quot;· &quot;+cfg.email:&quot;&quot;}${cfg.web?&quot;<br>&quot;+cfg.web:&quot;&quot;}
+          ${cfg.ind?cfg.ind+&quot;<br>&quot;:&quot;&quot;}${cfg.piva?&quot;P.IVA/C.F. &quot;+cfg.piva:&quot;&quot;}${cfg.web?(cfg.piva?&quot;<br>&quot;:&quot;&quot;)+cfg.web:&quot;&quot;}
         </div>
       </div>
       <div style=&quot;text-align:right;flex-shrink:0&quot;>
@@ -12715,7 +12728,9 @@ function apriFinestraStampa(){
     var st=doc.createElement('style'); st.id='css-stampa-globale';
     st.textContent='@media print{'
       +'body.in-stampa>*:not(.pannello-stampa){display:none!important}'
-      +'body.in-stampa{background:#fff!important;margin:0!important;padding:0!important}'
+      +'html,body.in-stampa{background:#fff!important;margin:0!important;padding:0!important}'
+      +'html,body.in-stampa{height:auto!important;max-height:none!important;overflow:visible!important}'
+      +'body.in-stampa .foglio-stampa{background:#fff!important;color:#000!important}'
       +'body.in-stampa .pannello-stampa{position:static!important;inset:auto!important;width:auto!important;height:auto!important;'
       +'background:#fff!important;display:block!important;overflow:visible!important}'
       +'body.in-stampa .barra-stampa{display:none!important}'
@@ -12742,15 +12757,26 @@ function apriFinestraStampa(){
   bar.appendChild(btnP); bar.appendChild(btnC);
   ov.appendChild(bar); ov.appendChild(foglio);
   doc.body.appendChild(ov);
-  var chiudi=function(){ doc.body.classList.remove('in-stampa'); ov.remove(); };
+  var chiudi=function(){ if(typeof ripristina==='function')ripristina(); doc.body.classList.remove('in-stampa'); ov.remove(); };
   btnC.onclick=chiudi;
+  var tRip=null;
+  var ripristina=function(){
+    clearTimeout(tRip);
+    doc.body.classList.remove('in-stampa');
+    try{ win.removeEventListener('afterprint',ripristina); }catch(e){}
+    try{ win.removeEventListener('focus',ripristina); }catch(e){}
+  };
   var lancia=function(){
     doc.body.classList.add('in-stampa');
+    // La pagina resta pronta per la carta finche la stampa non e finita: sul telefono
+    // il sistema fotografa la pagina dopo qualche secondo, non subito (prima usciva nera).
+    try{ win.addEventListener('afterprint',ripristina); }catch(e){}
+    try{ win.addEventListener('focus',ripristina); }catch(e){}
+    clearTimeout(tRip); tRip=setTimeout(ripristina,120000);
     setTimeout(function(){
       var esito=stampaOra(win);
-      setTimeout(function(){ doc.body.classList.remove('in-stampa'); },1200);
-      if(!esito){ btnP.textContent='\u26a0 Stampa non disponibile qui'; }
-    },40);
+      if(!esito){ ripristina(); btnP.textContent='\u26a0 Stampa non disponibile qui'; }
+    },60);
   };
   btnP.onclick=lancia;
   var finta={ _buf:'' };
