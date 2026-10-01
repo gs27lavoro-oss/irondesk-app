@@ -9788,10 +9788,8 @@ function apriFinestraStampa(){
     try{ win.removeEventListener('focus',ripristina); }catch(e){}
   };
   var htmlDoc='';
-  var lancia=function(){
-    // sul telefono basta mandare il documento al sistema: niente da preparare nella pagina
-    var A=null; try{ A=(win&amp;&amp;win.AndroidPrint)||window.AndroidPrint; }catch(e){}
-    if(A&amp;&amp;typeof A.stampaHtml==='function'&amp;&amp;htmlDoc){ try{ A.stampaHtml(htmlDoc); return; }catch(e){} }
+  // Ripiego: prepara la pagina e stampa quello che si vede (PC, browser, app vecchie)
+  var stampaDiScorta=function(){
     doc.body.classList.add('in-stampa');
     // La pagina resta pronta per la carta finche la stampa non e finita: sul telefono
     // il sistema fotografa la pagina dopo qualche secondo, non subito (prima usciva nera).
@@ -9799,9 +9797,29 @@ function apriFinestraStampa(){
     try{ win.addEventListener('focus',ripristina); }catch(e){}
     clearTimeout(tRip); tRip=setTimeout(ripristina,120000);
     setTimeout(function(){
-      var esito=stampaOra(win,htmlDoc);
+      var esito=stampaOra(win);
       if(!esito){ ripristina(); btnP.textContent='\u26a0 Stampa non disponibile qui'; }
     },60);
+  };
+  var lancia=function(){
+    // Telefono: si manda il documento alla stampa di sistema. Se dopo due secondi e mezzo
+    // non si e' aperto niente, si riprova nel modo normale: il tasto non resta mai muto.
+    var A=null; try{ A=(win&amp;&amp;win.AndroidPrint)||window.AndroidPrint; }catch(e){}
+    if(A&amp;&amp;typeof A.stampaHtml==='function'&amp;&amp;htmlDoc){
+      var partito=false;
+      var segna=function(){ partito=true; };
+      try{ win.addEventListener('blur',segna); }catch(e){}
+      try{ doc.addEventListener('visibilitychange',segna); }catch(e){}
+      var avviato=true;
+      try{ avviato=(A.stampaHtml(htmlDoc)!==false); }catch(e){ avviato=false; }
+      setTimeout(function(){
+        try{ win.removeEventListener('blur',segna); }catch(e){}
+        try{ doc.removeEventListener('visibilitychange',segna); }catch(e){}
+        if(!partito) stampaDiScorta();
+      },2500);
+      if(avviato) return;
+    }
+    stampaDiScorta();
   };
   btnP.onclick=lancia;
   var finta={ _buf:'' };
@@ -12789,10 +12807,8 @@ function apriFinestraStampa(){
     try{ win.removeEventListener('focus',ripristina); }catch(e){}
   };
   var htmlDoc='';
-  var lancia=function(){
-    // sul telefono basta mandare il documento al sistema: niente da preparare nella pagina
-    var A=null; try{ A=(win&amp;&amp;win.AndroidPrint)||window.AndroidPrint; }catch(e){}
-    if(A&amp;&amp;typeof A.stampaHtml==='function'&amp;&amp;htmlDoc){ try{ A.stampaHtml(htmlDoc); return; }catch(e){} }
+  // Ripiego: prepara la pagina e stampa quello che si vede (PC, browser, app vecchie)
+  var stampaDiScorta=function(){
     doc.body.classList.add('in-stampa');
     // La pagina resta pronta per la carta finche la stampa non e finita: sul telefono
     // il sistema fotografa la pagina dopo qualche secondo, non subito (prima usciva nera).
@@ -12800,9 +12816,29 @@ function apriFinestraStampa(){
     try{ win.addEventListener('focus',ripristina); }catch(e){}
     clearTimeout(tRip); tRip=setTimeout(ripristina,120000);
     setTimeout(function(){
-      var esito=stampaOra(win,htmlDoc);
+      var esito=stampaOra(win);
       if(!esito){ ripristina(); btnP.textContent='\u26a0 Stampa non disponibile qui'; }
     },60);
+  };
+  var lancia=function(){
+    // Telefono: si manda il documento alla stampa di sistema. Se dopo due secondi e mezzo
+    // non si e' aperto niente, si riprova nel modo normale: il tasto non resta mai muto.
+    var A=null; try{ A=(win&amp;&amp;win.AndroidPrint)||window.AndroidPrint; }catch(e){}
+    if(A&amp;&amp;typeof A.stampaHtml==='function'&amp;&amp;htmlDoc){
+      var partito=false;
+      var segna=function(){ partito=true; };
+      try{ win.addEventListener('blur',segna); }catch(e){}
+      try{ doc.addEventListener('visibilitychange',segna); }catch(e){}
+      var avviato=true;
+      try{ avviato=(A.stampaHtml(htmlDoc)!==false); }catch(e){ avviato=false; }
+      setTimeout(function(){
+        try{ win.removeEventListener('blur',segna); }catch(e){}
+        try{ doc.removeEventListener('visibilitychange',segna); }catch(e){}
+        if(!partito) stampaDiScorta();
+      },2500);
+      if(avviato) return;
+    }
+    stampaDiScorta();
   };
   btnP.onclick=lancia;
   var finta={ _buf:'' };
