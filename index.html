@@ -9697,9 +9697,17 @@ function docPrincipale(){
   }catch(e){}
   return {doc:d,win:w};
 }
-function stampaOra(win){
+function stampaOra(win,html){
   var w=win||window;
-  try{ var A=w.AndroidPrint||window.AndroidPrint; if(A&amp;&amp;typeof A.stampa==='function'){ A.stampa(); return 'telefono'; } }catch(e){}
+  try{
+    var A=w.AndroidPrint||window.AndroidPrint;
+    if(A){
+      // Il telefono stampa il documento in una pagina tutta sua: cosi' non c'entra
+      // niente il resto dell'app e il PDF non esce bianco.
+      if(html&amp;&amp;typeof A.stampaHtml==='function'){ A.stampaHtml(html); return 'telefono'; }
+      if(typeof A.stampa==='function'){ A.stampa(); return 'telefono'; }
+    }
+  }catch(e){}
   try{ w.focus(); }catch(e){}
   try{ w.print(); return 'print'; }catch(e){}
   try{ window.print(); return 'print'; }catch(e){}
@@ -9779,7 +9787,11 @@ function apriFinestraStampa(){
     try{ win.removeEventListener('afterprint',ripristina); }catch(e){}
     try{ win.removeEventListener('focus',ripristina); }catch(e){}
   };
+  var htmlDoc='';
   var lancia=function(){
+    // sul telefono basta mandare il documento al sistema: niente da preparare nella pagina
+    var A=null; try{ A=(win&amp;&amp;win.AndroidPrint)||window.AndroidPrint; }catch(e){}
+    if(A&amp;&amp;typeof A.stampaHtml==='function'&amp;&amp;htmlDoc){ try{ A.stampaHtml(htmlDoc); return; }catch(e){} }
     doc.body.classList.add('in-stampa');
     // La pagina resta pronta per la carta finche la stampa non e finita: sul telefono
     // il sistema fotografa la pagina dopo qualche secondo, non subito (prima usciva nera).
@@ -9787,7 +9799,7 @@ function apriFinestraStampa(){
     try{ win.addEventListener('focus',ripristina); }catch(e){}
     clearTimeout(tRip); tRip=setTimeout(ripristina,120000);
     setTimeout(function(){
-      var esito=stampaOra(win);
+      var esito=stampaOra(win,htmlDoc);
       if(!esito){ ripristina(); btnP.textContent='\u26a0 Stampa non disponibile qui'; }
     },60);
   };
@@ -9797,6 +9809,8 @@ function apriFinestraStampa(){
     write:function(h){ finta._buf+=String(h); },
     close:function(){
       var html=finta._buf, stile='';
+      // copia completa del documento (senza i tasti) da mandare alla stampa del telefono
+      htmlDoc=finta._buf.replace(/<button[^>]*class=&quot;[^&quot;]*no-print[^&quot;]*&quot;[\s\S]*?<\/button>/gi,'');
       html=html.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi,function(m,c){ stile+=c+'\n'; return ''; });
       html=html.replace(/<script[\s\S]*?<\/script>/gi,'');
       var m=html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
@@ -12684,9 +12698,17 @@ function docPrincipale(){
   }catch(e){}
   return {doc:d,win:w};
 }
-function stampaOra(win){
+function stampaOra(win,html){
   var w=win||window;
-  try{ var A=w.AndroidPrint||window.AndroidPrint; if(A&amp;&amp;typeof A.stampa==='function'){ A.stampa(); return 'telefono'; } }catch(e){}
+  try{
+    var A=w.AndroidPrint||window.AndroidPrint;
+    if(A){
+      // Il telefono stampa il documento in una pagina tutta sua: cosi' non c'entra
+      // niente il resto dell'app e il PDF non esce bianco.
+      if(html&amp;&amp;typeof A.stampaHtml==='function'){ A.stampaHtml(html); return 'telefono'; }
+      if(typeof A.stampa==='function'){ A.stampa(); return 'telefono'; }
+    }
+  }catch(e){}
   try{ w.focus(); }catch(e){}
   try{ w.print(); return 'print'; }catch(e){}
   try{ window.print(); return 'print'; }catch(e){}
@@ -12766,7 +12788,11 @@ function apriFinestraStampa(){
     try{ win.removeEventListener('afterprint',ripristina); }catch(e){}
     try{ win.removeEventListener('focus',ripristina); }catch(e){}
   };
+  var htmlDoc='';
   var lancia=function(){
+    // sul telefono basta mandare il documento al sistema: niente da preparare nella pagina
+    var A=null; try{ A=(win&amp;&amp;win.AndroidPrint)||window.AndroidPrint; }catch(e){}
+    if(A&amp;&amp;typeof A.stampaHtml==='function'&amp;&amp;htmlDoc){ try{ A.stampaHtml(htmlDoc); return; }catch(e){} }
     doc.body.classList.add('in-stampa');
     // La pagina resta pronta per la carta finche la stampa non e finita: sul telefono
     // il sistema fotografa la pagina dopo qualche secondo, non subito (prima usciva nera).
@@ -12774,7 +12800,7 @@ function apriFinestraStampa(){
     try{ win.addEventListener('focus',ripristina); }catch(e){}
     clearTimeout(tRip); tRip=setTimeout(ripristina,120000);
     setTimeout(function(){
-      var esito=stampaOra(win);
+      var esito=stampaOra(win,htmlDoc);
       if(!esito){ ripristina(); btnP.textContent='\u26a0 Stampa non disponibile qui'; }
     },60);
   };
@@ -12784,6 +12810,8 @@ function apriFinestraStampa(){
     write:function(h){ finta._buf+=String(h); },
     close:function(){
       var html=finta._buf, stile='';
+      // copia completa del documento (senza i tasti) da mandare alla stampa del telefono
+      htmlDoc=finta._buf.replace(/<button[^>]*class=&quot;[^&quot;]*no-print[^&quot;]*&quot;[\s\S]*?<\/button>/gi,'');
       html=html.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi,function(m,c){ stile+=c+'\n'; return ''; });
       html=html.replace(/<script[\s\S]*?<\/script>/gi,'');
       var m=html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
