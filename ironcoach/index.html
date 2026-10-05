@@ -561,6 +561,20 @@ textarea:focus{border-color:var(--acc)}
     <div id="ciResult" class="note hide"></div>
     <div id="ciList"></div>
   </div>
+  <div class="card" id="gonfCard">
+    <h2>🎈 Diario del gonfiore</h2>
+    <p class="muted">Ogni sera segna quanto eri gonfio e cosa è successo oggi. Dopo una settimana l'app confronta i giorni e ti dice cosa lo peggiora; poi puoi togliere quel cibo dalla dieta con un tasto.</p>
+    <label>Data</label><input id="gDate" type="date">
+    <label style="margin-top:8px">Gonfiore (0 = pancia piatta, 5 = molto gonfia)</label>
+    <div class="chips" id="gScore"></div>
+    <label style="margin-top:8px">Cosa hai mangiato e cosa è successo oggi (tocca tutto ciò che vale)</label>
+    <div class="chips" id="gTags"></div>
+    <label style="margin-top:8px">Nota (facoltativa)</label>
+    <input id="gNote" type="text" placeholder="es. gonfio dopo cena">
+    <button class="btn" id="gSave">💾 Salva il giorno</button>
+    <div id="gAnalysis" style="margin-top:12px"></div>
+    <ul class="proglist" id="gList"></ul>
+  </div>
   <div class="card">
     <h2>📈 Registro peso</h2>
     <p class="muted">Segna il peso ogni settimana. Se cambia molto, rigenera il piano dal Profilo per ricalibrare calorie e macro.</p>
@@ -3176,8 +3190,95 @@ function renderCheckin(){
      +(c.righe||[]).map(x=>'• '+esc(x)).join('<br>')+'</div>').join('')
   : '';
 }
+/* ---------- Diario del gonfiore ---------- */
+const GONF_TAGS=[
+ {id:'latt',n:'Latticini',f:['yogurt','ricotta','fiocchi','whey','skyr','latte','mozzarella','parmigiano','philadelphia']},
+ {id:'legu',n:'Legumi',f:['legumi','edamame']},
+ {id:'cruc',n:'Broccoli / cavolfiore',f:['broccoli','cavolfiore']},
+ {id:'glut',n:'Pane / pasta / cereali con glutine',f:['pasta','pane','panbauletto','couscous','farro','orzo']},
+ {id:'dolc',n:'Dolcificanti / barrette'},
+ {id:'gas',n:'Bevande gassate'},
+ {id:'fritt',n:'Fritti / cibi unti'},
+ {id:'alc',n:'Alcol'},
+ {id:'abb',n:'Pasto molto abbondante'},
+ {id:'fretta',n:'Mangiato di fretta'},
+ {id:'acqua',n:'Poca acqua'},
+ {id:'cons',n:'Stitichezza'},
+ {id:'stress',n:'Stress'},
+ {id:'sonno',n:'Poco sonno'},
+ {id:'integr',n:'Creatina / integratori'}
+];
+let gSel={score:null,tags:[]};
+function gonfList(){ return state.gonfiore||[]; }
+function gonfLoadDate(){
+ const d=$('#gDate').value, e=gonfList().find(x=>x.date===d);
+ gSel={score:e?e.score:null,tags:e?e.tags.slice():[]};
+ $('#gNote').value=e?(e.note||''):'';
+ renderGonfChips();
+}
+function renderGonfChips(){
+ $('#gScore').innerHTML=[0,1,2,3,4,5].map(i=>`<div class="chip${gSel.score===i?' on':''}" data-s="${i}">${i}</div>`).join('');
+ $('#gScore').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{gSel.score=+c.dataset.s;renderGonfChips();});
+ const chip=(id,n)=>`<div class="chip${gSel.tags.includes(id)?' on':''}" data-t="${id}">${n}</div>`;
+ $('#gTags').innerHTML=Object.keys(FOODPREF).map(cat=>'<div class="chipgrouplabel">🍽️ '+cat+'</div>'+FOODPREF[cat].filter(k=>F[k]).map(k=>chip('f:'+k,F[k].n)).join('')).join('')
+  +'<div class="chipgrouplabel">⚠️ Altri fattori</div>'+GONF_TAGS.filter(t=>!t.f).map(t=>chip(t.id,t.n)).join('');
+ $('#gTags').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{
+   const i=gSel.tags.indexOf(c.dataset.t); i<0?gSel.tags.push(c.dataset.t):gSel.tags.splice(i,1); renderGonfChips();});
+}
+/* voci analizzabili: fattori, gruppi di cibi e ogni singolo cibo; un cibo spuntato accende anche il suo gruppo */
+function gonfItems(){
+ const it=GONF_TAGS.slice();
+ Object.keys(FOODPREF).forEach(c=>FOODPREF[c].forEach(k=>{if(F[k])it.push({id:'f:'+k,n:F[k].n,f:[k]});}));
+ return it;
+}
+function gonfEff(e){
+ const s=new Set(e.tags);
+ GONF_TAGS.forEach(t=>{if(t.f&&t.f.some(k=>s.has('f:'+k)))s.add(t.id);});
+ return s;
+}
+function gonfAnalisi(){
+ const L=gonfList(); if(L.length<7) return null;
+ const avg=a=>a.reduce((s,x)=>s+x.score,0)/a.length;
+ const out=[];
+ gonfItems().forEach(t=>{
+   const con=L.filter(e=>gonfEff(e).has(t.id)), senza=L.filter(e=>!gonfEff(e).has(t.id));
+   if(con.length<3||senza.length<3) return;
+   const diff=avg(con)-avg(senza);
+   if(diff>=0.8) out.push({t,diff,n:con.length,m:avg(con)});
+ });
+ return out.sort((a,b)=>b.diff-a.diff);
+}
+function renderGonfiore(){
+ if(!$('#gScore')) return;
+ if(!$('#gDate').value){ $('#gDate').value=new Date().toISOString().slice(0,10); gonfLoadDate(); }
+ const L=gonfList().slice().sort((a,b)=>b.date.localeCompare(a.date));
+ const an=gonfAnalisi(), box=$('#gAnalysis');
+ if(an===null) box.innerHTML=`<div class="small">Giorni registrati: <b>${L.length}</b>. Ne servono almeno 7 (meglio 14) perché l'app possa dirti cosa ti gonfia.</div>`;
+ else if(!an.length) box.innerHTML=`<div class="note">Nessun fattore spicca nei tuoi ${L.length} giorni. Continua a registrare: più dati, più l'analisi è sicura.</div>`;
+ else box.innerHTML=`<div class="note"><b style="color:var(--acc)">Cosa peggiora il tuo gonfiore</b> (${L.length} giorni analizzati)<br>`
+   +an.map(x=>`• <b>${x.t.n}</b>: gonfiore medio ${x.m.toFixed(1).replace('.',',')} nei ${x.n} giorni in cui c'era, <b>+${x.diff.toFixed(1).replace('.',',')}</b> rispetto agli altri giorni.`
+     +(x.t.f?` <button class="btn sec" style="padding:4px 10px;margin:4px 0" data-ex="${x.t.id}">Togli dalla dieta</button>`:'')).join('<br>')
+   +`<br><span class="small">È una correlazione sui tuoi dati, non una diagnosi. Se il gonfiore è forte o dolente, parlane col medico.</span></div>`;
+ box.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>{
+   const t=gonfItems().find(x=>x.id===b.dataset.ex);
+   if(!state.profile){alert('Genera prima un programma dal Profilo.');return;}
+   if(!confirm('Tolgo dalla dieta: '+t.f.filter(k=>F[k]).map(k=>F[k].n).join(', ')+'?'))return;
+   t.f.filter(k=>F[k]).forEach(k=>applyFoodExclude(k));
+   alert('Fatto: quei cibi non compariranno più nella dieta. Per rimetterli, deselezionali dai «cibi da evitare» nel Profilo.');
+ });
+ const nm=id=>id.startsWith('f:')?(F[id.slice(2)]||{}).n||id:(GONF_TAGS.find(t=>t.id===id)||{}).n||id;
+ $('#gList').innerHTML=L.slice(0,14).map(e=>`<li><span><b>${e.score}/5</b> <span class="small">${e.tags.map(nm).join(', ')}${e.note?' · '+esc(e.note):''}</span></span><span class="d">${e.date}</span></li>`).join('')||'<li class="small">Nessun giorno registrato.</li>';
+}
+$('#gDate').addEventListener('change',gonfLoadDate);
+$('#gSave').addEventListener('click',()=>{
+ if(gSel.score==null){alert('Scegli il voto del gonfiore da 0 a 5.');return;}
+ const date=$('#gDate').value||new Date().toISOString().slice(0,10);
+ state.gonfiore=gonfList().filter(e=>e.date!==date);
+ state.gonfiore.push({date,score:gSel.score,tags:gSel.tags.slice(),note:$('#gNote').value.trim()});
+ save(); renderGonfiore();
+});
 function renderProg(){
- renderCheckin(); renderCheckinBanner();
+ renderCheckin(); renderCheckinBanner(); renderGonfiore();
  const w=state.weights||[];
  $('#progList').innerHTML=w.slice().reverse().map((e,i,arr)=>{
    const prev=arr[i+1];
