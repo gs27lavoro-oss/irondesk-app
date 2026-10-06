@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.27.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.28.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.27.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.28.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -833,6 +833,18 @@ details.dett>.dett-body{padding:0 10px 10px}
       <button onclick=&quot;salvaPrezziAlu()&quot; class=&quot;btn&quot; style=&quot;border-color:#55d39b;color:#55d39b;background:#061208&quot;>💾 Salva prezzi</button>
       <button onclick=&quot;apriConfigAlu()&quot; class=&quot;btn&quot; style=&quot;border-color:#64a8ff;color:#64a8ff;background:#0a1628&quot;>🔧 Apri configuratore alluminio</button>
     </div>
+  </div>
+
+  <!-- INFISSI IN ALLUMINIO: prezzo al kg del giorno + accessori e guarnizioni (prezzi tuoi) -->
+  <div class=&quot;sec&quot; style=&quot;border-color:#64a8ff;margin-bottom:10px&quot;>
+    <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>🪟 Infissi alluminio — prezzo al kg, accessori e guarnizioni</div>
+    <p style=&quot;font-size:11px;color:#91a2bb;margin-bottom:10px;line-height:1.5&quot;>
+      Porte e finestre Gold 500 (taglio freddo) e Dogma Pro (taglio termico): costo profili = kg delle barre da 6,50 m × prezzo del giorno.
+      Accessori e guarnizioni: metti i prezzi qui, nei manufatti spunti le voci (come la ferramenta).
+    </p>
+    <div style=&quot;max-width:220px;margin-bottom:10px&quot;><label class=&quot;fl&quot;>Prezzo alluminio del giorno (€/kg)</label>
+      <input class=&quot;fi&quot; id=&quot;upg-alukg&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.01&quot; style=&quot;border-color:#64a8ff&quot; onchange=&quot;salvaPrezzoAluKg(this.value)&quot;></div>
+    <div id=&quot;infacc-listino&quot;></div>
   </div>
 
   <!-- AGGIORNATORE LISTINO 2026 -->
@@ -2414,6 +2426,7 @@ const TIPI=[
   {k:&quot;recinzione&quot;,         l:&quot;📐 Recinzione&quot;,           haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;},
   {k:&quot;gazebo&quot;,             l:&quot;⛺ Gazebo / Pergola&quot;,      haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isGazebo:true},
   {k:&quot;alluminio&quot;,          l:&quot;🔧 Alluminio Scuretto&quot;,    haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isAlluminio:true},
+  {k:&quot;infisso_alu&quot;,        l:&quot;🪟 Infisso alluminio&quot;,     haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isInfissoAlu:true},
   {k:&quot;scala&quot;,              l:&quot;🪜 Scala&quot;,                 haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isScala:true},
   {k:&quot;inferriata&quot;,         l:&quot;🛡️ Inferriata&quot;,            haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;},
   {k:&quot;corrimano_muro&quot;,     l:&quot;🤚 Corrimano a muro&quot;,       haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isCorrimano:true},
@@ -2695,7 +2708,7 @@ const KERF_MM=4;
 // Barre commerciali: 6 m (misura reale UPG.barraMm = 6015 mm) oppure 12 m, scelte per profilo.
 const BARRA12_MM=12000;
 const UPG=Object.assign({ottim:true,sfrido:5,sogliaSpz:500,vernMin:30,quote:true,barraMm:6015,usaMagazzino:false,tariffaOra:25,ricarico:35,
-  zincTariffa:0.65,zincMin:25,vernTariffa:12,lamPrezzoKg:1.50,barre12:{},stileDisegni:&quot;tecnico&quot;},
+  zincTariffa:0.65,zincMin:25,vernTariffa:12,lamPrezzoKg:1.50,barre12:{},stileDisegni:&quot;tecnico&quot;,aluPrezzoKg:0},
   (function(){try{return JSON.parse(localStorage.getItem(&quot;fc_upgrade&quot;)||&quot;{}&quot;)||{};}catch(e){return {};}})());
 function salvaUPG(k,v){UPG[k]=v;try{localStorage.setItem(&quot;fc_upgrade&quot;,JSON.stringify(UPG));}catch(e){}renderTutto();
   try{if(document.getElementById('tab-magazzino')?.classList.contains('on'))renderMagazzino();}catch(e){}
@@ -2752,7 +2765,9 @@ function barraScegliibile(mat){if(!mat||mat.fam==='alu')return false;const cm=pC
 function nomeBarra(mm){return mm>=BARRA12_MM-1?&quot;12 m&quot;:(Math.abs(mm-6500)<1?&quot;6,5 m&quot;:&quot;6 m&quot;);}
 // Metri &quot;di listino&quot; di una barra: il prezzo €/100 m si paga sulla misura commerciale (6 m, 12 m, 6,5 m)
 function barraNomM(mm){return Math.round(mm/100)/10;}
-function prezzoBarra(mat){const p100=getP(mat);return p100>0?p100/100*barraNomM(barraMmMat(mat)):0;}
+function prezzoBarra(mat){
+  if(mat&amp;&amp;mat.infisso)return (parseFloat(mat.kgm)||0)*barraNomM(barraMmMat(mat))*numOk(UPG.aluPrezzoKg,0); // infissi: kg della barra × €/kg
+  const p100=getP(mat);return p100>0?p100/100*barraNomM(barraMmMat(mat)):0;}
 function barreCalc(k,ml,mat){
   if(UPG.ottim&amp;&amp;window._PIANI&amp;&amp;window._PIANI[k])return window._PIANI[k].nBarre;
   return Math.ceil(mlConSfrido(ml)/(barraMmMat(mat)/1000));
@@ -3604,6 +3619,8 @@ function nuovoPezzo(id){
     lamiera_perc:50, lamiera_h_mm:'',         // percentuale altezza coperta da lamiera (modo 'sotto')
     lamiera_prezzoKg:UPG.lamPrezzoKg,   // prezzo lamiera al kg (Listino → I miei prezzi)
     aluFacce:null, aluColore:'Bianco RAL 9010',
+    // Infisso in alluminio (porte e finestre dai cataloghi): tipologia, misure telaio in mm, misure della scheda
+    infTipo:'G1', infL:'', infH:'', infPar:{}, infFv:'f', infColore:'Bianco RAL 9010', infAcc:{}, infVetroMq:'',
     aluBattuta:3.5,  // cm tolti per lato perimetrale per ricavare le ante (alluminio scuretto)
     coda_sup:0, coda_inf:0,  // code scorrevole: prolunghe (mm) delle traverse oriz. oltre il montante
     scalaH:3.0, scalaL:4.0, scalaW:1.0, scalaN:15,
@@ -3694,6 +3711,7 @@ function showTab(t){
       document.getElementById('upg-quote').checked=!!UPG.quote;
       document.getElementById('upg-mag').checked=!!UPG.usaMagazzino;
       renderFerrListino();
+      try{document.getElementById('upg-alukg').value=numOk(UPG.aluPrezzoKg,0)||'';renderInfAccListino();}catch(e){}
       renderPesi();
     }catch(e){}
   }
@@ -3841,6 +3859,7 @@ function descrizioneBreve(p){
   if(ti.isScala)s=`${tipo} · H ${cm(p.scalaH)} × L ${cm(p.scalaL)} cm · ${Math.max(1,parseInt(p.scalaN)||1)} gradini`;
   else if(ti.isCorrimano)s=`${tipo} · ${cm(p.corrLungh)} cm`;
   else if(ti.isAlluminio){const f=Object.keys(p.aluFacce||{}).filter(k=>p.aluFacce[k]&amp;&amp;p.aluFacce[k].attiva).length;s=`${tipo} · ${f} facc${f===1?&quot;ia&quot;:&quot;e&quot;}`;}
+  else if(ti.isInfissoAlu){const t=infTipo(p);s=`${INF_SISTEMI[t.sis].breve} tip. ${t.n} · ${cmv(numOk(p.infL,0))} × ${cmv(numOk(p.infH,0))} cm${infArcoOn(p)?&quot; · ad arco&quot;:&quot;&quot;}`;}
   else if(ti.isGazebo)s=`${tipo} · ${cm(p.larg)} × ${cm(p.alt)} cm in pianta`;
   else if(ti.isSoppalco)s=`${tipo} · ${cm(p.larg)} × ${cm(p.alt)} cm · piano a ${cm(numOk(p.sopH,2.4))} cm`;
   else if(ti.isPensilina)s=`${tipo} · ${cm(p.larg)} cm × sbalzo ${cm(p.alt)} cm`;
@@ -5964,6 +5983,7 @@ function buildBody(p){
   if(ti&amp;&amp;ti.isAlluminio)return buildBodyAlluminio(p);
   if(ti&amp;&amp;ti.isScala)return buildBodyScala(p);
   if(ti&amp;&amp;ti.isCorrimano)return buildBodyCorrimano(p);
+  if(ti&amp;&amp;ti.isInfissoAlu)return buildBodyInfissoAlu(p);
   if(ti&amp;&amp;ti.isSoppalco)return buildBodySoppalco(p);
   if(ti&amp;&amp;ti.isPensilina)return buildBodyPensilina(p);
 
@@ -6897,6 +6917,7 @@ function _disegnaSu(p,cvs,leg){
   if(tiD.isGazebo){disegnaGazebo(p,cvs,ctx,leg);return;}
   if(tiD.isScala){disegnaScala(p,cvs,ctx,leg);return;}
   if(tiD.isCorrimano){disegnaCorrimano(p,cvs,ctx,leg);return;}
+  if(tiD.isInfissoAlu){disegnaInfissoAlu(p,cvs,ctx,leg);return;}
   if(tiD.isSoppalco){disegnaSoppalco(p,cvs,ctx,leg);return;}
   if(tiD.isPensilina){disegnaPensilina(p,cvs,ctx,leg);return;}
   if(tiD.isAlluminio){aluDisegna(cvs,p);return;}
@@ -8483,6 +8504,19 @@ function inviaPREV(snapId){
         prezzo:prezzoDi(i),peso_kg:pesoDi(i),zinc:!!p.zinc_caldo,vern:!!p.vern_polvere
       };
     }
+    if(tiInfo.isInfissoAlu){
+      const vistiI=[];
+      walkPezzoMateriali(p,mat=>{if(mat&amp;&amp;mat.profilo&amp;&amp;vistiI.indexOf(mat.profilo)<0)vistiI.push(mat.profilo);});
+      const righeI=vistiI.map(t=>({ruolo:'',testo:'profilo alluminio '+t}));
+      const vtI=infVetri(p).filter(x=>x.w>0&amp;&amp;x.h>0);
+      if(vtI.length)righeI.push({ruolo:'',testo:vtI.map(x=>x.nome.toLowerCase()+' '+cmv(x.w)+'×'+cmv(x.hMax)+' cm ×'+(x.q*nPzU)).join(', ')});
+      const accI=loadInfAcc().filter(a=>infAccQta(p,a)>0).map(a=>a.nome.toLowerCase());
+      if(accI.length)righeI.push({ruolo:'',testo:'accessori e guarnizioni: '+accI.join(', ')});
+      let descI='Infisso in alluminio '+descrInfisso(p);
+      if(nPzU>1)descI+=' (×'+nPzU+' pezzi uguali)';
+      return{nome:p.nome||'Infisso alluminio',tipo:'altro',larg:numOk(p.infL,0)/1000,alt:numOk(p.infH,0)/1000,nBattenti:1,nPezziUguali:nPzU,
+        desc_tecnica:descI,materiali:righeI,img:pezzoImgDataURL(p),prezzo:prezzoDi(i),peso_kg:pesoDi(i),zinc:false,vern:false};
+    }
     // Profili usati (dalla distinta unica), senza doppioni
     const visti=[];
     walkPezzoMateriali(p,mat=>{const t=nomeProfiloCliente(mat);if(t&amp;&amp;visti.indexOf(t)<0)visti.push(t);});
@@ -8699,7 +8733,7 @@ function decoriPezzo(p){
     ringhieraScalaManufatto(p).forEach(q=>{const d=decoriPezzo(q);out.collari+=d.collari;out.riccioli+=d.riccioli;});
     return out;
   }
-  if(ti.isScala||ti.isCorrimano||ti.isAlluminio||ti.isGazebo||tipoStruttura(ti))return out;
+  if(ti.isScala||ti.isCorrimano||ti.isAlluminio||ti.isInfissoAlu||ti.isGazebo||tipoStruttura(ti))return out;
   const fp=faccePezzi(p);if(fp){fp.forEach(pf=>{const d=decoriPezzo(pf);out.collari+=d.collari;out.riccioli+=d.riccioli;});return out;}
   const luce=calcLuce(p),nPz=Math.max(1,parseInt(p.nPezziUguali)||1);
   const nSeg=ti.haAnte?Math.max(1,(p.ante||[]).length):luce.nCL;
@@ -8734,6 +8768,7 @@ function walkPezzoMateriali(p,addG){
     addG(mat,mm/1000*qty,mm,qty,nome+&quot; · &quot;+lbl);
   };
   if(ti.isCorrimano){const c=corrCalc(p);A(p.corrMat,c.L*1000,c.nPz,&quot;corrimano&quot;);return;}
+  if(ti.isInfissoAlu){infWalk(p,A);return;}
   if(ti.isSoppalco){
     const s=soppCalc(p),M=p.strMats||{};
     A(M.pilastri,s.hPil,s.nPil*nPz,&quot;pilastro&quot;);
@@ -8931,7 +8966,7 @@ function walkPezzoMateriali(p,addG){
 // ═══════ COSTI: un solo calcolo per card, riepilogo, stampa, archivio e Preventivi ═══════
 function opzTaglioMat(mat){
   const o={barraMm:barraMmMat(mat)};
-  if(mat&amp;&amp;mat.fam==='alu'){o.kerf=0;o.perPezzoMm=ALU_SC*10;}
+  if(mat&amp;&amp;mat.fam==='alu'&amp;&amp;!mat.infisso){o.kerf=0;o.perPezzoMm=ALU_SC*10;}
   return o;
 }
 // Somma i pezzi di una lista di manufatti: metri per profilo (anche per singolo manufatto) e tagli
@@ -10058,7 +10093,7 @@ function applicaModelloCatalogo(k){
   const m=MODELLI_CAT.find(x=>x.k===k);if(!m)return;
   const p=pezzi.find(x=>x.aperto)||pezzi[0];if(!p)return;
   const ti=TIPI.find(t=>t.k===p.tipo)||TIPI[0];
-  if(ti.isScala||ti.isCorrimano||ti.isAlluminio||ti.isGazebo||tipoStruttura(ti)){alert(&quot;I riempimenti si applicano a cancelli, porte, grate, ringhiere e recinzioni.&quot;);return;}
+  if(ti.isScala||ti.isCorrimano||ti.isAlluminio||ti.isInfissoAlu||ti.isGazebo||tipoStruttura(ti)){alert(&quot;I riempimenti si applicano a cancelli, porte, grate, ringhiere e recinzioni.&quot;);return;}
   const matEl=((p.elemList||[]).find(e=>e.mat)||{}).mat||null;
   const matTr=((p.traverse||[]).find(t=>t.mat)||{}).mat||matEl;
   trattaModelloCat(p,m,matEl,matTr);
@@ -10496,6 +10531,638 @@ function renderMagazzino(){
   </div>`;})()}`;
 }
 
+// ═══════ INFISSI IN ALLUMINIO (porte e finestre) — dai cataloghi DOGMA / Indinvest ═══════
+// Distinte di taglio trascritte dalle schede dei cataloghi (misure in mm):
+//  · GOLD 500 taglio freddo (catalogo GEN-2005, pag. 143-235)
+//  · DOGMA PRO taglio termico (catalogo Rev.02 GEN 2026, pag. 6.2-6.7)
+// Ogni riga: [codice, descrizione, misura di taglio, quantità, taglio, gruppo, pezzi in testa]
+//  taglio: 'a' = 45° alle due teste, 'r' = 90°, 'm' = 45° da un lato e 90° dall'altro, 'x' = da definire
+//  gruppo: 'f' = fermavetro della distinta, 'v' = fermavetro in alternativa (variante del catalogo)
+//  pezzi in testa: quanti pezzi della riga stanno in cima (servono solo per la cima ad arco)
+// Le barre si comprano da 6,50 m; il costo è kg di barre × prezzo dell'alluminio al kg (Listino).
+const INF_BARRA_MM=6500;
+const INF_SISTEMI={
+  gold:{n:&quot;GOLD 500 · taglio freddo&quot;,breve:&quot;Gold 500&quot;,fvNomi:[&quot;40082 fermavetro&quot;,&quot;40029 variante&quot;]},
+  dogma:{n:&quot;DOGMA PRO · taglio termico&quot;,breve:&quot;Dogma Pro&quot;,fvNomi:[&quot;40087 fermavetro piano&quot;,&quot;40081 fermavetro arrotondato&quot;]}
+};
+// Peso al metro (kg/m) dalle tabelle profili dei cataloghi
+const INF_PROF={
+  gold:{&quot;50000&quot;:[&quot;Anta Z&quot;,1.131],&quot;50001&quot;:[&quot;Anta T&quot;,1.373],&quot;50002&quot;:[&quot;Telaio Z&quot;,0.993],&quot;50003&quot;:[&quot;Anta Z maggiorata&quot;,1.395],
+    &quot;50005&quot;:[&quot;Zoccolo&quot;,2.281],&quot;50006&quot;:[&quot;Telaio L&quot;,0.874],&quot;50010&quot;:[&quot;Telaio L&quot;,1.114],&quot;50011&quot;:[&quot;Riporto&quot;,1.019],
+    &quot;50013&quot;:[&quot;Inversione bilico&quot;,0.965],&quot;50014&quot;:[&quot;Anta bilico T&quot;,1.414],&quot;50015&quot;:[&quot;Anta T maggiorata&quot;,1.603],
+    &quot;50016&quot;:[&quot;Traverso T&quot;,1.114],&quot;50017&quot;:[&quot;Anta T apert. est.&quot;,1.204],&quot;50018&quot;:[&quot;Fascia&quot;,2.216],&quot;50019&quot;:[&quot;Anta T apert. est.&quot;,1.342],
+    &quot;50021&quot;:[&quot;Zoccolo&quot;,1.474],&quot;50022&quot;:[&quot;Inversione di battuta&quot;,0.972],&quot;50023&quot;:[&quot;Anta&quot;,0.978],&quot;50024&quot;:[&quot;Telaio a muro&quot;,1.412],
+    &quot;50025&quot;:[&quot;Imbotte 85-110&quot;,0.837],&quot;50028&quot;:[&quot;Zoccolo&quot;,1.292],&quot;50029&quot;:[&quot;Riduttore vetro semplice&quot;,0.336],
+    &quot;50031&quot;:[&quot;Montante / traverso / fascia&quot;,1.376],&quot;50042&quot;:[&quot;Anta&quot;,1.209],&quot;50043&quot;:[&quot;Riporto laterale&quot;,0.292],
+    &quot;50044&quot;:[&quot;Riporto superiore&quot;,0.292],&quot;50045&quot;:[&quot;Riduttore vetrocamera&quot;,0.294],&quot;50051&quot;:[&quot;Anta&quot;,1.104],
+    &quot;50052&quot;:[&quot;Porta spazzolino&quot;,0.175],&quot;50053&quot;:[&quot;Compensatore a muro&quot;,0.419],&quot;40082&quot;:[&quot;Fermavetro&quot;,0.273],
+    &quot;40029&quot;:[&quot;Fermavetro variante&quot;,0.275],&quot;6405&quot;:[&quot;Astina&quot;,0.170],&quot;6673&quot;:[&quot;Ovalina&quot;,0.346],&quot;TUBO40x15&quot;:[&quot;Tubo alluminio 40x15&quot;,0]},
+  dogma:{&quot;175000&quot;:[&quot;Telaio Z&quot;,1.358],&quot;175001&quot;:[&quot;Telaio L&quot;,1.231],&quot;175002&quot;:[&quot;Anta Z&quot;,1.549],&quot;175003&quot;:[&quot;Riporto&quot;,1.387],
+    &quot;175020&quot;:[&quot;Traverso&quot;,1.338],&quot;175024&quot;:[&quot;Zoccolo riportato&quot;,2.450],&quot;175087&quot;:[&quot;Soglia ribassata&quot;,0.815],
+    &quot;40087&quot;:[&quot;Fermavetro piano&quot;,0.303],&quot;40081&quot;:[&quot;Fermavetro arrotondato&quot;,0.293],&quot;6405&quot;:[&quot;Astina di comando&quot;,0.159]}
+};
+// Telai Gold 500 ricorrenti
+const _GZ=[[&quot;50002&quot;,&quot;Telaio Z&quot;,&quot;L+52&quot;,1,&quot;a&quot;,&quot;&quot;,1],[&quot;50002&quot;,&quot;Telaio Z&quot;,&quot;H+52&quot;,2,&quot;a&quot;],[&quot;50006&quot;,&quot;Telaio L&quot;,&quot;L&quot;,1,&quot;a&quot;]];
+const _GZp=[[&quot;50002&quot;,&quot;Telaio Z&quot;,&quot;L+52&quot;,1,&quot;a&quot;,&quot;&quot;,1],[&quot;50002&quot;,&quot;Telaio Z&quot;,&quot;H+26&quot;,2,&quot;m&quot;]];
+const _GM=[[&quot;50024&quot;,&quot;Telaio a muro&quot;,&quot;L+84&quot;,1,&quot;a&quot;,&quot;&quot;,1],[&quot;50024&quot;,&quot;Telaio a muro&quot;,&quot;H+42&quot;,2,&quot;m&quot;],[&quot;50025&quot;,&quot;Imbotte 85-110&quot;,&quot;L+84&quot;,1,&quot;a&quot;,&quot;&quot;,1],[&quot;50025&quot;,&quot;Imbotte 85-110&quot;,&quot;H+42&quot;,2,&quot;m&quot;]];
+// lay = schema per il disegno: c = colonne [tipo, larghezza]; tipo a=anta, f=fisso, p=porta, b=bilico/vasistas, r=anta-ribalta
+const INF_TIPI=[
+  // ── GOLD 500: aperture interne ──
+  {k:&quot;G1&quot;,sis:&quot;gold&quot;,n:&quot;1&quot;,nome:&quot;Finestra 1 anta giunto aperto, apertura interna&quot;,pag:143,arco:true,lay:{c:[[&quot;a&quot;,&quot;L&quot;]]},
+    r:_GZ.concat([[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;L-46&quot;,2,&quot;a&quot;,&quot;&quot;,1],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;H-46&quot;,2,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L-130.5&quot;,2,&quot;a&quot;,&quot;f&quot;,1],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-130.5&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L-139&quot;,2,&quot;r&quot;,&quot;v&quot;,1],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-183&quot;,2,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;L-153&quot;,&quot;H-153&quot;,1]],astina:1},
+  {k:&quot;G2&quot;,sis:&quot;gold&quot;,n:&quot;2&quot;,nome:&quot;Finestra 2 ante T.Z. giunto aperto, apertura interna&quot;,pag:145,arco:true,lay:{c:[[&quot;a&quot;,&quot;L/2&quot;],[&quot;a&quot;,&quot;L/2&quot;]]},
+    r:_GZ.concat([[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;(L/2)-13.75&quot;,4,&quot;a&quot;,&quot;&quot;,2],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;H-46&quot;,3,&quot;a&quot;],[&quot;50001&quot;,&quot;Anta T&quot;,&quot;H-27&quot;,1,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;(L/2)-98.25&quot;,4,&quot;a&quot;,&quot;f&quot;,2],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-130.5&quot;,4,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;(L/2)-106.75&quot;,4,&quot;r&quot;,&quot;v&quot;,2],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-183&quot;,4,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;(L/2)-120&quot;,&quot;H-153&quot;,2]],astina:1},
+  {k:&quot;G3&quot;,sis:&quot;gold&quot;,n:&quot;3&quot;,nome:&quot;Finestra 3 ante T.Z. giunto aperto, apertura interna&quot;,pag:147,arco:true,lay:{c:[[&quot;a&quot;,&quot;L/3&quot;],[&quot;a&quot;,&quot;L/3&quot;],[&quot;a&quot;,&quot;L/3&quot;]]},
+    nota:&quot;Nella scheda le misure delle ante sono scritte con «L1»: qui L1 = L (larghezza del telaio).&quot;,
+    r:_GZ.concat([[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;(L/3)+18.5&quot;,6,&quot;a&quot;,&quot;&quot;,3],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;H-46&quot;,4,&quot;a&quot;],[&quot;50001&quot;,&quot;Anta T&quot;,&quot;H-27&quot;,2,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;(L/3)-66&quot;,6,&quot;a&quot;,&quot;f&quot;,3],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-130.5&quot;,6,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;(L/3)-74.5&quot;,6,&quot;r&quot;,&quot;v&quot;,3],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-183&quot;,6,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;(L/3)-88.5&quot;,&quot;H-153&quot;,3]],astina:1},
+  {k:&quot;G4&quot;,sis:&quot;gold&quot;,n:&quot;4&quot;,nome:&quot;Finestra 1 anta ribalta giunto aperto, apertura interna&quot;,pag:149,lay:{c:[[&quot;r&quot;,&quot;L&quot;]]},
+    r:_GZ.concat([[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;L-46&quot;,2,&quot;a&quot;],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;H-46.5&quot;,2,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L-130.5&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-131&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L-139&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-183.5&quot;,2,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;L-153&quot;,&quot;H-153&quot;,1]],astina:1},
+  {k:&quot;G5&quot;,sis:&quot;gold&quot;,n:&quot;5&quot;,nome:&quot;Finestra 2 ante T.Z. prima anta a ribalta, apertura interna&quot;,pag:151,lay:{c:[[&quot;r&quot;,&quot;L/2&quot;],[&quot;a&quot;,&quot;L/2&quot;]]},
+    r:_GZ.concat([[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;(L/2)-13.75&quot;,4,&quot;a&quot;],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;H-46.5&quot;,3,&quot;a&quot;],[&quot;50001&quot;,&quot;Anta T&quot;,&quot;H-27.5&quot;,1,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;(L/2)-98.25&quot;,4,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-131&quot;,4,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;(L/2)-106.75&quot;,4,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-183.5&quot;,4,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;(L/2)-120&quot;,&quot;H-153&quot;,2]],astina:1},
+  {k:&quot;G6&quot;,sis:&quot;gold&quot;,n:&quot;6&quot;,nome:&quot;Finestra 2 ante Z.RIP.Z giunto aperto, apertura interna&quot;,pag:153,arco:true,lay:{c:[[&quot;a&quot;,&quot;L/2&quot;],[&quot;a&quot;,&quot;L/2&quot;]]},
+    r:_GZ.concat([[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;(L-51)/2&quot;,4,&quot;a&quot;,&quot;&quot;,2],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;H-46&quot;,4,&quot;a&quot;],[&quot;50011&quot;,&quot;Riporto&quot;,&quot;H-114&quot;,1,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;(L-220)/2&quot;,4,&quot;a&quot;,&quot;f&quot;,2],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-130.5&quot;,4,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;(L-237)/2&quot;,4,&quot;r&quot;,&quot;v&quot;,2],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-183&quot;,4,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;(L-265)/2&quot;,&quot;H-153&quot;,2]],astina:1},
+  {k:&quot;G6A&quot;,sis:&quot;gold&quot;,n:&quot;6A&quot;,nome:&quot;Finestra 2 ante Z.RIP.Z prima anta a ribalta, apertura interna&quot;,pag:155,lay:{c:[[&quot;r&quot;,&quot;L/2&quot;],[&quot;a&quot;,&quot;L/2&quot;]]},
+    r:_GZ.concat([[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;(L-51)/2&quot;,4,&quot;a&quot;],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;H-46.5&quot;,4,&quot;a&quot;],[&quot;50011&quot;,&quot;Riporto&quot;,&quot;H-114.5&quot;,1,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;(L-220)/2&quot;,4,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-131&quot;,4,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;(L-237)/2&quot;,4,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-183.5&quot;,4,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;(L-265)/2&quot;,&quot;H-153&quot;,2]],astina:1},
+  {k:&quot;G7&quot;,sis:&quot;gold&quot;,n:&quot;7&quot;,nome:&quot;Finestra 3 ante Z.RIP.Z giunto aperto, apertura interna&quot;,pag:157,arco:true,lay:{c:[[&quot;a&quot;,&quot;L/3&quot;],[&quot;a&quot;,&quot;L/3&quot;],[&quot;a&quot;,&quot;L/3&quot;]]},
+    r:_GZ.concat([[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;(L-56)/3&quot;,6,&quot;a&quot;,&quot;&quot;,3],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;H-46&quot;,6,&quot;a&quot;],[&quot;50011&quot;,&quot;Riporto&quot;,&quot;H-114&quot;,2,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;(L-309.5)/3&quot;,6,&quot;a&quot;,&quot;f&quot;,3],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-130.5&quot;,6,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;(L-335)/3&quot;,6,&quot;r&quot;,&quot;v&quot;,3],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-183&quot;,6,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;(L-377)/3&quot;,&quot;H-153&quot;,3]],astina:1},
+  {k:&quot;G8&quot;,sis:&quot;gold&quot;,n:&quot;8&quot;,nome:&quot;Finestra 1 anta wasistas giunto aperto, apertura interna&quot;,pag:159,lay:{c:[[&quot;b&quot;,&quot;L&quot;]]},
+    r:_GZ.concat([[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;L-46&quot;,2,&quot;a&quot;],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;H-46&quot;,2,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L-130.5&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-130.5&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L-139&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-183&quot;,2,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;L-153&quot;,&quot;H-153&quot;,1]]},
+  {k:&quot;G9&quot;,sis:&quot;gold&quot;,n:&quot;9&quot;,nome:&quot;Finestra 1 anta con laterale fisso, apertura interna&quot;,pag:161,par:[&quot;LF&quot;],lay:{c:[[&quot;f&quot;,&quot;LF&quot;],[&quot;a&quot;,&quot;LA&quot;]]},
+    r:_GZ.concat([[&quot;50016&quot;,&quot;Traverso T&quot;,&quot;H-48&quot;,1,&quot;r&quot;],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;LA-31&quot;,2,&quot;a&quot;],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;H-46&quot;,2,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro fisso&quot;,&quot;LF-34.5&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro fisso&quot;,&quot;H-49.5&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro apribile&quot;,&quot;LA-115.5&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro apribile&quot;,&quot;H-130.5&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. fisso&quot;,&quot;LF-43&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante ferm. fisso&quot;,&quot;H-102&quot;,2,&quot;r&quot;,&quot;v&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. apribile&quot;,&quot;LA-124&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante ferm. apribile&quot;,&quot;H-183&quot;,2,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Fisso&quot;,&quot;LF-57&quot;,&quot;H-72&quot;,1],[&quot;Apribile&quot;,&quot;LA-138&quot;,&quot;H-153&quot;,1]],astina:1},
+  {k:&quot;G10&quot;,sis:&quot;gold&quot;,n:&quot;10&quot;,nome:&quot;Porta balcone 1 anta giunto aperto, apertura interna&quot;,pag:163,arco:true,par:[&quot;H1&quot;],lay:{c:[[&quot;a&quot;,&quot;L&quot;]],tr:1},
+    r:_GZ.concat([[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;L-46&quot;,2,&quot;a&quot;,&quot;&quot;,1],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;H-46&quot;,2,&quot;a&quot;],[&quot;50016&quot;,&quot;Traverso T&quot;,&quot;L-129&quot;,1,&quot;r&quot;],[&quot;50021&quot;,&quot;Zoccolo&quot;,&quot;L-129&quot;,1,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro apribile&quot;,&quot;L-130.5&quot;,4,&quot;a&quot;,&quot;f&quot;,1],[&quot;40082&quot;,&quot;Fermavetro apribile&quot;,&quot;H1-145&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro apribile&quot;,&quot;H2-75&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. inf.&quot;,&quot;L-139&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante ferm. inf.&quot;,&quot;H1-197.5&quot;,2,&quot;r&quot;,&quot;v&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. sup.&quot;,&quot;L-139&quot;,2,&quot;r&quot;,&quot;v&quot;,1],[&quot;40029&quot;,&quot;Variante ferm. sup.&quot;,&quot;H2-127.5&quot;,2,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Inferiore&quot;,&quot;L-153&quot;,&quot;H1-167.5&quot;,1],[&quot;Superiore&quot;,&quot;L-153&quot;,&quot;H2-97.5&quot;,1,1]],astina:1},
+  {k:&quot;G10A&quot;,sis:&quot;gold&quot;,n:&quot;10A&quot;,nome:&quot;Porta balcone 2 ante T.Z. giunto aperto, apertura interna&quot;,pag:165,arco:true,par:[&quot;H1&quot;],lay:{c:[[&quot;a&quot;,&quot;L/2&quot;],[&quot;a&quot;,&quot;L/2&quot;]],tr:1},
+    r:_GZ.concat([[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;(L/2)-13.75&quot;,4,&quot;a&quot;,&quot;&quot;,2],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;H-46&quot;,3,&quot;a&quot;],[&quot;50001&quot;,&quot;Anta T&quot;,&quot;H-27&quot;,1,&quot;a&quot;],
+      [&quot;50016&quot;,&quot;Traverso T&quot;,&quot;(L/2)-96.75&quot;,2,&quot;r&quot;],[&quot;50021&quot;,&quot;Zoccolo&quot;,&quot;(L/2)-96.75&quot;,2,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro apribile&quot;,&quot;(L/2)-98.25&quot;,8,&quot;a&quot;,&quot;f&quot;,2],[&quot;40082&quot;,&quot;Fermavetro apribile&quot;,&quot;H1-145&quot;,4,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro apribile&quot;,&quot;H2-75&quot;,4,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. inf.&quot;,&quot;(L/2)-106.75&quot;,4,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante ferm. inf.&quot;,&quot;H1-197.5&quot;,4,&quot;r&quot;,&quot;v&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. sup.&quot;,&quot;(L/2)-106.75&quot;,4,&quot;r&quot;,&quot;v&quot;,2],[&quot;40029&quot;,&quot;Variante ferm. sup.&quot;,&quot;H2-127.5&quot;,4,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Inferiore&quot;,&quot;(L/2)-120&quot;,&quot;H1-167.5&quot;,2],[&quot;Superiore&quot;,&quot;(L/2)-120&quot;,&quot;H2-97.5&quot;,2,1]],astina:1},
+  {k:&quot;G10B&quot;,sis:&quot;gold&quot;,n:&quot;10B&quot;,nome:&quot;Porta balcone 2 ante Z.RIP.Z giunto aperto, apertura interna&quot;,pag:167,arco:true,par:[&quot;H1&quot;],lay:{c:[[&quot;a&quot;,&quot;L/2&quot;],[&quot;a&quot;,&quot;L/2&quot;]],tr:1},
+    r:_GZ.concat([[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;(L-51)/2&quot;,4,&quot;a&quot;,&quot;&quot;,2],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;H-46&quot;,4,&quot;a&quot;],[&quot;50011&quot;,&quot;Riporto&quot;,&quot;H-114&quot;,1,&quot;r&quot;],
+      [&quot;50016&quot;,&quot;Traverso T&quot;,&quot;(L-217)/2&quot;,2,&quot;r&quot;],[&quot;50021&quot;,&quot;Zoccolo&quot;,&quot;(L-217)/2&quot;,2,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro apribile&quot;,&quot;(L-220)/2&quot;,8,&quot;a&quot;,&quot;f&quot;,2],[&quot;40082&quot;,&quot;Fermavetro apribile&quot;,&quot;H1-145&quot;,4,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro apribile&quot;,&quot;H2-75&quot;,4,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. inf.&quot;,&quot;(L-237)/2&quot;,4,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante ferm. inf.&quot;,&quot;H1-197.5&quot;,4,&quot;r&quot;,&quot;v&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. sup.&quot;,&quot;(L-237)/2&quot;,4,&quot;r&quot;,&quot;v&quot;,2],[&quot;40029&quot;,&quot;Variante ferm. sup.&quot;,&quot;H2-127.5&quot;,4,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Inferiore&quot;,&quot;(L-265)/2&quot;,&quot;H1-167.5&quot;,2],[&quot;Superiore&quot;,&quot;(L-265)/2&quot;,&quot;H2-97.5&quot;,2,1]],astina:1},
+  {k:&quot;G11&quot;,sis:&quot;gold&quot;,n:&quot;11&quot;,nome:&quot;Serramento 2 ante T.Z. 1 anta-ribalta scorrevole, apertura interna&quot;,pag:169,lay:{c:[[&quot;r&quot;,&quot;L/2&quot;],[&quot;a&quot;,&quot;L/2&quot;]]},
+    nota:&quot;Sulla scheda del catalogo c'è l'avviso «verificare esistenza accessorio GS».&quot;,
+    r:[[&quot;50002&quot;,&quot;Telaio Z&quot;,&quot;L+52&quot;,1,&quot;a&quot;],[&quot;50002&quot;,&quot;Telaio Z&quot;,&quot;H+26&quot;,2,&quot;a&quot;],[&quot;50010&quot;,&quot;Telaio L&quot;,&quot;L+52&quot;,1,&quot;a&quot;],[&quot;50015&quot;,&quot;Anta T maggiorata&quot;,&quot;H-53.5&quot;,1,&quot;a&quot;],
+      [&quot;50003&quot;,&quot;Anta Z maggiorata&quot;,&quot;(L/2)-13.75&quot;,4,&quot;a&quot;],[&quot;50003&quot;,&quot;Anta Z maggiorata&quot;,&quot;H-72.5&quot;,3,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;(L/2)-139.25&quot;,4,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-198&quot;,4,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. fisso&quot;,&quot;(L/2)-147.75&quot;,4,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante ferm. fisso&quot;,&quot;H-250.5&quot;,4,&quot;r&quot;,&quot;v&quot;]],
+    vt:[[&quot;Vetro&quot;,&quot;(L/2)-162&quot;,&quot;H-220.5&quot;,2]],astina:1},
+  {k:&quot;G14&quot;,sis:&quot;gold&quot;,n:&quot;14&quot;,nome:&quot;Serramento a nastro con laterale fisso, apertura interna&quot;,pag:171,par:[&quot;LF&quot;],lay:{c:[[&quot;f&quot;,&quot;LF&quot;],[&quot;a&quot;,&quot;LA&quot;]]},
+    r:[[&quot;50006&quot;,&quot;Telaio L&quot;,&quot;LF+LA&quot;,1,&quot;x&quot;],[&quot;50010&quot;,&quot;Telaio L&quot;,&quot;LF+LA&quot;,1,&quot;x&quot;],[&quot;50016&quot;,&quot;Traverso T&quot;,&quot;H-74&quot;,2,&quot;r&quot;],
+      [&quot;50000&quot;,&quot;Anta Z&quot;,&quot;LA-16&quot;,2,&quot;a&quot;],[&quot;50000&quot;,&quot;Anta Z&quot;,&quot;H-72&quot;,2,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro fisso&quot;,&quot;LF-19.5&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro fisso&quot;,&quot;H-75.5&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro apribile&quot;,&quot;LA-100.5&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro apribile&quot;,&quot;H-156.5&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. fisso&quot;,&quot;LF-28&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante ferm. fisso&quot;,&quot;H-128&quot;,2,&quot;r&quot;,&quot;v&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. apribile&quot;,&quot;LA-109&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante ferm. apribile&quot;,&quot;H-209&quot;,2,&quot;r&quot;,&quot;v&quot;]],
+    vt:[[&quot;Fisso&quot;,&quot;LF-42&quot;,&quot;H-98&quot;,1],[&quot;Apribile&quot;,&quot;LA-123&quot;,&quot;H-179&quot;,1]],astina:1},
+  {k:&quot;G15&quot;,sis:&quot;gold&quot;,n:&quot;15&quot;,nome:&quot;Portoncino 1 anta giunto aperto, apertura interna&quot;,pag:173,arco:true,lay:{c:[[&quot;p&quot;,&quot;L&quot;]]},
+    r:_GZp.concat([[&quot;50003&quot;,&quot;Anta Z maggiorata&quot;,&quot;L-46&quot;,1,&quot;a&quot;,&quot;&quot;,1],[&quot;50003&quot;,&quot;Anta Z maggiorata&quot;,&quot;H-29&quot;,2,&quot;m&quot;],[&quot;50005&quot;,&quot;Zoccolo&quot;,&quot;L-170&quot;,1,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L-171.5&quot;,2,&quot;a&quot;,&quot;f&quot;,1],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-225.5&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L-180&quot;,2,&quot;r&quot;,&quot;v&quot;,1],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-278&quot;,2,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;L-194&quot;,&quot;H-248&quot;,1]]},
+  {k:&quot;G16&quot;,sis:&quot;gold&quot;,n:&quot;16&quot;,nome:&quot;Portoncino 2 ante T.Z. giunto aperto, apertura interna&quot;,pag:175,arco:true,lay:{c:[[&quot;p&quot;,&quot;L/2&quot;],[&quot;p&quot;,&quot;L/2&quot;]]},
+    r:_GZp.concat([[&quot;50003&quot;,&quot;Anta Z maggiorata&quot;,&quot;(L/2)-13.75&quot;,2,&quot;a&quot;,&quot;&quot;,2],[&quot;50003&quot;,&quot;Anta Z maggiorata&quot;,&quot;H-29&quot;,3,&quot;m&quot;],[&quot;50015&quot;,&quot;Anta T maggiorata&quot;,&quot;H-19.5&quot;,1,&quot;m&quot;],
+      [&quot;50005&quot;,&quot;Zoccolo&quot;,&quot;(L/2)-137.75&quot;,2,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;(L/2)-139.25&quot;,4,&quot;a&quot;,&quot;f&quot;,2],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-225.5&quot;,4,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;(L/2)-147.75&quot;,4,&quot;r&quot;,&quot;v&quot;,2],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-278&quot;,4,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;(L/2)-162&quot;,&quot;H-248&quot;,2]]},
+  {k:&quot;G17&quot;,sis:&quot;gold&quot;,n:&quot;17&quot;,nome:&quot;Vetrina con inserimento, apertura interna giunto aperto&quot;,pag:177,par:[&quot;L1&quot;,&quot;H1&quot;],lay:{c:[[&quot;a&quot;,&quot;L1&quot;],[&quot;f&quot;,&quot;L2&quot;]],tr:1,aH:&quot;H1&quot;},
+    r:_GZp.concat([[&quot;50031&quot;,&quot;Montante traverso&quot;,&quot;L1-41.5&quot;,1,&quot;r&quot;],[&quot;50031&quot;,&quot;Montante traverso&quot;,&quot;L2-41.5&quot;,1,&quot;r&quot;],[&quot;50031&quot;,&quot;Montante traverso&quot;,&quot;H-24&quot;,1,&quot;r&quot;],
+      [&quot;50005&quot;,&quot;Zoccolo&quot;,&quot;L1-163.5&quot;,1,&quot;r&quot;],[&quot;50005&quot;,&quot;Zoccolo&quot;,&quot;L2-41.5&quot;,1,&quot;r&quot;],
+      [&quot;50003&quot;,&quot;Anta Z maggiorata&quot;,&quot;L1-39.5&quot;,1,&quot;a&quot;],[&quot;50003&quot;,&quot;Anta Z maggiorata&quot;,&quot;H1-22.5&quot;,2,&quot;m&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L1-43&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L1-165&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L2-43&quot;,4,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H1-219&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H1-152&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H2-43&quot;,4,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L1-51.5&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L1-173.5&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L2-51.5&quot;,4,&quot;r&quot;,&quot;v&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H1-204.5&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H1-271.5&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H2-95.5&quot;,4,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Apribile&quot;,&quot;L1-187.5&quot;,&quot;H1-241.5&quot;,1],[&quot;Fisso&quot;,&quot;L1-65.5&quot;,&quot;H2-65.5&quot;,1],[&quot;Fisso&quot;,&quot;L2-65.5&quot;,&quot;H1-174.5&quot;,1],[&quot;Fisso&quot;,&quot;L2-65.5&quot;,&quot;H2-65.5&quot;,1]]},
+  // ── GOLD 500: aperture esterne ──
+  {k:&quot;G12&quot;,sis:&quot;gold&quot;,n:&quot;12&quot;,nome:&quot;Bilico verticale giunto aperto, apertura esterna&quot;,pag:219,lay:{c:[[&quot;b&quot;,&quot;L&quot;]]},
+    r:_GZ.concat([[&quot;50013&quot;,&quot;Inversione bilico&quot;,&quot;(L-46)/2&quot;,4,&quot;m&quot;],[&quot;50013&quot;,&quot;Inversione bilico&quot;,&quot;H-46&quot;,2,&quot;m&quot;],
+      [&quot;50014&quot;,&quot;Anta bilico T&quot;,&quot;L-112&quot;,2,&quot;a&quot;],[&quot;50014&quot;,&quot;Anta bilico T&quot;,&quot;H-112&quot;,2,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L-239.5&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-239.5&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L-248&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-292&quot;,2,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;L-262&quot;,&quot;H-262&quot;,1]],astina:1},
+  {k:&quot;G13&quot;,sis:&quot;gold&quot;,n:&quot;13&quot;,nome:&quot;Bilico orizzontale giunto aperto, apertura esterna&quot;,pag:221,lay:{c:[[&quot;b&quot;,&quot;L&quot;]]},
+    r:_GZ.concat([[&quot;50013&quot;,&quot;Inversione bilico&quot;,&quot;L-46&quot;,2,&quot;m&quot;],[&quot;50013&quot;,&quot;Inversione bilico&quot;,&quot;(H-46)/2&quot;,4,&quot;m&quot;],
+      [&quot;50014&quot;,&quot;Anta bilico T&quot;,&quot;L-112&quot;,2,&quot;a&quot;],[&quot;50014&quot;,&quot;Anta bilico T&quot;,&quot;H-112&quot;,2,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L-239.5&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-239.5&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L-248&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-292&quot;,2,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;L-262&quot;,&quot;H-262&quot;,1]],astina:1},
+  {k:&quot;G20&quot;,sis:&quot;gold&quot;,n:&quot;20&quot;,nome:&quot;Serramento a nastro a sporgere doppia battuta con laterali fissi, apertura esterna&quot;,pag:223,lay:{c:[[&quot;b&quot;,&quot;L&quot;]]},
+    r:[[&quot;50006&quot;,&quot;Telaio L&quot;,&quot;L&quot;,1,&quot;x&quot;],[&quot;50010&quot;,&quot;Telaio L&quot;,&quot;L&quot;,1,&quot;x&quot;],[&quot;50016&quot;,&quot;Traverso T&quot;,&quot;H-74&quot;,1,&quot;r&quot;],
+      [&quot;50022&quot;,&quot;Inversione di battuta&quot;,&quot;L-16&quot;,2,&quot;a&quot;],[&quot;50022&quot;,&quot;Inversione di battuta&quot;,&quot;H-72&quot;,2,&quot;a&quot;],
+      [&quot;50017&quot;,&quot;Anta T apert. est.&quot;,&quot;L-82&quot;,2,&quot;a&quot;],[&quot;50017&quot;,&quot;Anta T apert. est.&quot;,&quot;H-138&quot;,2,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L-176.5&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-232.5&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L-185&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-285&quot;,2,&quot;r&quot;,&quot;v&quot;]],
+    vt:[[&quot;Vetro&quot;,&quot;L-199&quot;,&quot;H-255&quot;,1]],astina:1},
+  {k:&quot;G20A&quot;,sis:&quot;gold&quot;,n:&quot;20A&quot;,nome:&quot;Finestra 1 anta a sporgere doppia battuta, apertura esterna&quot;,pag:225,lay:{c:[[&quot;b&quot;,&quot;L&quot;]]},
+    r:_GZ.concat([[&quot;50017&quot;,&quot;Anta T apert. est.&quot;,&quot;L-46&quot;,2,&quot;a&quot;],[&quot;50017&quot;,&quot;Anta T apert. est.&quot;,&quot;H-46&quot;,2,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L-140.5&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-140.5&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L-149&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-193&quot;,2,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;L-163&quot;,&quot;H-163&quot;,1]],astina:1},
+  {k:&quot;G21&quot;,sis:&quot;gold&quot;,n:&quot;21&quot;,nome:&quot;Serramento a nastro a sporgere giunto aperto con laterali fissi, apertura esterna&quot;,pag:227,lay:{c:[[&quot;b&quot;,&quot;L&quot;]]},
+    r:[[&quot;50006&quot;,&quot;Telaio L&quot;,&quot;L&quot;,1,&quot;x&quot;],[&quot;50010&quot;,&quot;Telaio L&quot;,&quot;L&quot;,1,&quot;x&quot;],[&quot;50016&quot;,&quot;Traverso T&quot;,&quot;H-74&quot;,1,&quot;r&quot;],
+      [&quot;50013&quot;,&quot;Inversione bilico&quot;,&quot;L-16&quot;,2,&quot;a&quot;],[&quot;50013&quot;,&quot;Inversione bilico&quot;,&quot;H-72&quot;,2,&quot;a&quot;],
+      [&quot;50014&quot;,&quot;Anta T bilico&quot;,&quot;L-82&quot;,2,&quot;a&quot;],[&quot;50014&quot;,&quot;Anta T bilico&quot;,&quot;H-138&quot;,2,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L-209.5&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-265.5&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L-218&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-318&quot;,2,&quot;r&quot;,&quot;v&quot;]],
+    vt:[[&quot;Vetro&quot;,&quot;L-232&quot;,&quot;H-288&quot;,1]],astina:1},
+  {k:&quot;G22&quot;,sis:&quot;gold&quot;,n:&quot;22&quot;,nome:&quot;Finestra 1 anta doppia battuta, apertura esterna&quot;,pag:229,arco:true,lay:{c:[[&quot;a&quot;,&quot;L&quot;]]},
+    r:_GZ.concat([[&quot;50017&quot;,&quot;Anta T apert. est.&quot;,&quot;L-46&quot;,2,&quot;a&quot;,&quot;&quot;,1],[&quot;50017&quot;,&quot;Anta T apert. est.&quot;,&quot;H-46&quot;,2,&quot;a&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L-140.5&quot;,2,&quot;a&quot;,&quot;f&quot;,1],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-140.5&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L-149&quot;,2,&quot;r&quot;,&quot;v&quot;,1],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-193&quot;,2,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;L-163&quot;,&quot;H-163&quot;,1]],astina:1},
+  {k:&quot;G23&quot;,sis:&quot;gold&quot;,n:&quot;23&quot;,nome:&quot;Finestra 2 ante Z.RIP.T doppia battuta, apertura esterna&quot;,pag:231,arco:true,lay:{c:[[&quot;a&quot;,&quot;L/2&quot;],[&quot;a&quot;,&quot;L/2&quot;]]},
+    r:_GZ.concat([[&quot;50017&quot;,&quot;Anta T apert. est.&quot;,&quot;(L-51)/2&quot;,4,&quot;a&quot;,&quot;&quot;,2],[&quot;50017&quot;,&quot;Anta T apert. est.&quot;,&quot;H-46&quot;,4,&quot;a&quot;],[&quot;50011&quot;,&quot;Riporto&quot;,&quot;H-114&quot;,1,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;(L-240)/2&quot;,4,&quot;a&quot;,&quot;f&quot;,2],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-140.5&quot;,4,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;(L-257)/2&quot;,4,&quot;r&quot;,&quot;v&quot;,2],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-193&quot;,4,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;(L-285)/2&quot;,&quot;H-163&quot;,2]],astina:1},
+  {k:&quot;G32&quot;,sis:&quot;gold&quot;,n:&quot;32&quot;,nome:&quot;Portoncino 1 anta doppia battuta, apertura esterna&quot;,pag:233,arco:true,lay:{c:[[&quot;p&quot;,&quot;L&quot;]]},
+    r:_GZp.concat([[&quot;50019&quot;,&quot;Anta T apert. est.&quot;,&quot;L-46&quot;,1,&quot;a&quot;,&quot;&quot;,1],[&quot;50019&quot;,&quot;Anta T apert. est.&quot;,&quot;H-29&quot;,2,&quot;m&quot;],[&quot;50005&quot;,&quot;Zoccolo&quot;,&quot;L-170&quot;,1,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L-171.5&quot;,2,&quot;a&quot;,&quot;f&quot;,1],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-225.5&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L-180&quot;,2,&quot;r&quot;,&quot;v&quot;,1],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-278&quot;,2,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;L-194&quot;,&quot;H-248&quot;,1]]},
+  {k:&quot;G33&quot;,sis:&quot;gold&quot;,n:&quot;33&quot;,nome:&quot;Portoncino 2 ante Z.RIP.Z doppia battuta, apertura esterna&quot;,pag:235,arco:true,lay:{c:[[&quot;p&quot;,&quot;L/2&quot;],[&quot;p&quot;,&quot;L/2&quot;]]},
+    r:_GZp.concat([[&quot;50019&quot;,&quot;Anta T apert. est.&quot;,&quot;(L-51)/2&quot;,2,&quot;a&quot;,&quot;&quot;,2],[&quot;50019&quot;,&quot;Anta T apert. est.&quot;,&quot;H-29&quot;,4,&quot;m&quot;],[&quot;50011&quot;,&quot;Riporto&quot;,&quot;H-63&quot;,1,&quot;r&quot;],
+      [&quot;50005&quot;,&quot;Zoccolo&quot;,&quot;(L-299)/2&quot;,2,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;(L-302)/2&quot;,4,&quot;a&quot;,&quot;f&quot;,2],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-225.5&quot;,4,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;(L-319)/2&quot;,4,&quot;r&quot;,&quot;v&quot;,2],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-278&quot;,4,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;(L-347)/2&quot;,&quot;H-248&quot;,2]]},
+  // ── GOLD 500: porte interne ──
+  {k:&quot;G48&quot;,sis:&quot;gold&quot;,n:&quot;48&quot;,nome:&quot;Porta a ventola 1 anta, serratura a fascia, vetrocamera&quot;,pag:189,par:[&quot;H1&quot;],lay:{c:[[&quot;p&quot;,&quot;L&quot;]],tr:1},
+    nota:&quot;Il fermavetro è indicato come «50082» nella scheda: è il 40082 (stessa sagoma).&quot;,
+    r:_GZp.concat([[&quot;50044&quot;,&quot;Riporto superiore&quot;,&quot;L-58&quot;,1,&quot;r&quot;],[&quot;50043&quot;,&quot;Riporto laterale&quot;,&quot;H-51&quot;,2,&quot;r&quot;],
+      [&quot;50042&quot;,&quot;Anta&quot;,&quot;L-111&quot;,1,&quot;a&quot;],[&quot;50042&quot;,&quot;Anta&quot;,&quot;H-63&quot;,2,&quot;m&quot;],[&quot;50005&quot;,&quot;Zoccolo&quot;,&quot;L-205&quot;,1,&quot;r&quot;],[&quot;50018&quot;,&quot;Fascia&quot;,&quot;L-205&quot;,1,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L-206.5&quot;,4,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H1-195&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H2-157&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;6405&quot;,&quot;Astina di chiusura&quot;,&quot;H-60.5&quot;,2,&quot;r&quot;],[&quot;50052&quot;,&quot;Porta spazzolino&quot;,&quot;L-120&quot;,2,&quot;r&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. inf.&quot;,&quot;L-215&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante ferm. inf.&quot;,&quot;H1-247.5&quot;,2,&quot;r&quot;,&quot;v&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. sup.&quot;,&quot;L-215&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante ferm. sup.&quot;,&quot;H2-209.5&quot;,2,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Inferiore&quot;,&quot;L-229&quot;,&quot;H1-217.5&quot;,1],[&quot;Superiore&quot;,&quot;L-229&quot;,&quot;H2-179.5&quot;,1]]},
+  {k:&quot;G49&quot;,sis:&quot;gold&quot;,n:&quot;49&quot;,nome:&quot;Porta a ventola 2 ante con sopraluce fisso, serratura a montante&quot;,pag:191,par:[&quot;H1&quot;],lay:{c:[[&quot;p&quot;,&quot;L/2&quot;],[&quot;p&quot;,&quot;L/2&quot;]],tr:1},
+    nota:&quot;Il fermavetro è indicato come «50082» nella scheda: è il 40082 (stessa sagoma). H1 = porta, H2 = sopraluce.&quot;,
+    r:_GZp.concat([[&quot;50031&quot;,&quot;Fascia&quot;,&quot;L-48&quot;,1,&quot;r&quot;],[&quot;50044&quot;,&quot;Riporto superiore&quot;,&quot;L-58&quot;,1,&quot;r&quot;],[&quot;50043&quot;,&quot;Riporto laterale&quot;,&quot;H1-44.5&quot;,2,&quot;r&quot;],
+      [&quot;50042&quot;,&quot;Anta&quot;,&quot;(L-122)/2&quot;,2,&quot;a&quot;],[&quot;50042&quot;,&quot;Anta&quot;,&quot;H1-56.5&quot;,4,&quot;m&quot;],[&quot;50005&quot;,&quot;Zoccolo&quot;,&quot;(L-310)/2&quot;,2,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;(L-313)/2&quot;,4,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L-49.5&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H1-238&quot;,4,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H2-43&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;6405&quot;,&quot;Astina di chiusura&quot;,&quot;H1-54&quot;,4,&quot;r&quot;],[&quot;50052&quot;,&quot;Porta spazzolino&quot;,&quot;(L-139.6)/2&quot;,4,&quot;r&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. inf.&quot;,&quot;(L-330)/2&quot;,4,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante ferm. inf.&quot;,&quot;H1-290.5&quot;,4,&quot;r&quot;,&quot;v&quot;],
+      [&quot;40029&quot;,&quot;Variante ferm. sup.&quot;,&quot;L-58&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante ferm. sup.&quot;,&quot;H2-95.5&quot;,2,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Inferiore&quot;,&quot;(L-358)/2&quot;,&quot;H1-260.5&quot;,2],[&quot;Superiore&quot;,&quot;L-72&quot;,&quot;H2-65.5&quot;,1]]},
+  {k:&quot;G50&quot;,sis:&quot;gold&quot;,n:&quot;50&quot;,nome:&quot;Porta interna 1 anta battente, pannello 40 mm, maniglia premiapri&quot;,pag:193,lay:{c:[[&quot;p&quot;,&quot;L&quot;]]},
+    r:_GM.concat([[&quot;50023&quot;,&quot;Anta&quot;,&quot;L-24.8&quot;,1,&quot;a&quot;],[&quot;50023&quot;,&quot;Anta&quot;,&quot;H-18.4&quot;,2,&quot;m&quot;],[&quot;50028&quot;,&quot;Zoccolo&quot;,&quot;L-107.8&quot;,1,&quot;r&quot;],[&quot;6405&quot;,&quot;Astina di chiusura&quot;,&quot;H-37.5&quot;,2,&quot;r&quot;]]),
+    vt:[],pan:[[&quot;Pannello sp. 40&quot;,&quot;L-110&quot;,&quot;H-142&quot;,1]]},
+  {k:&quot;G51&quot;,sis:&quot;gold&quot;,n:&quot;51&quot;,nome:&quot;Porta interna 2 ante battenti, pannello 40 mm e vetrocamera, serratura a fascia&quot;,pag:195,par:[&quot;L1&quot;,&quot;H1&quot;],lay:{c:[[&quot;p&quot;,&quot;L1&quot;],[&quot;p&quot;,&quot;L2&quot;]],tr:1},
+    r:_GM.concat([[&quot;50023&quot;,&quot;Anta&quot;,&quot;L1-14.9&quot;,1,&quot;a&quot;],[&quot;50023&quot;,&quot;Anta&quot;,&quot;L2-14.9&quot;,1,&quot;a&quot;],[&quot;50023&quot;,&quot;Anta&quot;,&quot;H-18.4&quot;,4,&quot;m&quot;],[&quot;50011&quot;,&quot;Riporto&quot;,&quot;H-52.4&quot;,1,&quot;r&quot;],
+      [&quot;50028&quot;,&quot;Zoccolo&quot;,&quot;L1-97.9&quot;,2,&quot;r&quot;],[&quot;50028&quot;,&quot;Zoccolo&quot;,&quot;L2-97.9&quot;,1,&quot;r&quot;],
+      [&quot;50045&quot;,&quot;Riduttore vetrocamera&quot;,&quot;L1-127.9&quot;,2,&quot;r&quot;],[&quot;50045&quot;,&quot;Riduttore vetrocamera&quot;,&quot;H2-116.4&quot;,2,&quot;r&quot;],[&quot;6405&quot;,&quot;Astina di chiusura&quot;,&quot;H-37.5&quot;,3,&quot;r&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;L1-108&quot;,&quot;H2-97&quot;,1]],pan:[[&quot;Pannello sp. 40&quot;,&quot;L1-100&quot;,&quot;H1-120.5&quot;,1],[&quot;Pannello sp. 40&quot;,&quot;L2-100&quot;,&quot;H-142&quot;,1]]},
+  {k:&quot;G52&quot;,sis:&quot;gold&quot;,n:&quot;52&quot;,nome:&quot;Porta interna 1 anta battente con sopraluce wasistas, pannello 40 mm&quot;,pag:197,par:[&quot;H1&quot;],lay:{c:[[&quot;p&quot;,&quot;L&quot;]],tr:1},
+    r:_GM.concat([[&quot;50023&quot;,&quot;Anta&quot;,&quot;L-24.8&quot;,3,&quot;a&quot;],[&quot;50023&quot;,&quot;Anta&quot;,&quot;H1-14&quot;,2,&quot;m&quot;],[&quot;50023&quot;,&quot;Anta&quot;,&quot;H2-20.4&quot;,2,&quot;a&quot;],[&quot;50016&quot;,&quot;Traverso&quot;,&quot;L-26.8&quot;,1,&quot;r&quot;],
+      [&quot;50028&quot;,&quot;Zoccolo&quot;,&quot;L-107.8&quot;,1,&quot;r&quot;],[&quot;50029&quot;,&quot;Riduttore vetro semplice&quot;,&quot;L-137.8&quot;,2,&quot;r&quot;],[&quot;50029&quot;,&quot;Riduttore vetro semplice&quot;,&quot;H2-133.4&quot;,2,&quot;r&quot;],
+      [&quot;6405&quot;,&quot;Astina di chiusura&quot;,&quot;H1-33&quot;,2,&quot;r&quot;]]),
+    vt:[[&quot;Vetro sp. 6-8&quot;,&quot;L-120&quot;,&quot;H2-115&quot;,1]],pan:[[&quot;Pannello sp. 40&quot;,&quot;L-110&quot;,&quot;H1-137.5&quot;,1]]},
+  {k:&quot;G53&quot;,sis:&quot;gold&quot;,n:&quot;53&quot;,nome:&quot;Porta interna 1 anta battente profilo maggiorato, pannello ad infilare&quot;,pag:199,lay:{c:[[&quot;p&quot;,&quot;L&quot;]]},
+    nota:&quot;Lo zoccolo 50028 è scritto «H − 147,8» nella scheda: riportato com'è.&quot;,
+    r:_GM.concat([[&quot;50051&quot;,&quot;Anta&quot;,&quot;L-24.8&quot;,1,&quot;a&quot;],[&quot;50051&quot;,&quot;Anta&quot;,&quot;H-18.4&quot;,2,&quot;m&quot;],[&quot;50028&quot;,&quot;Zoccolo&quot;,&quot;H-147.8&quot;,1,&quot;r&quot;],[&quot;6405&quot;,&quot;Astina di chiusura&quot;,&quot;H-37.5&quot;,2,&quot;r&quot;]]),
+    vt:[],pan:[[&quot;Pannello sp. 40&quot;,&quot;L-150&quot;,&quot;H-162&quot;,1]]},
+  {k:&quot;G54&quot;,sis:&quot;gold&quot;,n:&quot;54&quot;,nome:&quot;Porta interna 1 anta battente con griglia di aerazione, vetro semplice&quot;,pag:201,par:[&quot;H1&quot;,&quot;N&quot;],lay:{c:[[&quot;p&quot;,&quot;L&quot;]],tr:1},
+    nota:&quot;Il tubo alluminio 40x15 non ha codice né peso a catalogo: entra in distinta con peso 0.&quot;,
+    r:_GM.concat([[&quot;50023&quot;,&quot;Anta&quot;,&quot;L-24.8&quot;,1,&quot;a&quot;],[&quot;50023&quot;,&quot;Anta&quot;,&quot;H-18.4&quot;,2,&quot;m&quot;],[&quot;50028&quot;,&quot;Zoccolo&quot;,&quot;L-107.8&quot;,2,&quot;r&quot;],
+      [&quot;50029&quot;,&quot;Riduttore vetro semplice&quot;,&quot;L-137.8&quot;,2,&quot;r&quot;],[&quot;50029&quot;,&quot;Riduttore vetro semplice&quot;,&quot;H2-116.4&quot;,2,&quot;r&quot;],[&quot;50029&quot;,&quot;Riduttore vetro semplice&quot;,&quot;H1-148.5&quot;,2,&quot;r&quot;],
+      [&quot;6673&quot;,&quot;Ovalina&quot;,&quot;L-139.8&quot;,&quot;N&quot;,&quot;r&quot;],[&quot;6405&quot;,&quot;Astina di chiusura&quot;,&quot;H-37.5&quot;,2,&quot;r&quot;],[&quot;TUBO40x15&quot;,&quot;Tubo alluminio 40x15&quot;,&quot;L-107.8&quot;,2,&quot;r&quot;]]),
+    vt:[[&quot;Vetro sp. 6-8&quot;,&quot;L-120&quot;,&quot;H2-98&quot;,1]]},
+  {k:&quot;G55&quot;,sis:&quot;gold&quot;,n:&quot;55&quot;,nome:&quot;Porta interna 1 anta battente Z maggiorato, vetrocamera, serratura a montante&quot;,pag:203,lay:{c:[[&quot;p&quot;,&quot;L&quot;]]},
+    r:_GM.concat([[&quot;50003&quot;,&quot;Anta&quot;,&quot;L-24.8&quot;,1,&quot;a&quot;],[&quot;50003&quot;,&quot;Anta&quot;,&quot;H-18.4&quot;,2,&quot;m&quot;],[&quot;50005&quot;,&quot;Zoccolo&quot;,&quot;L-148.8&quot;,1,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;L-150.3&quot;,2,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-214.9&quot;,2,&quot;a&quot;,&quot;f&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;L-158.8&quot;,2,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-267.4&quot;,2,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;L-173&quot;,&quot;H-237&quot;,1]]},
+  {k:&quot;G56&quot;,sis:&quot;gold&quot;,n:&quot;56&quot;,nome:&quot;Porta interna 2 ante a ventola, vetrocamera, serratura a montante&quot;,pag:205,lay:{c:[[&quot;p&quot;,&quot;L/2&quot;],[&quot;p&quot;,&quot;L/2&quot;]]},
+    r:_GM.concat([[&quot;50044&quot;,&quot;Riporto superiore&quot;,&quot;L-36.8&quot;,1,&quot;r&quot;],[&quot;50043&quot;,&quot;Riporto laterale&quot;,&quot;H-40.4&quot;,2,&quot;r&quot;],
+      [&quot;50042&quot;,&quot;Anta&quot;,&quot;(L-100.8)/2&quot;,2,&quot;a&quot;],[&quot;50042&quot;,&quot;Anta&quot;,&quot;H-52.4&quot;,4,&quot;m&quot;],[&quot;50005&quot;,&quot;Zoccolo&quot;,&quot;(L-288.8)/2&quot;,2,&quot;r&quot;],
+      [&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;(L-291.8)/2&quot;,4,&quot;a&quot;,&quot;f&quot;],[&quot;40082&quot;,&quot;Fermavetro&quot;,&quot;H-233.9&quot;,4,&quot;a&quot;,&quot;f&quot;],
+      [&quot;6405&quot;,&quot;Astina di chiusura&quot;,&quot;H-50&quot;,4,&quot;r&quot;],[&quot;50052&quot;,&quot;Porta spazzolino&quot;,&quot;(L-118.4)/2&quot;,4,&quot;r&quot;],
+      [&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;(L-308.8)/2&quot;,4,&quot;r&quot;,&quot;v&quot;],[&quot;40029&quot;,&quot;Variante fermavetro&quot;,&quot;H-286.4&quot;,4,&quot;r&quot;,&quot;v&quot;]]),
+    vt:[[&quot;Vetro&quot;,&quot;(L-337)/2&quot;,&quot;H-256&quot;,2]]},
+  {k:&quot;G57&quot;,sis:&quot;gold&quot;,n:&quot;57&quot;,nome:&quot;Porta interna 1 anta battente in legno sp. 42, maniglia premiapri&quot;,pag:207,lay:{c:[[&quot;p&quot;,&quot;L&quot;]]},
+    r:_GM.slice(),vt:[],pan:[[&quot;Anta in legno sp. 42&quot;,&quot;L-45&quot;,&quot;H-28.5&quot;,1]]},
+  {k:&quot;G58&quot;,sis:&quot;gold&quot;,n:&quot;58&quot;,nome:&quot;Porta interna 1 anta battente in legno sp. 42, cerniera a scomparsa&quot;,pag:209,lay:{c:[[&quot;p&quot;,&quot;L&quot;]]},
+    nota:&quot;Misure dell'anta in funzione del tipo di cerniera adottato (nota della scheda).&quot;,
+    r:_GM.slice(),vt:[],pan:[[&quot;Anta in legno sp. 42&quot;,&quot;L-45&quot;,&quot;H-28.5&quot;,1]]},
+  {k:&quot;G59&quot;,sis:&quot;gold&quot;,n:&quot;59&quot;,nome:&quot;Porta interna 1 anta battente in cristallo temperato&quot;,pag:211,lay:{c:[[&quot;p&quot;,&quot;L&quot;]]},
+    nota:&quot;Compensatore a muro: 1 pezzo spallato DX e 1 spallato SX (lavorazione di spallatura superiore).&quot;,
+    r:_GM.concat([[&quot;50053&quot;,&quot;Compensatore a muro&quot;,&quot;L-36.8&quot;,1,&quot;r&quot;],[&quot;50053&quot;,&quot;Compensatore a muro&quot;,&quot;H-28.4&quot;,2,&quot;r&quot;]]),
+    vt:[[&quot;Cristallo sp. 10&quot;,&quot;L-67&quot;,&quot;H-40&quot;,1]]},
+  {k:&quot;G60&quot;,sis:&quot;gold&quot;,n:&quot;60&quot;,nome:&quot;Porta interna 1 anta a ventola in cristallo temperato&quot;,pag:213,lay:{c:[[&quot;p&quot;,&quot;L&quot;]]},
+    r:_GM.concat([[&quot;50044&quot;,&quot;Riporto laterale e superiore&quot;,&quot;L-36.8&quot;,1,&quot;r&quot;],[&quot;50044&quot;,&quot;Riporto laterale e superiore&quot;,&quot;H-40.4&quot;,1,&quot;r&quot;]]),
+    vt:[[&quot;Cristallo&quot;,&quot;L-93&quot;,&quot;H-53.5&quot;,1]]},
+  // ── DOGMA PRO (taglio termico) ──
+  {k:&quot;D1&quot;,sis:&quot;dogma&quot;,n:&quot;1&quot;,nome:&quot;Finestra 1 anta giunto aperto, apertura interna&quot;,pag:&quot;6.2&quot;,arco:true,lay:{c:[[&quot;a&quot;,&quot;L&quot;]]},
+    r:[[&quot;175000&quot;,&quot;Telaio Z&quot;,&quot;L+52&quot;,1,&quot;a&quot;,&quot;&quot;,1],[&quot;175000&quot;,&quot;Telaio Z&quot;,&quot;H+52&quot;,2,&quot;a&quot;],[&quot;175001&quot;,&quot;Telaio L&quot;,&quot;L&quot;,1,&quot;a&quot;],
+      [&quot;175002&quot;,&quot;Anta Z&quot;,&quot;L-45&quot;,2,&quot;a&quot;,&quot;&quot;,1],[&quot;175002&quot;,&quot;Anta Z&quot;,&quot;H-45&quot;,2,&quot;a&quot;],
+      [&quot;40087&quot;,&quot;Fermavetro&quot;,&quot;L-139&quot;,2,&quot;r&quot;,&quot;f&quot;,1],[&quot;40087&quot;,&quot;Fermavetro&quot;,&quot;H-183&quot;,2,&quot;r&quot;,&quot;f&quot;],
+      [&quot;40081&quot;,&quot;Fermavetro arrotondato&quot;,&quot;L-183&quot;,2,&quot;r&quot;,&quot;v&quot;,1],[&quot;40081&quot;,&quot;Fermavetro arrotondato&quot;,&quot;H-183&quot;,2,&quot;r&quot;,&quot;v&quot;]],
+    vt:[],astina:1,
+    acc:[[&quot;TA075&quot;,&quot;t&quot;],[&quot;G2001&quot;,16],[&quot;G2002&quot;,16],[&quot;TS077&quot;,8],[&quot;TS078&quot;,8],[&quot;G501N&quot;,8],[&quot;TS079&quot;,8],[&quot;S3001&quot;,8],[&quot;G112&quot;,4],[&quot;G268&quot;,4],[&quot;G269&quot;,2],[&quot;G101&quot;,&quot;2…3&quot;],[&quot;G231&quot;,4],
+      [&quot;TG186&quot;,4],[&quot;TG185&quot;,&quot;2L+2H&quot;],[&quot;TG031&quot;,&quot;2L+2H&quot;],[&quot;TGCE&quot;,&quot;2L+2H&quot;],[&quot;TGCI&quot;,&quot;2L+2H&quot;],[&quot;TG302&quot;,&quot;L&quot;],[&quot;TG004&quot;,&quot;L+2H&quot;],[&quot;TG385&quot;,&quot;2L+2H&quot;],[&quot;Z119&quot;,&quot;L+2H&quot;]]},
+  {k:&quot;D2&quot;,sis:&quot;dogma&quot;,n:&quot;2&quot;,nome:&quot;Finestra 2 ante giunto aperto, apertura interna&quot;,pag:&quot;6.4&quot;,arco:true,lay:{c:[[&quot;a&quot;,&quot;L/2&quot;],[&quot;a&quot;,&quot;L/2&quot;]]},
+    r:[[&quot;175000&quot;,&quot;Telaio Z&quot;,&quot;L+52&quot;,1,&quot;a&quot;,&quot;&quot;,1],[&quot;175000&quot;,&quot;Telaio Z&quot;,&quot;H+52&quot;,2,&quot;a&quot;],[&quot;175001&quot;,&quot;Telaio L&quot;,&quot;L&quot;,1,&quot;a&quot;],
+      [&quot;175002&quot;,&quot;Anta Z&quot;,&quot;L/2-25&quot;,4,&quot;a&quot;,&quot;&quot;,2],[&quot;175002&quot;,&quot;Anta Z&quot;,&quot;H-45&quot;,4,&quot;a&quot;],[&quot;175003&quot;,&quot;Riporto&quot;,&quot;H-111&quot;,1,&quot;r&quot;],
+      [&quot;40087&quot;,&quot;Fermavetro&quot;,&quot;L/2-119&quot;,4,&quot;r&quot;,&quot;f&quot;,2],[&quot;40087&quot;,&quot;Fermavetro&quot;,&quot;H-183&quot;,4,&quot;r&quot;,&quot;f&quot;],
+      [&quot;40081&quot;,&quot;Fermavetro arrotondato&quot;,&quot;L/2-163&quot;,4,&quot;r&quot;,&quot;v&quot;,2],[&quot;40081&quot;,&quot;Fermavetro arrotondato&quot;,&quot;H-183&quot;,4,&quot;r&quot;,&quot;v&quot;]],
+    vt:[],astina:1,
+    acc:[[&quot;TA075&quot;,&quot;t&quot;],[&quot;G2001&quot;,24],[&quot;G2002&quot;,24],[&quot;TS077&quot;,12],[&quot;TS078&quot;,12],[&quot;G501N&quot;,12],[&quot;TS079&quot;,12],[&quot;S3001&quot;,24],[&quot;G112&quot;,4],[&quot;G268&quot;,8],[&quot;G269&quot;,2],[&quot;TT085&quot;,1],[&quot;G101&quot;,&quot;2…4&quot;],[&quot;G231&quot;,8],
+      [&quot;TG186&quot;,4],[&quot;TG185&quot;,&quot;2L+3H&quot;],[&quot;TG031&quot;,&quot;2L+4H&quot;],[&quot;TGCE&quot;,&quot;2L+4H&quot;],[&quot;TGCI&quot;,&quot;2L+4H&quot;],[&quot;TG302&quot;,&quot;L&quot;],[&quot;TG004&quot;,&quot;L+2H&quot;],[&quot;TG385&quot;,&quot;2L+4H&quot;],[&quot;Z119&quot;,&quot;L+2H&quot;]]},
+  {k:&quot;D3&quot;,sis:&quot;dogma&quot;,n:&quot;3&quot;,nome:&quot;Portafinestra 2 ante giunto aperto, soglia ribassata, apertura interna&quot;,pag:&quot;6.6&quot;,arco:true,par:[&quot;H1&quot;],lay:{c:[[&quot;a&quot;,&quot;L/2&quot;],[&quot;a&quot;,&quot;L/2&quot;]],tr:1},
+    r:[[&quot;175000&quot;,&quot;Telaio Z&quot;,&quot;L+52&quot;,1,&quot;a&quot;,&quot;&quot;,1],[&quot;175000&quot;,&quot;Telaio Z&quot;,&quot;H+52&quot;,2,&quot;a&quot;],
+      [&quot;175002&quot;,&quot;Anta Z&quot;,&quot;L/2-25&quot;,4,&quot;a&quot;,&quot;&quot;,2],[&quot;175002&quot;,&quot;Anta Z&quot;,&quot;H-30&quot;,4,&quot;a&quot;],[&quot;175003&quot;,&quot;Riporto&quot;,&quot;H-96&quot;,1,&quot;r&quot;],
+      [&quot;40087&quot;,&quot;Fermavetro&quot;,&quot;L/2-119&quot;,8,&quot;r&quot;,&quot;f&quot;,2],[&quot;40087&quot;,&quot;Fermavetro&quot;,&quot;H1-212.75&quot;,4,&quot;r&quot;,&quot;f&quot;],[&quot;40087&quot;,&quot;Fermavetro&quot;,&quot;H2-127.75&quot;,4,&quot;r&quot;,&quot;f&quot;],
+      [&quot;40081&quot;,&quot;Fermavetro arrotondato&quot;,&quot;L/2-163&quot;,8,&quot;r&quot;,&quot;v&quot;,2],[&quot;40081&quot;,&quot;Fermavetro arrotondato&quot;,&quot;H1-212.75&quot;,4,&quot;r&quot;,&quot;v&quot;],[&quot;40081&quot;,&quot;Fermavetro arrotondato&quot;,&quot;H2-127.75&quot;,4,&quot;r&quot;,&quot;v&quot;],
+      [&quot;175087&quot;,&quot;Soglia ribassata&quot;,&quot;L-47.5&quot;,1,&quot;r&quot;],[&quot;175024&quot;,&quot;Zoccolo riportato&quot;,&quot;L/2-109.5&quot;,2,&quot;r&quot;],[&quot;175020&quot;,&quot;Traverso&quot;,&quot;L/2-109.5&quot;,2,&quot;r&quot;]],
+    vt:[],astina:1,
+    acc:[[&quot;TA075&quot;,&quot;t&quot;],[&quot;G2001&quot;,24],[&quot;G2002&quot;,24],[&quot;TS077&quot;,12],[&quot;TS078&quot;,12],[&quot;G501N&quot;,10],[&quot;TS079&quot;,10],[&quot;G501NC&quot;,12],[&quot;TS082&quot;,8],[&quot;G199&quot;,4],[&quot;TS073&quot;,4],[&quot;S3001&quot;,20],[&quot;G112&quot;,2],[&quot;G268&quot;,8],[&quot;G269&quot;,2],[&quot;TT065&quot;,1],[&quot;G101&quot;,&quot;2…4&quot;],[&quot;G231&quot;,8],
+      [&quot;TG186&quot;,4],[&quot;TG185&quot;,&quot;2L+3H&quot;],[&quot;TG031&quot;,&quot;2L+4H&quot;],[&quot;TGCE&quot;,&quot;4L+4H&quot;],[&quot;TGCI&quot;,&quot;4L+4H&quot;],[&quot;TG004&quot;,&quot;L+2H&quot;],[&quot;TG385&quot;,&quot;4L+4H&quot;],[&quot;Z119&quot;,&quot;L+4H&quot;]]}
+];
+// Voci di accessori e guarnizioni del catalogo DOGMA PRO (distinte accessori e guarnizioni). Prezzi: li metti tu.
+const INF_ACC_DEFAULT=[
+  [&quot;TA075&quot;,&quot;Regolo telaio camera semplice&quot;,&quot;pz&quot;],[&quot;G2001&quot;,&quot;Vite per squadretta TS078&quot;,&quot;pz&quot;],[&quot;G2002&quot;,&quot;Spina per squadretta TS078 (in alternativa)&quot;,&quot;pz&quot;],
+  [&quot;TS077&quot;,&quot;Squadretta a pulsante per telaio ed anta&quot;,&quot;pz&quot;],[&quot;TS078&quot;,&quot;Squadretta a spinare-cianfrinare telaio ed anta (in alternativa)&quot;,&quot;pz&quot;],
+  [&quot;G501N&quot;,&quot;Squadretta a camme per telaio e anta&quot;,&quot;pz&quot;],[&quot;TS079&quot;,&quot;Squadretta anta e telaio tubolarità esterna&quot;,&quot;pz&quot;],[&quot;S3001&quot;,&quot;Spina mm 3 per squadretta TS079&quot;,&quot;pz&quot;],
+  [&quot;G501NC&quot;,&quot;G501N cavallotto esterno&quot;,&quot;pz&quot;],[&quot;TS082&quot;,&quot;Placchetta di compensazione per G501N cavallotto&quot;,&quot;pz&quot;],[&quot;G199&quot;,&quot;Cavallotto interno&quot;,&quot;pz&quot;],[&quot;TS073&quot;,&quot;Cavallotto esterno&quot;,&quot;pz&quot;],
+  [&quot;G112&quot;,&quot;Squadretta inox di allineamento angoli&quot;,&quot;pz&quot;],[&quot;G268&quot;,&quot;Squadretta allineamento ante&quot;,&quot;pz&quot;],[&quot;G269&quot;,&quot;Squadretta allineamento telai&quot;,&quot;pz&quot;],
+  [&quot;TT085&quot;,&quot;Coppia tappi riporto centrale (TT085)&quot;,&quot;pz&quot;],[&quot;TT065&quot;,&quot;Coppia tappi riporto centrale (TT065)&quot;,&quot;pz&quot;],[&quot;G101&quot;,&quot;Cappetta drenaggio acqua&quot;,&quot;pz&quot;],
+  [&quot;G231&quot;,&quot;Angolo pressofuso per fermavetri arrotondati&quot;,&quot;pz&quot;],[&quot;TG186&quot;,&quot;Angolo vulcanizzato&quot;,&quot;pz&quot;],[&quot;TG185&quot;,&quot;Guarnizione di tenuta centrale&quot;,&quot;m&quot;],
+  [&quot;TG031&quot;,&quot;Guarnizione di battuta&quot;,&quot;m&quot;],[&quot;TGCE&quot;,&quot;Guarnizione cingivetro esterna&quot;,&quot;m&quot;],[&quot;TGCI&quot;,&quot;Guarnizione cingivetro interna&quot;,&quot;m&quot;],
+  [&quot;TG302&quot;,&quot;Guarnizione perimetrale isolante&quot;,&quot;m&quot;],[&quot;TG004&quot;,&quot;Guarnizione battuta a muro / battuta esterna&quot;,&quot;m&quot;],[&quot;TG385&quot;,&quot;Sottovetro isolante&quot;,&quot;m&quot;],[&quot;Z119&quot;,&quot;Guarnizione isolante&quot;,&quot;m&quot;]
+].map(x=>({id:&quot;ia_&quot;+x[0],cod:x[0],nome:x[1],u:x[2],prezzo:0,sis:&quot;dogma&quot;}));
+
+function infTipo(p){return INF_TIPI.find(t=>t.k===p.infTipo)||INF_TIPI[0];}
+const INF_PAR_NOMI={LF:&quot;Larghezza del fisso LF&quot;,L1:&quot;Larghezza L1&quot;,H1:&quot;Altezza H1 (parte bassa)&quot;,N:&quot;N° ovaline&quot;};
+// Misure del manufatto in mm (L e H esterne del telaio, come nelle schede)
+function infVar(p){
+  const t=infTipo(p),L=numOk(p.infL,0),H=numOk(p.infH,0);
+  const v={L,H};
+  (t.par||[]).forEach(k=>{v[k]=numOk((p.infPar||{})[k],0);});
+  if(v.LF!=null)v.LA=numOk((p.infPar||{}).LA,0)||Math.max(0,L-v.LF);
+  if(v.L1!=null)v.L2=numOk((p.infPar||{}).L2,0)||Math.max(0,L-v.L1);
+  if(v.H1!=null)v.H2=numOk((p.infPar||{}).H2,0)||Math.max(0,H-v.H1);
+  return v;
+}
+// Valuta una misura di catalogo (&quot;(L/2)-13.75&quot;, &quot;LF+LA&quot;, &quot;H1-145&quot;) con le misure del manufatto
+function infEval(f,v){
+  if(typeof f===&quot;number&quot;)return f;
+  const s=String(f).replace(/,/g,&quot;.&quot;).replace(/:/g,&quot;/&quot;).replace(/\b(LA|LF|L1|L2|H1|H2|L|H|N)\b/g,m=>&quot;(&quot;+(+v[m]||0)+&quot;)&quot;);
+  if(!/^[\d\s.+\-*/()]+$/.test(s))return 0;
+  try{const r=Function('&quot;use strict&quot;;return ('+s+');')();return isFinite(r)?r:0;}catch(e){return 0;}
+}
+const _infOrizz=f=>/\b(L|LA|LF|L1|L2)\b/.test(String(f))&amp;&amp;!/\bH/.test(String(f));
+function infArcoOn(p){const t=infTipo(p);return !!(t.arco&amp;&amp;p.arco&amp;&amp;p.arco.attivo&amp;&amp;(p.arco.verso||'su')!=='giu'&amp;&amp;formaCima(p)!=='inclinata'&amp;&amp;frecciaCima(p,numOk(p.infL,0))>0);}
+// Righe della distinta di taglio del manufatto (un pezzo). Con la cima ad arco i pezzi in testa diventano calandrati.
+function infRighe(p){
+  const t=infTipo(p),v=infVar(p),fv=(p.infFv||'f');
+  const out=[];
+  const arco=infArcoOn(p),C=v.L;
+  const nCol=(t.lay&amp;&amp;t.lay.c&amp;&amp;t.lay.c.length)||1;
+  t.r.forEach(r=>{
+    const g=r[5]||&quot;&quot;;
+    if(g&amp;&amp;g!==fv)return;
+    const mm=Math.round(infEval(r[2],v)*10)/10;
+    let q=r[3]===&quot;N&quot;?Math.max(0,parseInt(v.N)||0):r[3];
+    const top=r[6]||0;
+    const base={cod:r[0],descr:r[1],f:String(r[2]),taglio:r[4],kgm:(INF_PROF[t.sis][r[0]]||[&quot;&quot;,0])[1],gruppo:g};
+    if(arco&amp;&amp;top>0&amp;&amp;_infOrizz(r[2])){
+      // pezzi in testa: sviluppo sulla curva del loro tratto (un tratto per anta, o tutta la larghezza)
+      const tratti=top===1?[[0,C]]:Array.from({length:top},(_,i)=>[i*C/top,(i+1)*C/top]);
+      tratti.forEach((tr,i)=>{
+        const rap=arcoSegLen(p,C,tr[0],tr[1])/Math.max(1e-6,tr[1]-tr[0]);
+        out.push(Object.assign({},base,{mm:Math.round(mm*rap*10)/10,q:1,taglio:&quot;c&quot;,arco:true,dritto:mm,lbl:base.descr+&quot; in testa (calandrato)&quot;}));
+      });
+      q-=top;
+    }
+    if(q>0)out.push(Object.assign({},base,{mm,q,lbl:base.descr}));
+  });
+  return out;
+}
+function infColore(p){return p.infColore||'Bianco RAL 9010';}
+function infMat(p,r){
+  const t=infTipo(p),nm=(INF_PROF[t.sis][r.cod]||[r.descr])[0];
+  return {profilo:(t.sis==='gold'?'GOLD ':'DOGMA ')+r.cod+' '+nm,fam:'alu',cat:'infisso_alu',sp:null,qual:infColore(p),infisso:true,kgm:r.kgm,cod:r.cod,sis:t.sis};
+}
+function infVetri(p){
+  const t=infTipo(p),v=infVar(p),arco=infArcoOn(p),f=arco?frecciaCima(p,v.L):0;
+  const fila=(lista,tipo)=>(lista||[]).map((x,i)=>{
+    const w=Math.round(infEval(x[1],v)*10)/10,h=Math.round(infEval(x[2],v)*10)/10;
+    const sagoma=arco&amp;&amp;(x[4]||(lista.length===1));
+    return {tipo,nome:x[0],w,h,hMax:sagoma?Math.round((h+f)*10)/10:h,q:x[3],sagoma};
+  });
+  return fila(t.vt,'vetro').concat(fila(t.pan,'pannello'));
+}
+function infAreaVetriMq(p){const n=Math.max(1,parseInt(p.nPezziUguali)||1);return infVetri(p).filter(x=>x.tipo==='vetro'&amp;&amp;x.w>0&amp;&amp;x.h>0).reduce((a,x)=>a+x.w*x.hMax/1e6*x.q,0)*n;}
+// Accessori e guarnizioni: stessa logica della ferramenta (spunti la voce, metti la quantità, il prezzo lo decidi tu)
+function loadInfAcc(){
+  try{const v=JSON.parse(localStorage.getItem(&quot;fc_infissi_acc&quot;)||&quot;null&quot;);if(Array.isArray(v))return v;}catch(e){}
+  return JSON.parse(JSON.stringify(INF_ACC_DEFAULT));
+}
+function saveInfAcc(A){try{localStorage.setItem(&quot;fc_infissi_acc&quot;,JSON.stringify(A));}catch(e){}}
+// Quantità suggerita dal catalogo per la tipologia (null se la scheda non la indica)
+function infAccSugg(p,cod){
+  const t=infTipo(p),x=(t.acc||[]).find(a=>a[0]===cod);if(!x)return null;
+  const v=infVar(p),q=x[1];
+  if(q===&quot;t&quot;)return null; // &quot;tabella&quot;: dipende dalla tabella del catalogo
+  if(typeof q===&quot;number&quot;)return q;
+  if(/…/.test(q))return parseInt(q)||null;
+  // guarnizioni: formula in L e H (mm) → metri
+  return Math.round(infEval(String(q).replace(/(\d)([LH])/g,&quot;$1*$2&quot;),v)/1000*100)/100;
+}
+function infAccQta(p,a){
+  const s=(p.infAcc||{})[a.id];if(s==null)return 0;
+  if(s==='auto'){const q=infAccSugg(p,a.cod);return q==null?1:q;}
+  return Math.max(0,parseFloat(s)||0);
+}
+function costoInfAcc(p){
+  if(p.tipo!=='infisso_alu'||!p.infAcc)return 0;
+  const A=loadInfAcc();let tot=0;
+  A.forEach(a=>{const q=infAccQta(p,a);if(q>0)tot+=(parseFloat(a.prezzo)||0)*q;});
+  return tot*Math.max(1,parseInt(p.nPezziUguali)||1);
+}
+function setInfAcc(pid,id,val){
+  const p=pezzi.find(x=>x.id===pid);if(!p)return;
+  p.infAcc=Object.assign({},p.infAcc||{});
+  if(val===false||val===0||val===&quot;0&quot;)delete p.infAcc[id];
+  else p.infAcc[id]=(val===true?'auto':(String(val).trim()===''?'auto':Math.max(0,parseFloat(val)||0)));
+  renderTutto();
+}
+function infAccAggiungi(){
+  const nome=prompt(&quot;Nome della voce (accessorio o guarnizione):&quot;,&quot;&quot;);if(!nome)return;
+  const cod=prompt(&quot;Codice (facoltativo):&quot;,&quot;&quot;)||&quot;&quot;;
+  const u=(prompt(&quot;Unità: scrivi pz (pezzi) oppure m (metri)&quot;,&quot;pz&quot;)||&quot;pz&quot;).trim().toLowerCase()===&quot;m&quot;?&quot;m&quot;:&quot;pz&quot;;
+  const A=loadInfAcc();A.push({id:&quot;ia_u&quot;+Date.now().toString(36),cod:cod.trim(),nome:nome.trim(),u,prezzo:0,sis:&quot;&quot;});
+  saveInfAcc(A);renderInfAccListino();renderTutto();
+}
+function infAccSet(id,campo,v){
+  const A=loadInfAcc(),a=A.find(x=>x.id===id);if(!a)return;
+  if(campo==='prezzo')a.prezzo=Math.max(0,parseFloat(v)||0);else if(campo==='nome')a.nome=String(v||&quot;&quot;).trim()||a.nome;
+  saveInfAcc(A);renderTutto();
+}
+function infAccRimuovi(id){
+  if(!confirm(&quot;Rimuovo questa voce dal listino accessori infissi?&quot;))return;
+  saveInfAcc(loadInfAcc().filter(a=>a.id!==id));renderInfAccListino();renderTutto();
+}
+function renderInfAccListino(){
+  const el=document.getElementById(&quot;infacc-listino&quot;);if(!el)return;
+  const A=loadInfAcc();
+  el.innerHTML=A.map(a=>`<div style=&quot;display:flex;align-items:center;gap:8px;margin-bottom:6px&quot;>
+      <span style=&quot;font-size:10px;color:#91a2bb;min-width:52px&quot;>${esc(a.cod||&quot;&quot;)}</span>
+      <input class=&quot;fi&quot; value=&quot;${esc(a.nome)}&quot; style=&quot;flex:1;min-width:0&quot; onchange=&quot;infAccSet('${esc(a.id)}','nome',this.value)&quot;>
+      <input class=&quot;fi&quot; type=&quot;number&quot; step=&quot;0.01&quot; min=&quot;0&quot; value=&quot;${a.prezzo}&quot; style=&quot;width:92px;text-align:right&quot; onchange=&quot;infAccSet('${esc(a.id)}','prezzo',this.value)&quot;>
+      <span style=&quot;font-size:11px;color:#91a2bb;min-width:30px&quot;>€/${a.u==='m'?'m':'pz'}</span>
+      <button class=&quot;btn-x&quot; onclick=&quot;infAccRimuovi('${esc(a.id)}')&quot; style=&quot;width:24px;height:24px;font-size:12px&quot;>✕</button>
+    </div>`).join(&quot;&quot;)+`<button class=&quot;btn&quot; onclick=&quot;infAccAggiungi()&quot; style=&quot;border-color:#f08a3c;color:#f08a3c;padding:6px 12px;font-size:12px;margin-top:4px&quot;>➕ Aggiungi voce</button>`;
+}
+function salvaPrezzoAluKg(v){salvaUPG('aluPrezzoKg',Math.max(0,parseFloat(v)||0));}
+function setInfPar(id,k,valCm){
+  const p=pezzi.find(x=>x.id===id);if(!p)return;
+  p.infPar=Object.assign({},p.infPar||{});
+  const s=String(valCm).trim();
+  if(s==='')delete p.infPar[k];else p.infPar[k]=k==='N'?Math.max(0,parseInt(s)||0):Math.max(0,(parseFloat(s)||0)*10);
+  renderTutto();
+}
+function setInfTipo(id,k){
+  const p=pezzi.find(x=>x.id===id);if(!p)return;
+  p.infTipo=k;p.infPar={};p.infAcc={};renderTutto();
+}
+function setInfSistema(id,s){
+  const t=INF_TIPI.find(x=>x.sis===s);if(t)setInfTipo(id,t.k);
+}
+// Pezzi della distinta unica: entrano in barre, piano di taglio, peso, costi, stampa e Preventivi come gli altri profili
+function infWalk(p,A){
+  const nPz=Math.max(1,parseInt(p.nPezziUguali)||1);
+  if(!(numOk(p.infL,0)>0&amp;&amp;numOk(p.infH,0)>0))return;
+  infRighe(p).forEach(r=>{if(r.mm>0&amp;&amp;r.q>0)A(infMat(p,r),r.mm,r.q*nPz,r.lbl+&quot; &quot;+r.cod);});
+}
+function descrInfisso(p){
+  const t=infTipo(p),v=infVar(p);
+  let s=INF_SISTEMI[t.sis].breve+&quot; tip. &quot;+t.n+&quot; — &quot;+t.nome+&quot;, &quot;+cmv(v.L)+&quot;×&quot;+cmv(v.H)+&quot; cm&quot;;
+  if(infArcoOn(p)){const nf=(FORME_CIMA.find(f=>f[0]===formaCima(p))||[&quot;&quot;,&quot;arco&quot;])[1].replace(/^\S+\s/,&quot;&quot;).toLowerCase();
+    s+=&quot;, cima &quot;+nf+&quot; (freccia &quot;+cmv(frecciaCima(p,v.L))+&quot; cm)&quot;;}
+  return s+&quot;, &quot;+infColore(p);
+}
+const INF_TAGLIO={a:&quot;45° / 45°&quot;,r:&quot;90° / 90°&quot;,m:&quot;45° / 90°&quot;,x:&quot;da definire&quot;,c:&quot;calandrato&quot;};
+function buildBodyInfissoAlu(p){
+  const t=infTipo(p),v=infVar(p),S=INF_SISTEMI[t.sis];
+  const tipoChips=TIPI.map(x=>`<button class=&quot;chip${x.k===p.tipo?&quot; on&quot;:&quot;&quot;}&quot; onclick=&quot;setTipo(${p.id},'${x.k}')&quot;
+    style=&quot;border-color:${x.k===p.tipo?&quot;#f08a3c&quot;:&quot;#172438&quot;};color:${x.k===p.tipo?&quot;#f08a3c&quot;:&quot;#91a2bb&quot;};background:${x.k===p.tipo?&quot;#1a1205&quot;:&quot;#101a29&quot;}&quot;>${x.l}</button>`).join(&quot;&quot;);
+  const opt=(val,lab,sel)=>`<option value=&quot;${esc(val)}&quot;${sel?&quot; selected&quot;:&quot;&quot;}>${esc(lab)}</option>`;
+  const ok=v.L>0&amp;&amp;v.H>0;
+  const righe=ok?infRighe(p):[];
+  const nPz=Math.max(1,parseInt(p.nPezziUguali)||1);
+  const kgNetto=righe.reduce((a,r)=>a+r.mm/1000*r.q*r.kgm,0)*nPz;
+  const parIn=(t.par||[]).map(k=>{
+    const val=k==='N'?(parseInt((p.infPar||{}).N)||0):cmv(v[k]||0);
+    return `<div><label class=&quot;fl&quot;>${esc(INF_PAR_NOMI[k]||k)}${k==='N'?'':' (cm)'}</label><input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;${k==='N'?1:0.1}&quot; value=&quot;${(p.infPar||{})[k]!=null?val:''}&quot; style=&quot;border-color:#64a8ff&quot; onchange=&quot;setInfPar(${p.id},'${k}',this.value)&quot;></div>`;}).join(&quot;&quot;);
+  const derivati=[[&quot;LA&quot;,&quot;LF&quot;,&quot;L − LF&quot;],[&quot;L2&quot;,&quot;L1&quot;,&quot;L − L1&quot;],[&quot;H2&quot;,&quot;H1&quot;,&quot;H − H1&quot;]].filter(d=>v[d[1]]!=null).map(d=>
+    `<div><label class=&quot;fl&quot;>${d[0]} (cm) <span style=&quot;color:#91a2bb&quot;>= ${d[2]} se vuoto</span></label><input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.1&quot; placeholder=&quot;${cmv(v[d[0]]||0)}&quot; value=&quot;${(p.infPar||{})[d[0]]!=null?cmv(v[d[0]]):''}&quot; onchange=&quot;setInfPar(${p.id},'${d[0]}',this.value)&quot;></div>`).join(&quot;&quot;);
+  const arcoOn=!!(p.arco&amp;&amp;p.arco.attivo);
+  const arcoHtml=t.arco?`<div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${arcoOn?'#b090f0':'#172438'}&quot;>
+    <label style=&quot;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:${arcoOn?'#b090f0':'#8a96b0'};cursor:pointer&quot;>
+      <input type=&quot;checkbox&quot; ${arcoOn?'checked':''} onchange=&quot;setArco(${p.id},'attivo',this.checked)&quot;> ⌒ Cima ad arco</label>
+    ${arcoOn?`<div class=&quot;g2&quot; style=&quot;margin-top:8px&quot;>
+      <div><label class=&quot;fl&quot;>Forma</label><select class=&quot;fi&quot; onchange=&quot;setArco(${p.id},'forma',this.value)&quot;>
+        ${FORME_CIMA.filter(f=>f[0]!=='inclinata').map(f=>opt(f[0],f[1],formaCima(p)===f[0])).join(&quot;&quot;)}</select></div>
+      ${formaCima(p)==='tutto_sesto'?`<div><label class=&quot;fl&quot;>Freccia (cm)</label><div class=&quot;fi&quot; style=&quot;opacity:.7&quot;>${cmv(v.L/2)} = metà larghezza</div></div>`:
+      `<div><label class=&quot;fl&quot;>Freccia sopra H (cm)</label><input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.5&quot; value=&quot;${cmv(Math.abs(numOk(p.arco.freccia,150)))}&quot; onchange=&quot;setArco(${p.id},'freccia',Math.max(0,(parseFloat(this.value)||0)*10))&quot;></div>`}
+    </div><div class=&quot;nota-info&quot;>H resta l'altezza ai lati (imposta dell'arco). I pezzi in testa (telaio, ante e fermavetri) diventano calandrati: in distinta c'è il loro sviluppo sulla curva.</div>`:&quot;&quot;}
+  </div>`:&quot;&quot;;
+  const tabRighe=righe.map(r=>`<tr${r.arco?' style=&quot;background:#140f22&quot;':''}>
+      <td><b>${esc(r.cod)}</b></td><td style=&quot;font-size:11px&quot;>${esc(r.descr)}${r.arco?' <span style=&quot;color:#b090f0&quot;>(in testa, calandrato)</span>':''}</td>
+      <td style=&quot;font-size:11px;color:#8a96b0&quot;>${esc(r.f.replace(/\//g,&quot;:&quot;))}${r.arco?' → sviluppo':''}</td>
+      <td style=&quot;text-align:right;color:#f08a3c;font-weight:700&quot;>${cmv(r.mm)}</td>
+      <td style=&quot;text-align:center&quot;>${r.q*nPz}</td>
+      <td style=&quot;font-size:11px;color:#8a96b0&quot;>${INF_TAGLIO[r.taglio]||&quot;&quot;}</td>
+      <td style=&quot;text-align:right;color:#c0a0e0;font-size:11px&quot;>${r.kgm>0?(r.mm/1000*r.q*nPz*r.kgm).toFixed(2):&quot;—&quot;}</td></tr>`).join(&quot;&quot;);
+  const vetri=ok?infVetri(p):[];
+  const vetriHtml=vetri.length?`<table class=&quot;rtable&quot; style=&quot;margin-top:8px&quot;><thead><tr><th>${t.pan&amp;&amp;!t.vt.length?'Pannelli':'Vetri / pannelli'}</th><th style=&quot;text-align:right&quot;>l (cm)</th><th style=&quot;text-align:right&quot;>h (cm)</th><th style=&quot;text-align:center&quot;>pz</th></tr></thead><tbody>
+    ${vetri.map(x=>`<tr><td>${esc(x.nome)}${x.sagoma?' <span style=&quot;color:#b090f0&quot;>sagomato ad arco</span>':''}</td><td style=&quot;text-align:right&quot;>${cmv(x.w)}</td><td style=&quot;text-align:right&quot;>${cmv(x.h)}${x.sagoma?' <span style=&quot;font-size:10px;color:#b090f0&quot;>(max '+cmv(x.hMax)+')</span>':''}</td><td style=&quot;text-align:center&quot;>${x.q*nPz}</td></tr>`).join(&quot;&quot;)}
+  </tbody></table>`:`<div class=&quot;nota-info&quot;>${t.sis==='dogma'?'La scheda DOGMA PRO non riporta la distinta dei vetri: la luce vetro va presa dai nodi.':'Nessun vetro nella scheda di questa tipologia.'}</div>`;
+  const areaV=infAreaVetriMq(p);
+  // accessori e guarnizioni (spuntabili, prezzi tuoi)
+  const A=loadInfAcc().filter(a=>!a.sis||a.sis===t.sis);
+  const accHtml=A.length?A.map(a=>{
+    const s=(p.infAcc||{})[a.id],on=s!=null,q=on?infAccQta(p,a):0,sug=infAccSugg(p,a.cod),qs=(t.acc||[]).find(x=>x[0]===a.cod);
+    return `<div style=&quot;display:flex;align-items:center;gap:9px;margin-bottom:6px&quot;>
+      <input type=&quot;checkbox&quot; ${on?'checked':''} style=&quot;width:16px;height:16px;cursor:pointer;flex-shrink:0&quot; onchange=&quot;setInfAcc(${p.id},'${esc(a.id)}',this.checked)&quot;>
+      <span style=&quot;flex:1;min-width:0;font-size:12px;color:${on?'#e8eef7':'#91a2bb'};font-weight:${on?'700':'400'}&quot;>${a.cod?`<span style=&quot;color:#91a2bb&quot;>${esc(a.cod)}</span> `:''}${esc(a.nome)}
+        <span style=&quot;font-size:10px;color:#91a2bb&quot;>· € ${fmtP(parseFloat(a.prezzo)||0)}/${a.u==='m'?'m':'pz'}${qs?' · scheda: '+esc(qs[1]===&quot;t&quot;?&quot;da tabella&quot;:String(qs[1]))+(a.u==='m'&amp;&amp;sug!=null?' = '+fmtN(sug)+' m':''):''}</span></span>
+      ${on?`<input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;${a.u==='m'?0.01:1}&quot; value=&quot;${s==='auto'?'':q}&quot; placeholder=&quot;${q}&quot; title=&quot;Vuoto = quantità della scheda&quot; style=&quot;width:70px;padding:5px;text-align:center;border-color:#f08a3c&quot; onchange=&quot;setInfAcc(${p.id},'${esc(a.id)}',this.value)&quot;>
+      <span style=&quot;font-size:11px;color:#f08a3c;font-weight:700;min-width:64px;text-align:right&quot;>€ ${fmtP((parseFloat(a.prezzo)||0)*q*nPz)}</span>`:&quot;&quot;}
+    </div>`;}).join(&quot;&quot;):`<div style=&quot;font-size:11px;color:#91a2bb&quot;>Nessuna voce: aggiungile in 🔧 Listino → Accessori e guarnizioni infissi</div>`;
+  const totAcc=costoInfAcc(p);
+  return `
+  <div class=&quot;sec&quot; style=&quot;padding:10px&quot;>
+    <div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Nome</label><input class=&quot;fi&quot; type=&quot;text&quot; value=&quot;${esc(p.nome)}&quot; onchange=&quot;setProp(${p.id},'nome',this.value)&quot;></div>
+      <div><label class=&quot;fl&quot;>N° pezzi uguali</label><input class=&quot;fi&quot; type=&quot;number&quot; value=&quot;${nPz}&quot; min=&quot;1&quot; step=&quot;1&quot; inputmode=&quot;numeric&quot; onchange=&quot;setProp(${p.id},'nPezziUguali',Math.max(1,parseInt(this.value)||1))&quot;></div>
+    </div>
+    <label class=&quot;fl&quot; style=&quot;margin-bottom:6px&quot;>Tipo manufatto</label>
+    <div class=&quot;chips&quot;>${tipoChips}</div>
+  </div>
+
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#64a8ff&quot;>
+    <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>🪟 Infisso in alluminio</div>
+    <div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Sistema</label><select class=&quot;fi&quot; onchange=&quot;setInfSistema(${p.id},this.value)&quot;>
+        ${Object.keys(INF_SISTEMI).map(k=>opt(k,INF_SISTEMI[k].n,k===t.sis)).join(&quot;&quot;)}</select></div>
+      <div><label class=&quot;fl&quot;>Tipologia (scheda del catalogo)</label><select class=&quot;fi&quot; onchange=&quot;setInfTipo(${p.id},this.value)&quot;>
+        ${INF_TIPI.filter(x=>x.sis===t.sis).map(x=>opt(x.k,x.n+&quot; — &quot;+x.nome,x.k===t.k)).join(&quot;&quot;)}</select></div>
+    </div>
+    <div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Larghezza L telaio (cm)</label><input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.1&quot; value=&quot;${v.L>0?cmv(v.L):''}&quot; style=&quot;border-color:#f08a3c&quot; onchange=&quot;setProp(${p.id},'infL',Math.max(0,(parseFloat(this.value)||0)*10))&quot;></div>
+      <div><label class=&quot;fl&quot;>Altezza H telaio (cm)</label><input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.1&quot; value=&quot;${v.H>0?cmv(v.H):''}&quot; style=&quot;border-color:#f08a3c&quot; onchange=&quot;setProp(${p.id},'infH',Math.max(0,(parseFloat(this.value)||0)*10))&quot;></div>
+      ${parIn}${derivati}
+    </div>
+    <div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Fermavetro</label><select class=&quot;fi&quot; onchange=&quot;setProp(${p.id},'infFv',this.value)&quot;>
+        ${opt('f',S.fvNomi[0]+' (distinta)',(p.infFv||'f')==='f')}${opt('v',S.fvNomi[1]+' (in alternativa)',p.infFv==='v')}</select></div>
+      <div><label class=&quot;fl&quot;>Colore / finitura</label><select class=&quot;fi&quot; onchange=&quot;setProp(${p.id},'infColore',this.value)&quot;>
+        ${ALU_COLORI.map(c=>opt(c,c,c===infColore(p))).join(&quot;&quot;)}</select></div>
+    </div>
+    <div class=&quot;nota-info&quot;>Scheda ${esc(S.n)} n° ${esc(t.n)} (pag. ${esc(String(t.pag))}). Misure L e H = esterno telaio come nelle schede. Barre da 6,50 m.${t.nota?'<br>⚠️ '+esc(t.nota):''}${t.astina?'<br>Astina di comando 6405: misura e quantità dipendono dall\'accessorio di comando (aggiungila a mano se serve).':''}</div>
+    <div id=&quot;dis-${p.id}&quot; class=&quot;tavola-dis&quot; data-h=&quot;380&quot; style=&quot;margin-top:10px&quot;></div>
+    <div id=&quot;cvs-leg-${p.id}&quot; style=&quot;display:flex;flex-wrap:wrap;gap:9px;margin-top:8px;justify-content:center;font-size:12px;color:#8a96b0&quot;></div>
+    ${ok?buildAbaco(p):&quot;&quot;}
+  </div>
+
+  ${arcoHtml}
+
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#f08a3c&quot;>
+    <div class=&quot;st&quot; style=&quot;color:#f08a3c&quot;>✂️ Distinta di taglio del catalogo</div>
+    ${ok?`<div style=&quot;overflow-x:auto&quot;><table class=&quot;rtable&quot; style=&quot;min-width:560px&quot;>
+      <thead><tr><th>Codice</th><th>Profilo</th><th>Misura scheda</th><th style=&quot;text-align:right&quot;>Taglio (cm)</th><th style=&quot;text-align:center&quot;>Pz</th><th>Tipo taglio</th><th style=&quot;text-align:right&quot;>kg</th></tr></thead>
+      <tbody>${tabRighe}</tbody></table></div>
+      <div class=&quot;costi-riga&quot; style=&quot;margin-top:6px&quot;><span>Peso netto dei profili tagliati</span><b>${kgNetto.toFixed(2)} kg</b></div>
+      ${vetriHtml}
+      ${areaV>0?`<div class=&quot;g2&quot; style=&quot;margin-top:8px;align-items:end&quot;>
+        <div><label class=&quot;fl&quot;>Vetri: prezzo €/m² (facoltativo)</label><input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.5&quot; value=&quot;${p.infVetroMq||''}&quot; placeholder=&quot;non incluso&quot; onchange=&quot;setProp(${p.id},'infVetroMq',this.value)&quot;></div>
+        <div class=&quot;costi-riga&quot; style=&quot;border:0&quot;><span>${areaV.toFixed(2)} m²</span><b>${numOk(p.infVetroMq,0)>0?'€ '+fmtP(areaV*numOk(p.infVetroMq,0)):'—'}</b></div></div>`:''}`
+      :`<div style=&quot;color:#f06b6b;font-size:12px&quot;>⚠️ Scrivi larghezza e altezza del telaio${(t.par||[]).length?' e le misure della scheda':''}</div>`}
+  </div>
+
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#55d39b&quot;>
+    <div class=&quot;st&quot; style=&quot;color:#55d39b&quot;>💶 Prezzo alluminio</div>
+    <div class=&quot;g2&quot; style=&quot;align-items:end&quot;>
+      <div><label class=&quot;fl&quot;>Prezzo del giorno (€/kg) — vale per tutti i lavori</label><input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.01&quot; value=&quot;${numOk(UPG.aluPrezzoKg,0)||''}&quot; placeholder=&quot;es. 6.20&quot; style=&quot;border-color:#55d39b&quot; onchange=&quot;salvaPrezzoAluKg(this.value)&quot;></div>
+      <div class=&quot;nota-info&quot; style=&quot;margin:0&quot;>Costo profili = kg delle barre da 6,50 m da comprare × €/kg.</div>
+    </div>
+    ${numOk(UPG.aluPrezzoKg,0)>0?&quot;&quot;:'<div style=&quot;font-size:11px;color:#f06b6b;margin-top:6px&quot;>⚠️ Prezzo al kg non inserito: i profili restano senza prezzo</div>'}
+  </div>
+
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${Object.keys(p.infAcc||{}).length?'#f08a3c':'#172438'}&quot;>
+    <div class=&quot;st&quot; style=&quot;color:#f08a3c&quot;>🔩 Accessori e guarnizioni</div>
+    ${accHtml}
+    ${totAcc>0?`<div class=&quot;costi-riga&quot; style=&quot;border-bottom:0;border-top:1px solid #1a2440;margin-top:4px;padding-top:6px&quot;><span>Totale accessori e guarnizioni${nPz>1?` (×${nPz} pezzi uguali)`:''}</span><b style=&quot;color:#f08a3c&quot;>€ ${fmtP(totAcc)}</b></div>`:&quot;&quot;}
+    <div class=&quot;nota-info&quot;>Spunta le voci: la quantità della scheda si mette da sola (guarnizioni in metri da L e H). I prezzi sono i tuoi: 🔧 Listino → Accessori e guarnizioni infissi. Le voci con * nella scheda sono in alternativa.</div>
+  </div>
+
+  ${buildLavorazioniHtml(p)}
+
+  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#64a8ff&quot;>
+    <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>📋 Barre da ordinare</div>
+    ${buildDistinta(p)}
+  </div>`;
+}
+// Disegno della vista interna: telaio, ante/fissi, traverso a H1, cima ad arco, quote
+function disegnaInfissoAlu(p,cvs,ctx,leg){
+  const cW=cvs.width,cH=cvs.height,t=infTipo(p),v=infVar(p);
+  if(!(v.L>0&amp;&amp;v.H>0)){ctx.fillStyle=CVC(&quot;tenue&quot;);ctx.font=&quot;600 18px Arial&quot;;ctx.textAlign=&quot;center&quot;;ctx.fillText(&quot;Inserisci larghezza e altezza&quot;,cW/2,cH/2);return;}
+  const arco=infArcoOn(p),f=arco?frecciaCima(p,v.L):0;
+  const mL=70,mR=70,mT=(v.LF>0||v.L1>0)?80:40,mB=60;
+  const s=Math.min((cW-mL-mR)/v.L,(cH-mT-mB)/(v.H+f));
+  const x0=(cW-v.L*s)/2,yB=cH-mB,X=x=>x0+x*s,Y=y=>yB-y*s;
+  const topY=x=>v.H+(arco?Math.max(0,arcoY(p,x,v.L)):0);
+  const tec=cvTec(),col=tec?CV_TEC.profilo:&quot;#9aa6b8&quot;,bordo=tec?CV_TEC.contorno:&quot;#d6dde8&quot;,vetro=CVC(&quot;vetro&quot;);
+  const tel=Math.max(40,Math.min(70,v.L*0.06)); // fascia del telaio (vista), mm
+  const path=(off)=>{ // contorno a distanza off dal bordo esterno
+    ctx.beginPath();ctx.moveTo(X(off),Y(off));ctx.lineTo(X(v.L-off),Y(off));
+    const N=48;for(let i=0;i<=N;i++){const x=v.L-off-(v.L-2*off)*i/N;ctx.lineTo(X(x),Y(topY(x)-off));}
+    ctx.closePath();
+  };
+  ctx.save();
+  ctx.fillStyle=col;path(0);ctx.fill();
+  ctx.fillStyle=vetro||&quot;#9ccbe4&quot;;path(tel);ctx.fill();
+  ctx.strokeStyle=bordo;ctx.lineWidth=1.2;path(0);ctx.stroke();path(tel);ctx.stroke();
+  // colonne (ante / fissi)
+  const cols=(t.lay&amp;&amp;t.lay.c)||[[&quot;a&quot;,&quot;L&quot;]];
+  const ws=cols.map(c=>infEval(c[1],v));const tw=ws.reduce((a,b)=>a+b,0)||v.L;
+  let xc=0;
+  cols.forEach((c,i)=>{
+    const w=ws[i]*v.L/tw,xa=xc,xb=xc+w;xc=xb;
+    if(i>0){ctx.fillStyle=col;ctx.fillRect(X(xa-tel/2),Y(topY(xa)-tel),tel*s,(topY(xa)-2*tel)*s);ctx.strokeStyle=bordo;ctx.strokeRect(X(xa-tel/2),Y(topY(xa)-tel),tel*s,(topY(xa)-2*tel)*s);}
+    if(t.lay&amp;&amp;t.lay.tr&amp;&amp;v.H1>0){const yT=v.H1;ctx.fillStyle=col;ctx.fillRect(X(xa+tel/2),Y(yT+tel/3),(w-tel)*s,(tel*2/3)*s);ctx.strokeStyle=bordo;ctx.strokeRect(X(xa+tel/2),Y(yT+tel/3),(w-tel)*s,(tel*2/3)*s);}
+    // segno di apertura (vista interna): linee tratteggiate verso la maniglia
+    if(c[0]!=='f'){
+      ctx.save();ctx.setLineDash([6,4]);ctx.strokeStyle=tec?CV_TEC.tenue:&quot;#7f8fb0&quot;;ctx.lineWidth=1;
+      const yb=tel,yt=(t.lay.aH&amp;&amp;v[t.lay.aH]>0?v[t.lay.aH]:Math.min(topY(xa),topY(xb)))-tel,dx=i%2===0?xb-tel:xa+tel,sx=i%2===0?xa+tel:xb-tel;
+      ctx.beginPath();
+      if(c[0]==='b'){ctx.moveTo(X(xa+tel),Y(yt));ctx.lineTo(X((xa+xb)/2),Y(yb));ctx.lineTo(X(xb-tel),Y(yt));}
+      else{ctx.moveTo(X(sx),Y(yb));ctx.lineTo(X(dx),Y((yb+yt)/2));ctx.lineTo(X(sx),Y(yt));
+        if(c[0]==='r'){ctx.moveTo(X(xa+tel),Y(yt));ctx.lineTo(X((xa+xb)/2),Y(yb));ctx.lineTo(X(xb-tel),Y(yt));}}
+      ctx.stroke();ctx.restore();
+      ctx.fillStyle=bordo;ctx.fillRect(X(dx)-3,Y((yb+yt)/2)-9,6,18);
+    }
+  });
+  ctx.restore();
+  _boxDisegno={x0:X(0),y0:Y(v.H+f),x1:X(v.L),y1:Y(0)};
+  if(UPG.quote){try{
+    drawQuotaCv(ctx,X(0),Y(0)+8,X(v.L),Y(0)+8,&quot;L &quot;+cmU(v.L),28);
+    drawQuotaCv(ctx,X(v.L)+8,Y(0),X(v.L)+8,Y(v.H),&quot;H &quot;+cmU(v.H),34);
+    if(arco&amp;&amp;f>0)drawQuotaCv(ctx,X(0)-8,Y(v.H),X(0)-8,Y(v.H+f),&quot;freccia &quot;+cmU(f),-34);
+    if(v.H1>0&amp;&amp;t.lay&amp;&amp;t.lay.tr)drawQuotaCv(ctx,X(0)-8,Y(0),X(0)-8,Y(v.H1),&quot;H1 &quot;+cmU(v.H1),-34);
+    if(v.LF>0)drawQuotaCv(ctx,X(0),Y(v.H)-8,X(v.LF),Y(v.H)-8,&quot;LF &quot;+cmU(v.LF),-22);
+    if(v.L1>0)drawQuotaCv(ctx,X(0),Y(v.H)-8,X(v.L1),Y(v.H)-8,&quot;L1 &quot;+cmU(v.L1),-22);
+  }catch(e){}}
+  cvLabelFlush(ctx);
+  if(leg)leg.innerHTML=`<span><span style=&quot;color:#64a8ff&quot;>■</span> ${esc(INF_SISTEMI[t.sis].breve)} tip. ${esc(t.n)} — vista interna</span><span>${esc(infColore(p))}</span>`;
+}
+
 // ═══════ UPGRADE: FERRAMENTA E ACCESSORI (catalogo personale con prezzi manuali) ═══════
 const FERR_DEFAULT=[
   {id:&quot;f_cern&quot;,nome:&quot;Cerniera&quot;,prezzo:0},
@@ -10540,14 +11207,14 @@ function setFerrQty(pid,fid,q){
   renderTutto();
 }
 function costoFerrPezzo(p){
-  if(!p.ferr)return 0;
+  if(!p.ferr)return costoInfAcc(p);
   const F=loadFerr();let tot=0;
   Object.keys(p.ferr).forEach(fid=>{
     const f=F.find(x=>x.id===fid);
     if(f)tot+=(parseFloat(f.prezzo)||0)*(p.ferr[fid]||0);
   });
-  // moltiplica per il numero di pezzi uguali
-  return tot*Math.max(1,parseInt(p.nPezziUguali)||1);
+  // moltiplica per il numero di pezzi uguali (+ accessori e guarnizioni degli infissi, già per tutti i pezzi)
+  return tot*Math.max(1,parseInt(p.nPezziUguali)||1)+costoInfAcc(p);
 }
 function renderFerrListino(){
   const el=document.getElementById(&quot;ferr-listino&quot;);if(!el)return;
@@ -11507,6 +12174,8 @@ function extraPezzo(p){
       mq:_sl.areaMq,kg:_sl.areaMq*kgMq,acciaio:true,costo:_sl.areaMq*kgMq*numOk(p.lamiera_prezzoKg,UPG.lamPrezzoKg),senzaPrezzo:!(numOk(p.lamiera_prezzoKg,UPG.lamPrezzoKg)>0)});
   }
   if((p.vetro||(_sl&amp;&amp;_sl.riemp==='vetro'))&amp;&amp;ammetteVetro(p)){const v=calcVetro(p);if(v)add({k:'vetro',label:'Vetri '+v.sigla,det:v.nLastre+&quot; lastr&quot;+(v.nLastre===1?&quot;a&quot;:&quot;e&quot;)+&quot; · &quot;+v.areaTot.toFixed(2)+&quot; m²&quot;,mq:v.areaTot,kg:v.pesoTot,acciaio:false,costo:v.costo,senzaPrezzo:!(v.prezzoMq>0)});}
+  if(ti.isInfissoAlu&amp;&amp;numOk(p.infVetroMq,0)>0){const mq=infAreaVetriMq(p);
+    if(mq>0)add({k:'vetro',label:'Vetri dell\'infisso',det:mq.toFixed(2)+&quot; m²&quot;,mq,kg:0,acciaio:false,costo:mq*numOk(p.infVetroMq,0)});}
   const _scP=ti.isScala?p:(ti.isSoppalco?scalaSoppalcoPezzo(p):null);
   if(_scP){const g=scalaCalc(_scP),pn=g.pian;
     if(pn.ferro&amp;&amp;pn.lamKg>0)add({k:'pianerottolo',label:'Piano del pianerottolo (lamiera sp. '+fmtN(pn.spP)+' mm)',det:(pn.area*g.nPz).toFixed(2)+&quot; m²&quot;,
@@ -11568,6 +12237,7 @@ const PESI_SERR={ // Kg/mt dal Prontuario Bronifer &quot;PROFILI PER SERRAMENTI&
 };
 function calcolaPesoLineare(mat){
   if(!mat?.profilo) return 0;
+  if(mat.infisso)return parseFloat(mat.kgm)||0; // infissi alluminio: peso al metro del catalogo
   const nom=pesoNominale(mat);if(nom!=null)return nom; // dizionario interno dei pesi nominali
   const p=String(mat.profilo), cat=pCanonCat(mat.cat||&quot;&quot;), d=0.00785; // kg/m per mm² di sezione
   const sp=parseFloat(mat.sp)||0;
