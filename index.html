@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.29.1</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.29.2</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.29.1</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.29.2</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -9088,7 +9088,7 @@ function renderRiepilogo(){
   const righe=C.righe;
   const aluG=C.alu;
   const hasAluData=aluG&amp;&amp;(aluG.mlTot>0||(aluG.bachAll&amp;&amp;aluG.bachAll.length));
-  if(!righe.length&amp;&amp;!hasAluData){cont.innerHTML=`<div class=&quot;sec&quot;><div style=&quot;color:#91a2bb;font-size:12px&quot;>Scegli i profili dei manufatti per vedere il riepilogo</div></div>`;return;}
+  if(!righe.length&amp;&amp;!hasAluData&amp;&amp;!(C.tot.totale>0)){cont.innerHTML=`<div class=&quot;sec&quot;><div style=&quot;color:#91a2bb;font-size:12px&quot;>Scegli i profili dei manufatti per vedere il riepilogo</div></div>`;return;}
 
   const T=C.tot;
   const sfridoMedio=(()=>{const ps=righe.map(r=>r.piano).filter(Boolean);if(!ps.length)return null;
@@ -12458,7 +12458,7 @@ function nomePianoSopp(p){
 }
 
 // Nomi e colori delle voci &quot;extra&quot; nel riepilogo e nelle stampe
-const EXTRA_NOMI={vetro:[&quot;🪟 Vetri&quot;,&quot;#6fb6e0&quot;],piano:[&quot;🏗️ Piani dei soppalchi&quot;,&quot;#c0a060&quot;],copertura:[&quot;🏠 Coperture&quot;,&quot;#90c060&quot;]};
+const EXTRA_NOMI={pvc_fornito:[&quot;🪟 Infissi PVC forniti&quot;,&quot;#55d39b&quot;],vetro:[&quot;🪟 Vetri&quot;,&quot;#6fb6e0&quot;],piano:[&quot;🏗️ Piani dei soppalchi&quot;,&quot;#c0a060&quot;],copertura:[&quot;🏠 Coperture&quot;,&quot;#90c060&quot;]};
 // Tutte le lastre di vetro del cantiere, raggruppate per manufatto, composizione e misura
 function vetriDaOrdinare(lista){
   const out=[];
