@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.29.0</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.29.1</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.29.0</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.29.1</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -856,6 +856,15 @@ details.dett>.dett-body{padding:0 10px 10px}
       <div><label class=&quot;fl&quot;>Barra PVC (cm)</label><input class=&quot;fi&quot; id=&quot;upg-pvcbar&quot; type=&quot;number&quot; min=&quot;100&quot; step=&quot;1&quot; onchange=&quot;salvaUPG('pvcBarraMm',Math.max(1000,(parseFloat(this.value)||650)*10))&quot;></div>
       <div><label class=&quot;fl&quot;>Barra rinforzi (cm)</label><input class=&quot;fi&quot; id=&quot;upg-pvcbaracc&quot; type=&quot;number&quot; min=&quot;100&quot; step=&quot;1&quot; onchange=&quot;salvaUPG('pvcBarraAccMm',Math.max(1000,(parseFloat(this.value)||600)*10))&quot;></div>
     </div>
+    <div style=&quot;font-size:12px;font-weight:700;color:#55d39b;margin:4px 0 6px&quot;>Infissi comprati finiti (prezzo a m²)</div>
+    <div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Finestre / portafinestre / fissi (€/m² listino)</label><input class=&quot;fi&quot; id=&quot;upg-pvcmqfin&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.1&quot; onchange=&quot;salvaUPG('pvcMqFin',Math.max(0,parseFloat(this.value)||0))&quot;></div>
+      <div><label class=&quot;fl&quot;>Porte d'ingresso (€/m² listino)</label><input class=&quot;fi&quot; id=&quot;upg-pvcmqporta&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.1&quot; onchange=&quot;salvaUPG('pvcMqPorta',Math.max(0,parseFloat(this.value)||0))&quot;></div>
+      <div><label class=&quot;fl&quot;>Minimo fatturato a pezzo (m²)</label><input class=&quot;fi&quot; id=&quot;upg-pvcminmq&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.1&quot; onchange=&quot;salvaUPG('pvcMinMq',Math.max(0,parseFloat(this.value)||0))&quot;></div>
+      <div><label class=&quot;fl&quot;>Sconto del fornitore (%)</label><input class=&quot;fi&quot; id=&quot;upg-pvcsconto&quot; type=&quot;number&quot; min=&quot;0&quot; max=&quot;90&quot; step=&quot;1&quot; onchange=&quot;salvaUPG('pvcSconto',Math.max(0,Math.min(90,parseFloat(this.value)||0)))&quot;></div>
+    </div>
+    <p style=&quot;font-size:11px;color:#91a2bb;margin-bottom:10px;line-height:1.5&quot;>Valori di serie dai tuoi 3 preventivi PORTEINFISSI 2000: finestre 210,2 €/m², porta 281,8 €/m² (con pannello, maniglione e soglia 347,9), minimo 1 m², sconti avuti 11-20%.</p>
+    <div style=&quot;font-size:12px;font-weight:700;color:#64a8ff;margin:4px 0 6px&quot;>Infissi costruiti in officina (barre a €/m)</div>
     <div id=&quot;pvc-listino&quot;></div>
   </div>
 
@@ -3635,7 +3644,7 @@ function nuovoPezzo(id){
     lamiera_prezzoKg:UPG.lamPrezzoKg,   // prezzo lamiera al kg (Listino → I miei prezzi)
     aluFacce:null, aluColore:'Bianco RAL 9010',
     // Infisso in alluminio (porte e finestre dai cataloghi): tipologia, misure telaio in mm, misure della scheda
-    infTipo:'G1', infL:'', infH:'', infPar:{}, infFv:'f', infColore:'Bianco RAL 9010', infAcc:{}, infVetroMq:'', infSl:{attivo:false,tipo:'fisso',h:''}, infPvcAnta:'', infPvcRinf:{},
+    infTipo:'G1', infL:'', infH:'', infPar:{}, infFv:'f', infColore:'Bianco RAL 9010', infAcc:{}, infVetroMq:'', infSl:{attivo:false,tipo:'fisso',h:''}, infPvcAnta:'', infPvcRinf:{}, infPvcModo:'fornito',
     aluBattuta:3.5,  // cm tolti per lato perimetrale per ricavare le ante (alluminio scuretto)
     coda_sup:0, coda_inf:0,  // code scorrevole: prolunghe (mm) delle traverse oriz. oltre il montante
     scalaH:3.0, scalaL:4.0, scalaW:1.0, scalaN:15,
@@ -3728,7 +3737,9 @@ function showTab(t){
       renderFerrListino();
       try{document.getElementById('upg-alukg').value=numOk(UPG.aluPrezzoKg,0)||'';renderInfAccListino();}catch(e){}
       try{document.getElementById('upg-pvcsald').value=numOk(UPG.pvcSald,0)||'';document.getElementById('upg-pvcbar').value=cmv(barraMmMat({pvc:true}));
-        document.getElementById('upg-pvcbaracc').value=cmv(barraMmMat({pvc:true,acciaio:true}));renderPvcListino();}catch(e){}
+        document.getElementById('upg-pvcbaracc').value=cmv(barraMmMat({pvc:true,acciaio:true}));renderPvcListino();
+        document.getElementById('upg-pvcmqfin').value=numOk(UPG.pvcMqFin,210.2);document.getElementById('upg-pvcmqporta').value=numOk(UPG.pvcMqPorta,281.8);
+        document.getElementById('upg-pvcminmq').value=numOk(UPG.pvcMinMq,1);document.getElementById('upg-pvcsconto').value=numOk(UPG.pvcSconto,11);}catch(e){}
       renderPesi();
     }catch(e){}
   }
@@ -8526,6 +8537,7 @@ function inviaPREV(snapId){
       walkPezzoMateriali(p,mat=>{if(mat&amp;&amp;mat.profilo&amp;&amp;vistiI.indexOf(mat.profilo)<0)vistiI.push(mat.profilo);});
       const _pv=p.tipo==='infisso_pvc';
       const righeI=vistiI.map(t=>({ruolo:'',testo:(_pv?'':'profilo alluminio ')+t}));
+      if(pvcFornito(p)){const c=pvcFornitoCalc(p);if(c)righeI.push({ruolo:'',testo:'serramento in PVC Aluplast Ideal 4000, profilo 70 mm 5 camere, vetrocamera, ferramenta Siegenia'});}
       const vtI=infVetri(p).filter(x=>x.w>0&amp;&amp;x.h>0);
       if(vtI.length)righeI.push({ruolo:'',testo:vtI.map(x=>x.nome.toLowerCase()+' '+cmv(x.w)+'×'+cmv(x.hMax)+' cm ×'+(x.q*nPzU)).join(', ')});
       const accI=loadInfAcc().filter(a=>infAccQta(p,a)>0).map(a=>a.nome.toLowerCase());
@@ -10851,7 +10863,8 @@ const INF_TIPI=[
  [&quot;P7&quot;,&quot;Fisso diviso da montante&quot;,&quot;FmF&quot;,[[&quot;f&quot;,&quot;L/2&quot;],[&quot;f&quot;,&quot;L/2&quot;]],&quot;140x20&quot;,{sl:true,arco:true}],
  [&quot;P8&quot;,&quot;Vasistas&quot;,&quot;A&quot;,[[&quot;b&quot;,&quot;L&quot;]],&quot;140x20&quot;,{sl:true,arco:true}],
  [&quot;P9&quot;,&quot;Portafinestra 1 anta&quot;,&quot;A&quot;,[[&quot;p&quot;,&quot;L&quot;]],&quot;140x28&quot;,{sl:true,arco:true}],
- [&quot;P10&quot;,&quot;Portafinestra 2 ante con riporto&quot;,&quot;ArA&quot;,[[&quot;p&quot;,&quot;L/2&quot;],[&quot;p&quot;,&quot;L/2&quot;]],&quot;140x28&quot;,{sl:true,arco:true}]
+ [&quot;P10&quot;,&quot;Portafinestra 2 ante con riporto&quot;,&quot;ArA&quot;,[[&quot;p&quot;,&quot;L/2&quot;],[&quot;p&quot;,&quot;L/2&quot;]],&quot;140x28&quot;,{sl:true,arco:true}],
+ [&quot;P11&quot;,&quot;Porta d'ingresso (serratura, soglia ribassata)&quot;,&quot;A&quot;,[[&quot;p&quot;,&quot;L&quot;]],&quot;140x31&quot;,{sl:true,arco:true,porta:true}]
 ].forEach((x,i)=>INF_TIPI.push(Object.assign({k:x[0],sis:&quot;pvc&quot;,n:String(i+1),nome:x[1],pag:&quot;cap. 03&quot;,campi:x[2],lay:{c:x[3]},anta:x[4],r:[],vt:[]},x[5])));
 // Voci di accessori e guarnizioni del catalogo DOGMA PRO (distinte accessori e guarnizioni). Prezzi: li metti tu.
 const INF_ACC_DEFAULT=[
@@ -11066,6 +11079,7 @@ function setInfSistema(id,s){
 }
 // Pezzi della distinta unica: entrano in barre, piano di taglio, peso, costi, stampa e Preventivi come gli altri profili
 function infWalk(p,A){
+  if(pvcFornito(p))return; // infisso PVC comprato finito: nessuna barra, costo a m² (extraPezzo)
   const nPz=Math.max(1,parseInt(p.nPezziUguali)||1);
   if(!(numOk(p.infL,0)>0&amp;&amp;numOk(p.infH,0)>0))return;
   infRighe(p).forEach(r=>{if(r.mm>0&amp;&amp;r.q>0)A(infMat(p,r),r.mm,r.q*nPz,r.lbl+&quot; &quot;+r.cod);});
@@ -11080,7 +11094,7 @@ function descrInfisso(p){
 }
 const INF_TAGLIO={a:&quot;45° / 45°&quot;,r:&quot;90° / 90°&quot;,m:&quot;45° / 90°&quot;,x:&quot;da definire&quot;,c:&quot;calandrato&quot;};
 function buildBodyInfissoAlu(p){
-  const t=infTipo(p),v=infVar(p),S=INF_SISTEMI[t.sis],isPvc=t.sis==='pvc';
+  const t=infTipo(p),v=infVar(p),S=INF_SISTEMI[t.sis],isPvc=t.sis==='pvc',pvcFor=pvcFornito(p);
   const tipoChips=TIPI.map(x=>`<button class=&quot;chip${x.k===p.tipo?&quot; on&quot;:&quot;&quot;}&quot; onclick=&quot;setTipo(${p.id},'${x.k}')&quot;
     style=&quot;border-color:${x.k===p.tipo?&quot;#f08a3c&quot;:&quot;#172438&quot;};color:${x.k===p.tipo?&quot;#f08a3c&quot;:&quot;#91a2bb&quot;};background:${x.k===p.tipo?&quot;#1a1205&quot;:&quot;#101a29&quot;}&quot;>${x.l}</button>`).join(&quot;&quot;);
   const opt=(val,lab,sel)=>`<option value=&quot;${esc(val)}&quot;${sel?&quot; selected&quot;:&quot;&quot;}>${esc(lab)}</option>`;
@@ -11177,6 +11191,8 @@ function buildBodyInfissoAlu(p){
   ${slHtml}
   ${arcoHtml}
 
+  ${pvcFor?pvcFornitoHtml(p):''}
+  ${pvcFor?'<details class=&quot;dett&quot;><summary>✂️ Distinta di taglio (serve solo se lo costruisci tu)</summary><div class=&quot;dett-body&quot;>':''}
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#f08a3c&quot;>
     <div class=&quot;st&quot; style=&quot;color:#f08a3c&quot;>✂️ Distinta di taglio${isPvc?'':' del catalogo'}</div>
     ${ok?`<div style=&quot;overflow-x:auto&quot;><table class=&quot;rtable&quot; style=&quot;min-width:560px&quot;>
@@ -11190,14 +11206,15 @@ function buildBodyInfissoAlu(p){
       :`<div style=&quot;color:#f06b6b;font-size:12px&quot;>⚠️ Scrivi larghezza e altezza del telaio${(t.par||[]).length?' e le misure della scheda':''}</div>`}
   </div>
 
-  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#55d39b&quot;>
+  ${pvcFor?'</div></details>':''}
+  ${pvcFor?'':`<div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#55d39b&quot;>
     ${isPvc?pvcPrezziHtml(p):`<div class=&quot;st&quot; style=&quot;color:#55d39b&quot;>💶 Prezzo alluminio</div>
     <div class=&quot;g2&quot; style=&quot;align-items:end&quot;>
       <div><label class=&quot;fl&quot;>Prezzo del giorno (€/kg) — vale per tutti i lavori</label><input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.01&quot; value=&quot;${numOk(UPG.aluPrezzoKg,0)||''}&quot; placeholder=&quot;es. 6.20&quot; style=&quot;border-color:#55d39b&quot; onchange=&quot;salvaPrezzoAluKg(this.value)&quot;></div>
       <div class=&quot;nota-info&quot; style=&quot;margin:0&quot;>Costo profili = kg delle barre da 6,50 m da comprare × €/kg.</div>
     </div>
     ${numOk(UPG.aluPrezzoKg,0)>0?&quot;&quot;:'<div style=&quot;font-size:11px;color:#f06b6b;margin-top:6px&quot;>⚠️ Prezzo al kg non inserito: i profili restano senza prezzo</div>'}`}
-  </div>
+  </div>`}
 
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${Object.keys(p.infAcc||{}).length?'#f08a3c':'#172438'}&quot;>
     <div class=&quot;st&quot; style=&quot;color:#f08a3c&quot;>🔩 Accessori e guarnizioni</div>
@@ -11208,10 +11225,10 @@ function buildBodyInfissoAlu(p){
 
   ${buildLavorazioniHtml(p)}
 
-  <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#64a8ff&quot;>
+  ${pvcFor?'':`<div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#64a8ff&quot;>
     <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>📋 Barre da ordinare</div>
     ${buildDistinta(p)}
-  </div>`;
+  </div>`}`;
 }
 // Disegno della vista interna: telaio, ante/fissi, traverso a H1, cima ad arco, quote
 function disegnaInfissoAlu(p,cvs,ctx,leg){
@@ -11432,15 +11449,44 @@ function pvcCtrlHtml(p,opt){
   const sel=(prof,lbl)=>{const r=pvcRinf(p,prof);return `<div><label class=&quot;fl&quot;>${lbl}</label><select class=&quot;fi&quot; onchange=&quot;setInfPvcRinf(${p.id},'${prof}',this.value)&quot;>
     ${PVC_ACC.filter(x=>x[1]===prof).map(x=>opt(x[0],x[0]+' — '+(x[2]==='box'?'tubolare ':'a U ')+x[3]+'×'+x[4]+' sp.'+x[5],r&amp;&amp;r[0]===x[0])).join(&quot;&quot;)}</select></div>`;};
   const r=(numOk(p.infL,0)>0&amp;&amp;numOk(p.infH,0)>0)?pvcRighe(p):null;
+  const forn=pvcFornito(p);
   return `<div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Come lo prendi</label><select class=&quot;fi&quot; style=&quot;border-color:#55d39b&quot; onchange=&quot;setProp(${p.id},'infPvcModo',this.value)&quot;>
+        ${opt('fornito','Comprato finito dal fornitore (prezzo a m²)',forn)}${opt('costruito','Costruito in officina (barre a €/m)',!forn)}</select></div>
       <div><label class=&quot;fl&quot;>Anta</label><select class=&quot;fi&quot; onchange=&quot;setProp(${p.id},'infPvcAnta',this.value)&quot;>
         ${Object.keys(PVC_ANTE).map(k=>opt(k,k+' — '+PVC_ANTE[k].n,k===a)).join(&quot;&quot;)}</select></div>
       ${sel('140x07','Rinforzo telaio')}${sel(a,'Rinforzo anta')}
       ${(r&amp;&amp;r._nMont)?sel('140x41','Rinforzo montante / traverso'):''}${(r&amp;&amp;r._nRip)?sel('140x66','Rinforzo riporto'):''}
     </div>
-    ${W>0?'':'<div style=&quot;font-size:11px;color:#f06b6b;margin-bottom:8px&quot;>⚠️ Sovrametallo di saldatura non inserito (🔧 Listino → Infissi PVC): i tagli dei pezzi saldati sono alla misura finita.</div>'}`;
+    ${(W>0||forn)?'':'<div style=&quot;font-size:11px;color:#f06b6b;margin-bottom:8px&quot;>⚠️ Sovrametallo di saldatura non inserito (🔧 Listino → Infissi PVC): i tagli dei pezzi saldati sono alla misura finita.</div>'}`;
 }
 function setInfPvcRinf(id,prof,cod){const p=pezzi.find(x=>x.id===id);if(!p)return;p.infPvcRinf=Object.assign({},p.infPvcRinf||{});p.infPvcRinf[prof]=cod;renderTutto();}
+// ── INFISSO PVC COMPRATO FINITO: prezzo a m² ricavato dai preventivi del fornitore (PORTEINFISSI 2000, Aluplast Ideal 4000) ──
+// Preventivi 0929-0930, 1920-1921, 1651-1652-1653 (solo totali, niente prezzi per pezzo). Con un minimo di 1 m² a pezzo
+// i tre totali tornano tutti: finestre/portafinestre/fissi 210,2 €/m² di listino; porta semplice 281,8 €/m²
+// (porta con serratura, maniglione, soglia ribassata e pannello decorativo: 347,9 €/m²). Sconti applicati 11-20%.
+function pvcFornito(p){return !!p&amp;&amp;p.tipo==='infisso_pvc'&amp;&amp;(p.infPvcModo||'fornito')==='fornito';}
+function pvcFornitoCalc(p){
+  const L=numOk(p.infL,0),H=numOk(p.infH,0);if(!(L>0&amp;&amp;H>0))return null;
+  const t=infTipo(p),nPz=Math.max(1,parseInt(p.nPezziUguali)||1);
+  const f=(p.arco&amp;&amp;p.arco.attivo&amp;&amp;(p.arco.verso||'su')!=='giu')?frecciaCima(p,L):0; // arco: si conta il rettangolo che lo contiene
+  const mq=L*(H+f)/1e6,minMq=Math.max(0,numOk(UPG.pvcMinMq,1)),mqFatt=Math.max(mq,minMq);
+  const porta=!!t.porta,prezzoMq=porta?numOk(UPG.pvcMqPorta,281.8):numOk(UPG.pvcMqFin,210.2);
+  const sconto=Math.max(0,Math.min(90,numOk(UPG.pvcSconto,11)));
+  return {mq,mqFatt,minMq,porta,prezzoMq,sconto,nPz,arco:f>0,listino:mqFatt*prezzoMq*nPz,costo:mqFatt*prezzoMq*(1-sconto/100)*nPz};
+}
+function pvcFornitoHtml(p){
+  const c=pvcFornitoCalc(p);
+  return `<div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#55d39b&quot;>
+    <div class=&quot;st&quot; style=&quot;color:#55d39b&quot;>💶 Prezzo dal fornitore (infisso finito)</div>
+    ${c?`<div class=&quot;costi-riga&quot;><span>Superficie ${fmtN(c.mq)} m²${c.mq<c.minMq?' → si paga il minimo di '+fmtN(c.minMq)+' m²':''}${c.arco?' (rettangolo che contiene l\'arco)':''}</span><b>${fmtN(c.mqFatt)} m²</b></div>
+    <div class=&quot;costi-riga&quot;><span>${c.porta?'Porta':'Finestra / portafinestra / fisso'} a € ${fmtP(c.prezzoMq)}/m²${c.nPz>1?' × '+c.nPz+' pezzi':''}</span><b>€ ${fmtP(c.listino)}</b></div>
+    ${c.sconto>0?`<div class=&quot;costi-riga&quot;><span>Sconto fornitore ${fmtN(c.sconto)}%</span><b>− € ${fmtP(c.listino-c.costo)}</b></div>`:''}
+    <div class=&quot;costi-tot&quot;><span>Costo infisso</span><span style=&quot;color:#55d39b;font-size:17px&quot;>€ ${fmtP(c.costo)}</span></div>`
+    :'<div style=&quot;color:#f06b6b;font-size:12px&quot;>⚠️ Scrivi larghezza e altezza</div>'}
+    <div class=&quot;nota-info&quot;>Prezzi ricavati dai 3 preventivi PORTEINFISSI 2000 (Aluplast Ideal 4000, bianco, vetrocamera 4/16/4, ferramenta Siegenia, consegna compresa). Si cambiano in 🔧 Listino → Infissi PVC.</div>
+  </div>`;
+}
 function pvcPrezziHtml(p){
   const P=pvcPrezzi(),cod=[...new Set(pvcRighe(p).map(r=>r.cod))],manca=cod.filter(c=>!(numOk(P[c],0)>0));
   return `<div class=&quot;st&quot; style=&quot;color:#55d39b&quot;>💶 Prezzi PVC</div>
@@ -12458,7 +12504,10 @@ function extraPezzo(p){
       mq:_sl.areaMq,kg:_sl.areaMq*kgMq,acciaio:true,costo:_sl.areaMq*kgMq*numOk(p.lamiera_prezzoKg,UPG.lamPrezzoKg),senzaPrezzo:!(numOk(p.lamiera_prezzoKg,UPG.lamPrezzoKg)>0)});
   }
   if((p.vetro||(_sl&amp;&amp;_sl.riemp==='vetro'))&amp;&amp;ammetteVetro(p)){const v=calcVetro(p);if(v)add({k:'vetro',label:'Vetri '+v.sigla,det:v.nLastre+&quot; lastr&quot;+(v.nLastre===1?&quot;a&quot;:&quot;e&quot;)+&quot; · &quot;+v.areaTot.toFixed(2)+&quot; m²&quot;,mq:v.areaTot,kg:v.pesoTot,acciaio:false,costo:v.costo,senzaPrezzo:!(v.prezzoMq>0)});}
-  if(ti.isInfissoAlu&amp;&amp;numOk(p.infVetroMq,0)>0){const mq=infAreaVetriMq(p);
+  if(ti.isInfissoAlu&amp;&amp;pvcFornito(p)){const c=pvcFornitoCalc(p);
+    if(c)add({k:'pvc_fornito',label:'Infisso PVC fornito (Ideal 4000, '+(c.porta?'porta':'finestra')+')',det:fmtN(c.mqFatt)+' m² × € '+fmtP(c.prezzoMq)+(c.sconto>0?' − '+fmtN(c.sconto)+'%':''),
+      mq:c.mqFatt,kg:0,acciaio:false,costo:c.costo,senzaPrezzo:!(c.prezzoMq>0)});}
+  if(ti.isInfissoAlu&amp;&amp;!pvcFornito(p)&amp;&amp;numOk(p.infVetroMq,0)>0){const mq=infAreaVetriMq(p);
     if(mq>0)add({k:'vetro',label:'Vetri dell\'infisso',det:mq.toFixed(2)+&quot; m²&quot;,mq,kg:0,acciaio:false,costo:mq*numOk(p.infVetroMq,0)});}
   const _scP=ti.isScala?p:(ti.isSoppalco?scalaSoppalcoPezzo(p):null);
   if(_scP){const g=scalaCalc(_scP),pn=g.pian;
