@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.28.1</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.29.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.28.1</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.29.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -845,6 +845,18 @@ details.dett>.dett-body{padding:0 10px 10px}
     <div style=&quot;max-width:220px;margin-bottom:10px&quot;><label class=&quot;fl&quot;>Prezzo alluminio del giorno (€/kg)</label>
       <input class=&quot;fi&quot; id=&quot;upg-alukg&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.01&quot; style=&quot;border-color:#64a8ff&quot; onchange=&quot;salvaPrezzoAluKg(this.value)&quot;></div>
     <div id=&quot;infacc-listino&quot;></div>
+  </div>
+
+  <!-- INFISSI PVC: prezzi €/m, barre e saldatura -->
+  <div class=&quot;sec&quot; style=&quot;border-color:#64a8ff;margin-bottom:10px&quot;>
+    <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>🪟 Infissi PVC (Aluplast Ideal 4000) — i tuoi prezzi</div>
+    <p style=&quot;font-size:11px;color:#91a2bb;margin-bottom:10px;line-height:1.5&quot;>Profili PVC e rinforzi in acciaio a €/m: il costo è barre da comprare × lunghezza barra × €/m. Accessori e guarnizioni PVC: nella sezione Infissi alluminio qui sopra (stesse voci spuntabili).</p>
+    <div class=&quot;g3 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Sovrametallo saldatura per testa (mm)</label><input class=&quot;fi&quot; id=&quot;upg-pvcsald&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.5&quot; onchange=&quot;salvaUPG('pvcSald',Math.max(0,parseFloat(this.value)||0))&quot;></div>
+      <div><label class=&quot;fl&quot;>Barra PVC (cm)</label><input class=&quot;fi&quot; id=&quot;upg-pvcbar&quot; type=&quot;number&quot; min=&quot;100&quot; step=&quot;1&quot; onchange=&quot;salvaUPG('pvcBarraMm',Math.max(1000,(parseFloat(this.value)||650)*10))&quot;></div>
+      <div><label class=&quot;fl&quot;>Barra rinforzi (cm)</label><input class=&quot;fi&quot; id=&quot;upg-pvcbaracc&quot; type=&quot;number&quot; min=&quot;100&quot; step=&quot;1&quot; onchange=&quot;salvaUPG('pvcBarraAccMm',Math.max(1000,(parseFloat(this.value)||600)*10))&quot;></div>
+    </div>
+    <div id=&quot;pvc-listino&quot;></div>
   </div>
 
   <!-- AGGIORNATORE LISTINO 2026 -->
@@ -2427,6 +2439,7 @@ const TIPI=[
   {k:&quot;gazebo&quot;,             l:&quot;⛺ Gazebo / Pergola&quot;,      haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isGazebo:true},
   {k:&quot;alluminio&quot;,          l:&quot;🔧 Alluminio Scuretto&quot;,    haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isAlluminio:true},
   {k:&quot;infisso_alu&quot;,        l:&quot;🪟 Infisso alluminio&quot;,     haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isInfissoAlu:true},
+  {k:&quot;infisso_pvc&quot;,        l:&quot;🪟 Infisso PVC&quot;,           haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isInfissoAlu:true, isPvc:true},
   {k:&quot;scala&quot;,              l:&quot;🪜 Scala&quot;,                 haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isScala:true},
   {k:&quot;inferriata&quot;,         l:&quot;🛡️ Inferriata&quot;,            haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;},
   {k:&quot;corrimano_muro&quot;,     l:&quot;🤚 Corrimano a muro&quot;,       haAnte:false, soloAnte:false, nomeAnte:&quot;&quot;, isCorrimano:true},
@@ -2754,6 +2767,7 @@ function mlConSfrido(ml){return ml*(1+(parseFloat(UPG.sfrido)||0)/100);}
 // tutto il resto = UPG.barraMm (6015 mm). Serve a piano di taglio, conteggio barre e prezzo.
 function chiaveBarra(mat){return mat?(pCanonCat(mat.cat||&quot;&quot;)+&quot;|&quot;+mat.profilo+&quot;|&quot;+(mat.sp==null?&quot;&quot;:mat.sp)):&quot;&quot;;}
 function barraMmMat(mat){
+  if(mat&amp;&amp;mat.pvc)return mat.acciaio?Math.max(1000,numOk(UPG.pvcBarraAccMm,UPG.barraMm||6015)):Math.max(1000,numOk(UPG.pvcBarraMm,6500));
   if(mat&amp;&amp;mat.fam==='alu')return ALU_BAR*10;
   const cm=mat&amp;&amp;pCatMeta(pCanonCat(mat.cat));
   if(cm&amp;&amp;cm.barra)return cm.barra*1000;
@@ -2766,6 +2780,7 @@ function nomeBarra(mm){return mm>=BARRA12_MM-1?&quot;12 m&quot;:(Math.abs(mm-650
 // Metri &quot;di listino&quot; di una barra: il prezzo €/100 m si paga sulla misura commerciale (6 m, 12 m, 6,5 m)
 function barraNomM(mm){return Math.round(mm/100)/10;}
 function prezzoBarra(mat){
+  if(mat&amp;&amp;mat.pvc)return numOk(pvcPrezzi()[mat.cod],0)*barraMmMat(mat)/1000; // PVC e rinforzi: €/m del tuo listino × barra
   if(mat&amp;&amp;mat.infisso)return (parseFloat(mat.kgm)||0)*barraNomM(barraMmMat(mat))*numOk(UPG.aluPrezzoKg,0); // infissi: kg della barra × €/kg
   const p100=getP(mat);return p100>0?p100/100*barraNomM(barraMmMat(mat)):0;}
 function barreCalc(k,ml,mat){
@@ -3620,7 +3635,7 @@ function nuovoPezzo(id){
     lamiera_prezzoKg:UPG.lamPrezzoKg,   // prezzo lamiera al kg (Listino → I miei prezzi)
     aluFacce:null, aluColore:'Bianco RAL 9010',
     // Infisso in alluminio (porte e finestre dai cataloghi): tipologia, misure telaio in mm, misure della scheda
-    infTipo:'G1', infL:'', infH:'', infPar:{}, infFv:'f', infColore:'Bianco RAL 9010', infAcc:{}, infVetroMq:'', infSl:{attivo:false,tipo:'fisso',h:''},
+    infTipo:'G1', infL:'', infH:'', infPar:{}, infFv:'f', infColore:'Bianco RAL 9010', infAcc:{}, infVetroMq:'', infSl:{attivo:false,tipo:'fisso',h:''}, infPvcAnta:'', infPvcRinf:{},
     aluBattuta:3.5,  // cm tolti per lato perimetrale per ricavare le ante (alluminio scuretto)
     coda_sup:0, coda_inf:0,  // code scorrevole: prolunghe (mm) delle traverse oriz. oltre il montante
     scalaH:3.0, scalaL:4.0, scalaW:1.0, scalaN:15,
@@ -3712,6 +3727,8 @@ function showTab(t){
       document.getElementById('upg-mag').checked=!!UPG.usaMagazzino;
       renderFerrListino();
       try{document.getElementById('upg-alukg').value=numOk(UPG.aluPrezzoKg,0)||'';renderInfAccListino();}catch(e){}
+      try{document.getElementById('upg-pvcsald').value=numOk(UPG.pvcSald,0)||'';document.getElementById('upg-pvcbar').value=cmv(barraMmMat({pvc:true}));
+        document.getElementById('upg-pvcbaracc').value=cmv(barraMmMat({pvc:true,acciaio:true}));renderPvcListino();}catch(e){}
       renderPesi();
     }catch(e){}
   }
@@ -8507,14 +8524,15 @@ function inviaPREV(snapId){
     if(tiInfo.isInfissoAlu){
       const vistiI=[];
       walkPezzoMateriali(p,mat=>{if(mat&amp;&amp;mat.profilo&amp;&amp;vistiI.indexOf(mat.profilo)<0)vistiI.push(mat.profilo);});
-      const righeI=vistiI.map(t=>({ruolo:'',testo:'profilo alluminio '+t}));
+      const _pv=p.tipo==='infisso_pvc';
+      const righeI=vistiI.map(t=>({ruolo:'',testo:(_pv?'':'profilo alluminio ')+t}));
       const vtI=infVetri(p).filter(x=>x.w>0&amp;&amp;x.h>0);
       if(vtI.length)righeI.push({ruolo:'',testo:vtI.map(x=>x.nome.toLowerCase()+' '+cmv(x.w)+'×'+cmv(x.hMax)+' cm ×'+(x.q*nPzU)).join(', ')});
       const accI=loadInfAcc().filter(a=>infAccQta(p,a)>0).map(a=>a.nome.toLowerCase());
       if(accI.length)righeI.push({ruolo:'',testo:'accessori e guarnizioni: '+accI.join(', ')});
-      let descI='Infisso in alluminio '+descrInfisso(p);
+      let descI='Infisso in '+(_pv?'PVC ':'alluminio ')+descrInfisso(p);
       if(nPzU>1)descI+=' (×'+nPzU+' pezzi uguali)';
-      return{nome:p.nome||'Infisso alluminio',tipo:'altro',larg:numOk(p.infL,0)/1000,alt:numOk(p.infH,0)/1000,nBattenti:1,nPezziUguali:nPzU,
+      return{nome:p.nome||(_pv?'Infisso PVC':'Infisso alluminio'),tipo:'altro',larg:numOk(p.infL,0)/1000,alt:numOk(p.infH,0)/1000,nBattenti:1,nPezziUguali:nPzU,
         desc_tecnica:descI,materiali:righeI,img:pezzoImgDataURL(p),prezzo:prezzoDi(i),peso_kg:pesoDi(i),zinc:false,vern:false};
     }
     // Profili usati (dalla distinta unica), senza doppioni
@@ -10543,7 +10561,8 @@ function renderMagazzino(){
 const INF_BARRA_MM=6500;
 const INF_SISTEMI={
   gold:{n:&quot;GOLD 500 · taglio freddo&quot;,breve:&quot;Gold 500&quot;,fvNomi:[&quot;40082 fermavetro&quot;,&quot;40029 variante&quot;]},
-  dogma:{n:&quot;DOGMA PRO · taglio termico&quot;,breve:&quot;Dogma Pro&quot;,fvNomi:[&quot;40087 fermavetro piano&quot;,&quot;40081 fermavetro arrotondato&quot;]}
+  dogma:{n:&quot;DOGMA PRO · taglio termico&quot;,breve:&quot;Dogma Pro&quot;,fvNomi:[&quot;40087 fermavetro piano&quot;,&quot;40081 fermavetro arrotondato&quot;]},
+  pvc:{n:&quot;ALUPLAST IDEAL 4000 · PVC&quot;,breve:&quot;Ideal 4000&quot;,fvNomi:[&quot;120846 fermavetro classic-line&quot;,&quot;120876 fermavetro round-line&quot;]}
 };
 // Peso al metro (kg/m) dalle tabelle profili dei cataloghi
 const INF_PROF={
@@ -10822,6 +10841,18 @@ const INF_TIPI=[
     acc:[[&quot;TA075&quot;,&quot;t&quot;],[&quot;G2001&quot;,24],[&quot;G2002&quot;,24],[&quot;TS077&quot;,12],[&quot;TS078&quot;,12],[&quot;G501N&quot;,10],[&quot;TS079&quot;,10],[&quot;G501NC&quot;,12],[&quot;TS082&quot;,8],[&quot;G199&quot;,4],[&quot;TS073&quot;,4],[&quot;S3001&quot;,20],[&quot;G112&quot;,2],[&quot;G268&quot;,8],[&quot;G269&quot;,2],[&quot;TT065&quot;,1],[&quot;G101&quot;,&quot;2…4&quot;],[&quot;G231&quot;,8],
       [&quot;TG186&quot;,4],[&quot;TG185&quot;,&quot;2L+3H&quot;],[&quot;TG031&quot;,&quot;2L+4H&quot;],[&quot;TGCE&quot;,&quot;4L+4H&quot;],[&quot;TGCI&quot;,&quot;4L+4H&quot;],[&quot;TG004&quot;,&quot;L+2H&quot;],[&quot;TG385&quot;,&quot;4L+4H&quot;],[&quot;Z119&quot;,&quot;L+4H&quot;]]}
 ];
+// ── ALUPLAST IDEAL 4000 (PVC): tipologie costruite dai nodi quotati del manuale tecnico (vedi pvcRighe) ──
+[[&quot;P1&quot;,&quot;Fisso (vetro nel telaio)&quot;,&quot;F&quot;,[[&quot;f&quot;,&quot;L&quot;]],&quot;140x20&quot;,{arco:true}],
+ [&quot;P2&quot;,&quot;Finestra 1 anta (battente o anta-ribalta)&quot;,&quot;A&quot;,[[&quot;a&quot;,&quot;L&quot;]],&quot;140x20&quot;,{sl:true,arco:true}],
+ [&quot;P3&quot;,&quot;Finestra 2 ante con montante fisso&quot;,&quot;AmA&quot;,[[&quot;a&quot;,&quot;L/2&quot;],[&quot;a&quot;,&quot;L/2&quot;]],&quot;140x20&quot;,{sl:true,arco:true}],
+ [&quot;P4&quot;,&quot;Finestra 2 ante con riporto (montante mobile)&quot;,&quot;ArA&quot;,[[&quot;a&quot;,&quot;L/2&quot;],[&quot;a&quot;,&quot;L/2&quot;]],&quot;140x20&quot;,{sl:true,arco:true}],
+ [&quot;P5&quot;,&quot;Finestra 3 ante con 2 montanti&quot;,&quot;AmAmA&quot;,[[&quot;a&quot;,&quot;L/3&quot;],[&quot;a&quot;,&quot;L/3&quot;],[&quot;a&quot;,&quot;L/3&quot;]],&quot;140x20&quot;,{sl:true,arco:true}],
+ [&quot;P6&quot;,&quot;Anta con laterale fisso&quot;,&quot;FmA&quot;,[[&quot;f&quot;,&quot;LF&quot;],[&quot;a&quot;,&quot;LA&quot;]],&quot;140x20&quot;,{sl:true,arco:true,par:[&quot;LF&quot;]}],
+ [&quot;P7&quot;,&quot;Fisso diviso da montante&quot;,&quot;FmF&quot;,[[&quot;f&quot;,&quot;L/2&quot;],[&quot;f&quot;,&quot;L/2&quot;]],&quot;140x20&quot;,{sl:true,arco:true}],
+ [&quot;P8&quot;,&quot;Vasistas&quot;,&quot;A&quot;,[[&quot;b&quot;,&quot;L&quot;]],&quot;140x20&quot;,{sl:true,arco:true}],
+ [&quot;P9&quot;,&quot;Portafinestra 1 anta&quot;,&quot;A&quot;,[[&quot;p&quot;,&quot;L&quot;]],&quot;140x28&quot;,{sl:true,arco:true}],
+ [&quot;P10&quot;,&quot;Portafinestra 2 ante con riporto&quot;,&quot;ArA&quot;,[[&quot;p&quot;,&quot;L/2&quot;],[&quot;p&quot;,&quot;L/2&quot;]],&quot;140x28&quot;,{sl:true,arco:true}]
+].forEach((x,i)=>INF_TIPI.push(Object.assign({k:x[0],sis:&quot;pvc&quot;,n:String(i+1),nome:x[1],pag:&quot;cap. 03&quot;,campi:x[2],lay:{c:x[3]},anta:x[4],r:[],vt:[]},x[5])));
 // Voci di accessori e guarnizioni del catalogo DOGMA PRO (distinte accessori e guarnizioni). Prezzi: li metti tu.
 const INF_ACC_DEFAULT=[
   [&quot;TA075&quot;,&quot;Regolo telaio camera semplice&quot;,&quot;pz&quot;],[&quot;G2001&quot;,&quot;Vite per squadretta TS078&quot;,&quot;pz&quot;],[&quot;G2002&quot;,&quot;Spina per squadretta TS078 (in alternativa)&quot;,&quot;pz&quot;],
@@ -10834,8 +10865,19 @@ const INF_ACC_DEFAULT=[
   [&quot;TG031&quot;,&quot;Guarnizione di battuta&quot;,&quot;m&quot;],[&quot;TGCE&quot;,&quot;Guarnizione cingivetro esterna&quot;,&quot;m&quot;],[&quot;TGCI&quot;,&quot;Guarnizione cingivetro interna&quot;,&quot;m&quot;],
   [&quot;TG302&quot;,&quot;Guarnizione perimetrale isolante&quot;,&quot;m&quot;],[&quot;TG004&quot;,&quot;Guarnizione battuta a muro / battuta esterna&quot;,&quot;m&quot;],[&quot;TG385&quot;,&quot;Sottovetro isolante&quot;,&quot;m&quot;],[&quot;Z119&quot;,&quot;Guarnizione isolante&quot;,&quot;m&quot;]
 ].map(x=>({id:&quot;ia_&quot;+x[0],cod:x[0],nome:x[1],u:x[2],prezzo:0,sis:&quot;dogma&quot;}));
+const INF_ACC_PVC=[
+  [&quot;640900&quot;,&quot;Connettore montante / traverso&quot;,&quot;pz&quot;],[&quot;640941&quot;,&quot;Pezzo ausiliario connettore&quot;,&quot;pz&quot;],
+  [&quot;640066&quot;,&quot;Tappo di chiusura riporto&quot;,&quot;pz&quot;],[&quot;640031&quot;,&quot;Connettore angolare (con 640938)&quot;,&quot;pz&quot;],
+  [&quot;640311&quot;,&quot;Spessore vetro t=5 mm&quot;,&quot;pz&quot;],[&quot;640320&quot;,&quot;Spessore vetro t=5 mm (largo)&quot;,&quot;pz&quot;],[&quot;640301&quot;,&quot;Spessore vetro t=0 mm&quot;,&quot;pz&quot;],
+  [&quot;FD21&quot;,&quot;Vite autoforante FD21 3,9×19 per rinforzi&quot;,&quot;pz&quot;],[&quot;446071&quot;,&quot;Set guarnizioni soglia&quot;,&quot;pz&quot;]
+].map(x=>({id:&quot;ip_&quot;+x[0],cod:x[0],nome:x[1],u:x[2],prezzo:0,sis:&quot;pvc&quot;}));
+INF_ACC_DEFAULT.push(...INF_ACC_PVC);
 
-function infTipo(p){return INF_TIPI.find(t=>t.k===p.infTipo)||INF_TIPI[0];}
+function infTipo(p){
+  const pvc=p&amp;&amp;p.tipo==='infisso_pvc',t=INF_TIPI.find(x=>x.k===p.infTipo);
+  if(t&amp;&amp;(t.sis==='pvc')===pvc)return t;
+  return pvc?INF_TIPI.find(x=>x.sis==='pvc'&amp;&amp;x.k==='P2'):INF_TIPI[0];
+}
 const INF_PAR_NOMI={LF:&quot;Larghezza del fisso LF&quot;,L1:&quot;Larghezza L1&quot;,H1:&quot;Altezza H1 (parte bassa)&quot;,N:&quot;N° ovaline&quot;};
 // Misure del manufatto in mm (L e H esterne del telaio, come nelle schede)
 function infVar(p){
@@ -10855,7 +10897,9 @@ function infEval(f,v){
   try{const r=Function('&quot;use strict&quot;;return ('+s+');')();return isFinite(r)?r:0;}catch(e){return 0;}
 }
 const _infOrizz=f=>/\b(L|LA|LF|L1|L2)\b/.test(String(f))&amp;&amp;!/\bH/.test(String(f));
-function infArcoOn(p){const t=infTipo(p);return !!(t.arco&amp;&amp;p.arco&amp;&amp;p.arco.attivo&amp;&amp;(p.arco.verso||'su')!=='giu'&amp;&amp;formaCima(p)!=='inclinata'&amp;&amp;frecciaCima(p,numOk(p.infL,0))>0);}
+function infArcoOn(p){const t=infTipo(p);
+  if(t.sis==='pvc'&amp;&amp;!(t.campi==='F'||(infSlOn(p)&amp;&amp;infSlTipo(p)==='fisso')))return false;
+  return !!(t.arco&amp;&amp;p.arco&amp;&amp;p.arco.attivo&amp;&amp;(p.arco.verso||'su')!=='giu'&amp;&amp;formaCima(p)!=='inclinata'&amp;&amp;frecciaCima(p,numOk(p.infL,0))>0);}
 // Righe della distinta di taglio del manufatto (un pezzo). Con la cima ad arco i pezzi in testa diventano calandrati.
 // ── SOPRALUCE (Gold 500): traverso di telaio 50016 a quota HS dall'alto, sopra fisso o a vasistas ──
 // Misure ricavate dalla scheda 9 (fisso affiancato con traverso T 50016, pag. 161 e nodo pag. 247) ruotata:
@@ -10885,6 +10929,7 @@ function infVarSotto(p,v){
   return w;
 }
 function infRighe(p){
+  if(infTipo(p).sis==='pvc')return pvcRighe(p).slice();
   const t=infTipo(p),v0=infVar(p),fv=(p.infFv||'f');
   const out=[];
   const arco=infArcoOn(p),C=v0.L,sl=infSlOn(p),vS=infVarSotto(p,v0);
@@ -10914,10 +10959,14 @@ function infRighe(p){
 }
 function infColore(p){return p.infColore||'Bianco RAL 9010';}
 function infMat(p,r){
-  const t=infTipo(p),nm=(INF_PROF[t.sis][r.cod]||[r.descr])[0];
+  const t=infTipo(p),nm=((INF_PROF[t.sis]||{})[r.cod]||[r.descr])[0];
+  if(t.sis==='pvc'){const ac=PVC_ACC.find(x=>x[0]===r.cod);
+    return {profilo:'IDEAL4000 '+r.cod+' '+(ac?'rinforzo acciaio '+ac[3]+'×'+ac[4]+' sp.'+ac[5]:(PVC_PROF[r.cod]||[r.descr])[0]),fam:'pvc',cat:'infisso_pvc',sp:null,
+      qual:ac?'acciaio zincato':infColore(p),infisso:true,pvc:true,acciaio:!!ac,kgm:r.kgm,cod:r.cod,sis:'pvc'};}
   return {profilo:(t.sis==='gold'?'GOLD ':'DOGMA ')+r.cod+' '+nm,fam:'alu',cat:'infisso_alu',sp:null,qual:infColore(p),infisso:true,kgm:r.kgm,cod:r.cod,sis:t.sis};
 }
 function infVetri(p){
+  if(infTipo(p).sis==='pvc')return pvcVetri(p);
   const t=infTipo(p),v0=infVar(p),arco=infArcoOn(p),f=arco?frecciaCima(p,v0.L):0,sl=infSlOn(p),vS=infVarSotto(p,v0);
   if(sl)v0.HS=vS.HS;
   const fila=(lista,tipo,v,sopra)=>(lista||[]).map((x,i)=>{
@@ -10936,12 +10985,17 @@ function setInfSl(id,campo,val){
 function infAreaVetriMq(p){const n=Math.max(1,parseInt(p.nPezziUguali)||1);return infVetri(p).filter(x=>x.tipo==='vetro'&amp;&amp;x.w>0&amp;&amp;x.h>0).reduce((a,x)=>a+x.w*x.hMax/1e6*x.q,0)*n;}
 // Accessori e guarnizioni: stessa logica della ferramenta (spunti la voce, metti la quantità, il prezzo lo decidi tu)
 function loadInfAcc(){
-  try{const v=JSON.parse(localStorage.getItem(&quot;fc_infissi_acc&quot;)||&quot;null&quot;);if(Array.isArray(v))return v;}catch(e){}
+  try{const v=JSON.parse(localStorage.getItem(&quot;fc_infissi_acc&quot;)||&quot;null&quot;);if(Array.isArray(v)){
+    if(!localStorage.getItem(&quot;fc_infissi_acc_pvc&quot;)){ // listino salvato prima del PVC: aggiunge le voci PVC una volta sola
+      INF_ACC_PVC.forEach(a=>{if(!v.some(x=>x.id===a.id))v.push(JSON.parse(JSON.stringify(a)));});
+      try{localStorage.setItem(&quot;fc_infissi_acc&quot;,JSON.stringify(v));localStorage.setItem(&quot;fc_infissi_acc_pvc&quot;,&quot;1&quot;);}catch(e){}}
+    return v;}}catch(e){}
   return JSON.parse(JSON.stringify(INF_ACC_DEFAULT));
 }
 function saveInfAcc(A){try{localStorage.setItem(&quot;fc_infissi_acc&quot;,JSON.stringify(A));}catch(e){}}
 // Quantità suggerita dal catalogo per la tipologia (null se la scheda non la indica)
 function infAccSugg(p,cod){
+  if(infTipo(p).sis==='pvc')return pvcAccSugg(p,cod);
   const t=infTipo(p),x=(t.acc||[]).find(a=>a[0]===cod);if(!x)return null;
   const v=infVar(p),q=x[1];
   if(q===&quot;t&quot;)return null; // &quot;tabella&quot;: dipende dalla tabella del catalogo
@@ -10956,7 +11010,7 @@ function infAccQta(p,a){
   return Math.max(0,parseFloat(s)||0);
 }
 function costoInfAcc(p){
-  if(p.tipo!=='infisso_alu'||!p.infAcc)return 0;
+  if((p.tipo!=='infisso_alu'&amp;&amp;p.tipo!=='infisso_pvc')||!p.infAcc)return 0;
   const A=loadInfAcc();let tot=0;
   A.forEach(a=>{const q=infAccQta(p,a);if(q>0)tot+=(parseFloat(a.prezzo)||0)*q;});
   return tot*Math.max(1,parseInt(p.nPezziUguali)||1);
@@ -11026,7 +11080,7 @@ function descrInfisso(p){
 }
 const INF_TAGLIO={a:&quot;45° / 45°&quot;,r:&quot;90° / 90°&quot;,m:&quot;45° / 90°&quot;,x:&quot;da definire&quot;,c:&quot;calandrato&quot;};
 function buildBodyInfissoAlu(p){
-  const t=infTipo(p),v=infVar(p),S=INF_SISTEMI[t.sis];
+  const t=infTipo(p),v=infVar(p),S=INF_SISTEMI[t.sis],isPvc=t.sis==='pvc';
   const tipoChips=TIPI.map(x=>`<button class=&quot;chip${x.k===p.tipo?&quot; on&quot;:&quot;&quot;}&quot; onclick=&quot;setTipo(${p.id},'${x.k}')&quot;
     style=&quot;border-color:${x.k===p.tipo?&quot;#f08a3c&quot;:&quot;#172438&quot;};color:${x.k===p.tipo?&quot;#f08a3c&quot;:&quot;#91a2bb&quot;};background:${x.k===p.tipo?&quot;#1a1205&quot;:&quot;#101a29&quot;}&quot;>${x.l}</button>`).join(&quot;&quot;);
   const opt=(val,lab,sel)=>`<option value=&quot;${esc(val)}&quot;${sel?&quot; selected&quot;:&quot;&quot;}>${esc(lab)}</option>`;
@@ -11048,7 +11102,7 @@ function buildBodyInfissoAlu(p){
       <div><label class=&quot;fl&quot;>Sopraluce</label><select class=&quot;fi&quot; onchange=&quot;setInfSl(${p.id},'tipo',this.value)&quot;>
         ${opt('fisso','Fisso (vetro)',infSlTipo(p)==='fisso')}${opt('vasistas','Apribile a vasistas',infSlTipo(p)==='vasistas')}</select></div>
       <div><label class=&quot;fl&quot;>Altezza sopraluce HS (cm) — dall'alto all'asse del traverso</label><input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.1&quot; value=&quot;${numOk(SL.h,0)>0?cmv(SL.h):''}&quot; style=&quot;border-color:#6fb6e0&quot; onchange=&quot;setInfSl(${p.id},'h',Math.max(0,(parseFloat(this.value)||0)*10))&quot;></div>
-    </div>${slOk?`<div class=&quot;nota-info&quot;>Sotto: ${esc(t.nome.toLowerCase())} alta ${cmv(v.H-numOk(SL.h,0))} cm all'asse del traverso. Traverso di telaio 50016; misure ricavate dalla scheda 9 (fisso con traverso T) e dai nodi del catalogo.${arcoOn?' La cima ad arco va sul sopraluce.':''}</div>`:'<div style=&quot;font-size:11px;color:#f06b6b;margin-top:6px&quot;>⚠️ Scrivi l\'altezza del sopraluce (minore di H)</div>'}`:&quot;&quot;}
+    </div>${slOk?`<div class=&quot;nota-info&quot;>Sotto: ${esc(t.nome.toLowerCase())} alta ${cmv(v.H-numOk(SL.h,0))} cm all'asse del traverso. ${isPvc?'Traverso 140x41 (come il montante), misure dai nodi quotati aluplast.':'Traverso di telaio 50016; misure ricavate dalla scheda 9 (fisso con traverso T) e dai nodi del catalogo.'}${arcoOn?' La cima ad arco va sul sopraluce.':''}</div>`:'<div style=&quot;font-size:11px;color:#f06b6b;margin-top:6px&quot;>⚠️ Scrivi l\'altezza del sopraluce (minore di H)</div>'}`:&quot;&quot;}
   </div>`:(t.sis==='dogma'?`<div class=&quot;sec&quot; style=&quot;padding:10px&quot;><div class=&quot;nota-info&quot; style=&quot;margin:0&quot;>Sopraluce: il catalogo DOGMA PRO non ha la distinta del traverso di telaio (solo le 3 schede finestra/portafinestra), quindi qui non si calcola.</div></div>`:&quot;&quot;);
   const arcoHtml=t.arco?`<div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${arcoOn?'#b090f0':'#172438'}&quot;>
     <label style=&quot;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:${arcoOn?'#b090f0':'#8a96b0'};cursor:pointer&quot;>
@@ -11058,7 +11112,7 @@ function buildBodyInfissoAlu(p){
         ${FORME_CIMA.filter(f=>f[0]!=='inclinata').map(f=>opt(f[0],f[1],formaCima(p)===f[0])).join(&quot;&quot;)}</select></div>
       ${formaCima(p)==='tutto_sesto'?`<div><label class=&quot;fl&quot;>Freccia (cm)</label><div class=&quot;fi&quot; style=&quot;opacity:.7&quot;>${cmv(v.L/2)} = metà larghezza</div></div>`:
       `<div><label class=&quot;fl&quot;>Freccia sopra H (cm)</label><input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.5&quot; value=&quot;${cmv(Math.abs(numOk(p.arco.freccia,150)))}&quot; onchange=&quot;setArco(${p.id},'freccia',Math.max(0,(parseFloat(this.value)||0)*10))&quot;></div>`}
-    </div><div class=&quot;nota-info&quot;>H resta l'altezza ai lati (imposta dell'arco). I pezzi in testa (telaio, ante e fermavetri) diventano calandrati: in distinta c'è il loro sviluppo sulla curva.</div>`:&quot;&quot;}
+    </div><div class=&quot;nota-info&quot;>H resta l'altezza ai lati (imposta dell'arco). ${isPvc?'PVC: l\'arco si fa sul vetro fisso (tipologia Fisso, oppure sopraluce fisso sopra le ante); telaio e fermavetri in testa sono calandrati.'+(infArcoOn(p)?'':' <b style=&quot;color:#f06b6b&quot;>Con questa tipologia attiva il sopraluce fisso.</b>'):'I pezzi in testa (telaio, ante e fermavetri) diventano calandrati: in distinta c\'è il loro sviluppo sulla curva.'}</div>`:&quot;&quot;}
   </div>`:&quot;&quot;;
   const tabRighe=righe.map(r=>`<tr${r.arco?' style=&quot;background:#140f22&quot;':''}>
       <td><b>${esc(r.cod)}</b></td><td style=&quot;font-size:11px&quot;>${esc(r.descr)}${r.arco?' <span style=&quot;color:#b090f0&quot;>(in testa, calandrato)</span>':''}</td>
@@ -11095,10 +11149,10 @@ function buildBodyInfissoAlu(p){
   </div>
 
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#64a8ff&quot;>
-    <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>🪟 Infisso in alluminio</div>
+    <div class=&quot;st&quot; style=&quot;color:#64a8ff&quot;>🪟 Infisso in ${isPvc?'PVC':'alluminio'}</div>
     <div class=&quot;g2 mb8&quot;>
       <div><label class=&quot;fl&quot;>Sistema</label><select class=&quot;fi&quot; onchange=&quot;setInfSistema(${p.id},this.value)&quot;>
-        ${Object.keys(INF_SISTEMI).map(k=>opt(k,INF_SISTEMI[k].n,k===t.sis)).join(&quot;&quot;)}</select></div>
+        ${Object.keys(INF_SISTEMI).filter(k=>(k==='pvc')===isPvc).map(k=>opt(k,INF_SISTEMI[k].n,k===t.sis)).join(&quot;&quot;)}</select></div>
       <div><label class=&quot;fl&quot;>Tipologia (scheda del catalogo)</label><select class=&quot;fi&quot; onchange=&quot;setInfTipo(${p.id},this.value)&quot;>
         ${INF_TIPI.filter(x=>x.sis===t.sis).map(x=>opt(x.k,x.n+&quot; — &quot;+x.nome,x.k===t.k)).join(&quot;&quot;)}</select></div>
     </div>
@@ -11113,7 +11167,8 @@ function buildBodyInfissoAlu(p){
       <div><label class=&quot;fl&quot;>Colore / finitura</label><select class=&quot;fi&quot; onchange=&quot;setProp(${p.id},'infColore',this.value)&quot;>
         ${ALU_COLORI.map(c=>opt(c,c,c===infColore(p))).join(&quot;&quot;)}</select></div>
     </div>
-    <div class=&quot;nota-info&quot;>Scheda ${esc(S.n)} n° ${esc(t.n)} (pag. ${esc(String(t.pag))}). Misure L e H = esterno telaio come nelle schede. Barre da 6,50 m.${t.nota?'<br>⚠️ '+esc(t.nota):''}${t.astina?'<br>Astina di comando 6405: misura e quantità dipendono dall\'accessorio di comando (aggiungila a mano se serve).':''}</div>
+    ${isPvc?pvcCtrlHtml(p,opt):''}
+    <div class=&quot;nota-info&quot;>${isPvc?'ALUPLAST IDEAL 4000 — misure finite ricavate dai nodi quotati del manuale tecnico aluplast (telaio 70, anta a 42 dal filo telaio, montante 84 con anta a 14 dall\'asse, vetro fisso a 55 / 27). Taglio = misura finita + sovrametallo di saldatura per testa. Barre PVC da '+cmv(barraMmMat({pvc:true}))+' cm.':`Scheda ${esc(S.n)} n° ${esc(t.n)} (pag. ${esc(String(t.pag))}). Misure L e H = esterno telaio come nelle schede. Barre da 6,50 m.`}${t.nota?'<br>⚠️ '+esc(t.nota):''}${t.astina?'<br>Astina di comando 6405: misura e quantità dipendono dall\'accessorio di comando (aggiungila a mano se serve).':''}</div>
     <div id=&quot;dis-${p.id}&quot; class=&quot;tavola-dis&quot; data-h=&quot;380&quot; style=&quot;margin-top:10px&quot;></div>
     <div id=&quot;cvs-leg-${p.id}&quot; style=&quot;display:flex;flex-wrap:wrap;gap:9px;margin-top:8px;justify-content:center;font-size:12px;color:#8a96b0&quot;></div>
     ${ok?buildAbaco(p):&quot;&quot;}
@@ -11123,9 +11178,9 @@ function buildBodyInfissoAlu(p){
   ${arcoHtml}
 
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#f08a3c&quot;>
-    <div class=&quot;st&quot; style=&quot;color:#f08a3c&quot;>✂️ Distinta di taglio del catalogo</div>
+    <div class=&quot;st&quot; style=&quot;color:#f08a3c&quot;>✂️ Distinta di taglio${isPvc?'':' del catalogo'}</div>
     ${ok?`<div style=&quot;overflow-x:auto&quot;><table class=&quot;rtable&quot; style=&quot;min-width:560px&quot;>
-      <thead><tr><th>Codice</th><th>Profilo</th><th>Misura scheda</th><th style=&quot;text-align:right&quot;>Taglio (cm)</th><th style=&quot;text-align:center&quot;>Pz</th><th>Tipo taglio</th><th style=&quot;text-align:right&quot;>kg</th></tr></thead>
+      <thead><tr><th>Codice</th><th>Profilo</th><th>${isPvc?'Misura finita':'Misura scheda'}</th><th style=&quot;text-align:right&quot;>Taglio (cm)</th><th style=&quot;text-align:center&quot;>Pz</th><th>Tipo taglio</th><th style=&quot;text-align:right&quot;>kg</th></tr></thead>
       <tbody>${tabRighe}</tbody></table></div>
       <div class=&quot;costi-riga&quot; style=&quot;margin-top:6px&quot;><span>Peso netto dei profili tagliati</span><b>${kgNetto.toFixed(2)} kg</b></div>
       ${vetriHtml}
@@ -11136,12 +11191,12 @@ function buildBodyInfissoAlu(p){
   </div>
 
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:#55d39b&quot;>
-    <div class=&quot;st&quot; style=&quot;color:#55d39b&quot;>💶 Prezzo alluminio</div>
+    ${isPvc?pvcPrezziHtml(p):`<div class=&quot;st&quot; style=&quot;color:#55d39b&quot;>💶 Prezzo alluminio</div>
     <div class=&quot;g2&quot; style=&quot;align-items:end&quot;>
       <div><label class=&quot;fl&quot;>Prezzo del giorno (€/kg) — vale per tutti i lavori</label><input class=&quot;fi&quot; type=&quot;number&quot; min=&quot;0&quot; step=&quot;0.01&quot; value=&quot;${numOk(UPG.aluPrezzoKg,0)||''}&quot; placeholder=&quot;es. 6.20&quot; style=&quot;border-color:#55d39b&quot; onchange=&quot;salvaPrezzoAluKg(this.value)&quot;></div>
       <div class=&quot;nota-info&quot; style=&quot;margin:0&quot;>Costo profili = kg delle barre da 6,50 m da comprare × €/kg.</div>
     </div>
-    ${numOk(UPG.aluPrezzoKg,0)>0?&quot;&quot;:'<div style=&quot;font-size:11px;color:#f06b6b;margin-top:6px&quot;>⚠️ Prezzo al kg non inserito: i profili restano senza prezzo</div>'}
+    ${numOk(UPG.aluPrezzoKg,0)>0?&quot;&quot;:'<div style=&quot;font-size:11px;color:#f06b6b;margin-top:6px&quot;>⚠️ Prezzo al kg non inserito: i profili restano senza prezzo</div>'}`}
   </div>
 
   <div class=&quot;sec&quot; style=&quot;padding:10px;border-color:${Object.keys(p.infAcc||{}).length?'#f08a3c':'#172438'}&quot;>
@@ -11220,6 +11275,178 @@ function disegnaInfissoAlu(p,cvs,ctx,leg){
   if(leg)leg.innerHTML=`<span><span style=&quot;color:#64a8ff&quot;>■</span> ${esc(INF_SISTEMI[t.sis].breve)} tip. ${esc(t.n)} — vista interna</span><span>${esc(infColore(p))}</span>`;
 }
 
+// ═══════ INFISSI IN PVC — ALUPLAST IDEAL 4000 ═══════
+// Fonti: manuale tecnico aluplast IDEAL 4000 (cap. 02 profili, cap. 03 nodi quotati 1:1, ed. 2019-04),
+// benestare ATG 08/2624 (pesi kg/m dei profili e rinforzi), scheda tecnica e brochure IDEAL 4000.
+// aluplast non pubblica le distinte di taglio: le misure FINITE si ricavano dai nodi quotati (mm):
+//  · telaio 140x07: faccia 70; vetro fisso a 55 dal filo esterno (50 battuta + 5)
+//  · anta: filo esterno anta a 42 dal filo esterno telaio (tutte le ante, gioco 4)
+//      140x20 (77 mm): vetro a 62 dal filo anta (57+5) · 140x28 (97): 82 (77+5) · 140x31 (105): 90 (85+5)
+//  · montante/traverso 140x41 (84 mm): anta a 14 dall'asse, vetro fisso a 27 dall'asse (22+5)
+//  · riporto 140x66 (montante mobile, 64 mm): ante a 4 dall'asse
+//  · fermavetro 120846/120876: lungo quanto la battuta = vetro + 2×5
+// Saldatura: i pezzi a 45° si saldano, al taglio si aggiunge il sovrametallo per testa (Listino, della tua saldatrice).
+const PVC_PROF={ // codice → [descrizione, kg/m dal benestare ATG (0 = non dichiarato)]
+  &quot;140x07&quot;:[&quot;Telaio 70 mm&quot;,1.362],&quot;140x20&quot;:[&quot;Anta 77 mm&quot;,0],&quot;140x28&quot;:[&quot;Anta 97 mm&quot;,0],&quot;140x31&quot;:[&quot;Anta 105 mm&quot;,1.963],
+  &quot;140x41&quot;:[&quot;Montante / traverso 84 mm&quot;,1.382],&quot;140x66&quot;:[&quot;Riporto (montante mobile) 64 mm&quot;,1.310],
+  &quot;120846&quot;:[&quot;Fermavetro classic-line&quot;,0],&quot;120876&quot;:[&quot;Fermavetro round-line&quot;,0]
+};
+// Rinforzi in acciaio zincato (cap. 02): [codice, per profilo, forma, a, b, spessore] — peso calcolato dalla sezione
+const PVC_ACC=[
+  [&quot;249016&quot;,&quot;140x07&quot;,&quot;U&quot;,29,32,1.5],[&quot;249014&quot;,&quot;140x07&quot;,&quot;box&quot;,30,32,1.25],[&quot;249015&quot;,&quot;140x07&quot;,&quot;box&quot;,30,32,2.0],
+  [&quot;229027&quot;,&quot;140x20&quot;,&quot;U&quot;,35,27,1.5],[&quot;229028&quot;,&quot;140x20&quot;,&quot;U&quot;,35,27,2.0],[&quot;229023&quot;,&quot;140x20&quot;,&quot;U&quot;,35,27,1.5],[&quot;229025&quot;,&quot;140x20&quot;,&quot;U&quot;,35,27,1.0],
+  [&quot;229024&quot;,&quot;140x20&quot;,&quot;U&quot;,35,27,1.5],[&quot;229026&quot;,&quot;140x20&quot;,&quot;U&quot;,35,27,2.0],[&quot;249026&quot;,&quot;140x20&quot;,&quot;U&quot;,35,27,3.0],
+  [&quot;209192&quot;,&quot;140x28&quot;,&quot;U&quot;,40,47,1.25],[&quot;209193&quot;,&quot;140x28&quot;,&quot;U&quot;,40,47,2.0],
+  [&quot;249013&quot;,&quot;140x31&quot;,&quot;U&quot;,40,50,2.0],[&quot;249031&quot;,&quot;140x31&quot;,&quot;U&quot;,40,50,2.0],[&quot;229114&quot;,&quot;140x31&quot;,&quot;box&quot;,40,35,1.5],[&quot;229115&quot;,&quot;140x31&quot;,&quot;box&quot;,40,35,2.0],
+  [&quot;229098&quot;,&quot;140x41&quot;,&quot;box&quot;,35,20,2.5],[&quot;229101&quot;,&quot;140x41&quot;,&quot;box&quot;,35,20,1.5],[&quot;229100&quot;,&quot;140x41&quot;,&quot;box&quot;,35,20,1.25],
+  [&quot;229063&quot;,&quot;140x66&quot;,&quot;U&quot;,48,14.5,2.0]
+];
+function pvcAccKgm(r){const per=r[2]===&quot;box&quot;?2*(r[3]+r[4]):r[3]+2*r[4];return Math.round(per*r[5]*7.85)/1000;}
+const PVC_ANTE={&quot;140x20&quot;:{w:77,g:62,n:&quot;77 mm (finestra)&quot;},&quot;140x28&quot;:{w:97,g:82,n:&quot;97 mm (portafinestra)&quot;},&quot;140x31&quot;:{w:105,g:90,n:&quot;105 mm (grandi dimensioni)&quot;}};
+const PVC_T=70,PVC_SA=42,PVC_SM=14,PVC_GM=27,PVC_GT=55,PVC_RIP=4,PVC_BAT=50,PVC_BATM=22,PVC_FV=5;
+function pvcAnta(p){const t=infTipo(p);return PVC_ANTE[p.infPvcAnta]?p.infPvcAnta:(t.anta||&quot;140x20&quot;);}
+function pvcRinf(p,prof){const s=(p.infPvcRinf||{})[prof];return PVC_ACC.find(r=>r[0]===s&amp;&amp;r[1]===prof)||PVC_ACC.find(r=>r[1]===prof);}
+function pvcSald(){return Math.max(0,numOk(UPG.pvcSald,0));}
+function pvcSlOn(p){return infSlOn(p);}
+// Campi della finestra: [x0,x1] in larghezza e tipo (a=anta, f=fisso); bordi: 't' telaio, 'm' montante, 'r' riporto
+function pvcCampi(p){
+  const t=infTipo(p),L=numOk(p.infL,0),LF=numOk((p.infPar||{}).LF,0);
+  const c=t.campi;
+  if(c===&quot;F&quot;)return [{k:&quot;f&quot;,sx:&quot;t&quot;,dx:&quot;t&quot;,x0:0,x1:L}];
+  if(c===&quot;A&quot;)return [{k:&quot;a&quot;,sx:&quot;t&quot;,dx:&quot;t&quot;,x0:0,x1:L}];
+  if(c===&quot;AmA&quot;)return [{k:&quot;a&quot;,sx:&quot;t&quot;,dx:&quot;m&quot;,x0:0,x1:L/2},{k:&quot;a&quot;,sx:&quot;m&quot;,dx:&quot;t&quot;,x0:L/2,x1:L}];
+  if(c===&quot;ArA&quot;)return [{k:&quot;a&quot;,sx:&quot;t&quot;,dx:&quot;r&quot;,x0:0,x1:L/2},{k:&quot;a&quot;,sx:&quot;r&quot;,dx:&quot;t&quot;,x0:L/2,x1:L}];
+  if(c===&quot;AmAmA&quot;)return [{k:&quot;a&quot;,sx:&quot;t&quot;,dx:&quot;m&quot;,x0:0,x1:L/3},{k:&quot;a&quot;,sx:&quot;m&quot;,dx:&quot;m&quot;,x0:L/3,x1:2*L/3},{k:&quot;a&quot;,sx:&quot;m&quot;,dx:&quot;t&quot;,x0:2*L/3,x1:L}];
+  if(c===&quot;FmA&quot;)return [{k:&quot;f&quot;,sx:&quot;t&quot;,dx:&quot;m&quot;,x0:0,x1:LF},{k:&quot;a&quot;,sx:&quot;m&quot;,dx:&quot;t&quot;,x0:LF,x1:L}];
+  if(c===&quot;FmF&quot;)return [{k:&quot;f&quot;,sx:&quot;t&quot;,dx:&quot;m&quot;,x0:0,x1:L/2},{k:&quot;f&quot;,sx:&quot;m&quot;,dx:&quot;t&quot;,x0:L/2,x1:L}];
+  return [];
+}
+// distanze dal bordo del campo: anta (filo anta) e vetro fisso (filo vetro)
+const _pvcDA=b=>b===&quot;t&quot;?PVC_SA:(b===&quot;m&quot;?PVC_SM:PVC_RIP);
+const _pvcDF=b=>b===&quot;t&quot;?PVC_GT:PVC_GM;
+function pvcRighe(p){
+  const t=infTipo(p),L=numOk(p.infL,0),H=numOk(p.infH,0),W=pvcSald(),aCod=pvcAnta(p),AN=PVC_ANTE[aCod];
+  const fv=(p.infFv||'f')==='v'?&quot;120876&quot;:&quot;120846&quot;;
+  const sl=pvcSlOn(p),HS=sl?numOk(p.infSl.h,0):0,slV=sl&amp;&amp;infSlTipo(p)==='vasistas';
+  const arco=infArcoOn(p);
+  const out=[];
+  const R=(cod,descr,f,mm,q,taglio,extra)=>{mm=Math.round(mm*10)/10;if(mm>0&amp;&amp;q>0){const P=PVC_PROF[cod];
+    out.push(Object.assign({cod,descr,f,mm,q,taglio,kgm:P?P[1]:0,lbl:descr},extra||{}));}};
+  const RA=(prof,descr,f,mm,q)=>{const r=pvcRinf(p,prof);if(!r)return;mm=Math.round(mm*10)/10;if(mm>0&amp;&amp;q>0)
+    out.push({cod:r[0],descr:&quot;Rinforzo acciaio &quot;+descr,f,mm,q,taglio:&quot;r&quot;,kgm:pvcAccKgm(r),lbl:&quot;Rinforzo &quot;+descr,acciaio:true});};
+  const sv=W>0?&quot; + 2×&quot;+fmtN(W)+&quot; sald.&quot;:&quot;&quot;;
+  // ── telaio: 4 lati saldati a 45° (in testa calandrato con l'arco) ──
+  if(arco){const sv0=arcoSegLen(p,L,0,L);R(&quot;140x07&quot;,&quot;Telaio in testa (calandrato)&quot;,&quot;sviluppo arco&quot;+sv,sv0+2*W,1,&quot;c&quot;,{arco:true,dritto:L});R(&quot;140x07&quot;,&quot;Telaio&quot;,&quot;L&quot;+sv,L+2*W,1,&quot;a&quot;);}
+  else R(&quot;140x07&quot;,&quot;Telaio&quot;,&quot;L&quot;+sv,L+2*W,2,&quot;a&quot;);
+  R(&quot;140x07&quot;,&quot;Telaio&quot;,&quot;H&quot;+sv,H+2*W,2,&quot;a&quot;);
+  RA(&quot;140x07&quot;,&quot;telaio&quot;,&quot;L − 140&quot;,L-2*PVC_T,arco?1:2);RA(&quot;140x07&quot;,&quot;telaio&quot;,&quot;H − 140&quot;,H-2*PVC_T,2);
+  // ── zona bassa (sotto il traverso del sopraluce) ──
+  const Hb=sl?H-HS:H; // dal filo esterno in basso all'asse del traverso
+  const bTop=sl?&quot;m&quot;:&quot;t&quot;;
+  const fb=(lato)=>lato===&quot;t&quot;?&quot;t&quot;:&quot;m&quot;;
+  const campi=pvcCampi(p);
+  // montanti 140x41 fra telaio (o traverso) e telaio: misura alla battuta (fresati in testa)
+  const nMont=campi.filter((c,i)=>i>0&amp;&amp;c.sx===&quot;m&quot;).length;
+  if(nMont){const lm=Hb-PVC_BAT-(sl?PVC_BATM:PVC_BAT);
+    R(&quot;140x41&quot;,&quot;Montante (teste fresate)&quot;,sl?&quot;H − HS − 72&quot;:&quot;H − 100&quot;,lm,nMont,&quot;r&quot;);RA(&quot;140x41&quot;,&quot;montante&quot;,sl?&quot;H − HS − 112&quot;:&quot;H − 140&quot;,lm-40,nMont);}
+  const vetri=[];
+  let nAnte=0;
+  campi.forEach((c,i)=>{
+    const w=c.x1-c.x0;
+    if(c.k===&quot;a&quot;){
+      const aw=w-_pvcDA(c.sx)-_pvcDA(c.dx),ah=Hb-PVC_SA-(sl?PVC_SM:PVC_SA);
+      nAnte++;
+      R(aCod,&quot;Anta &quot;+(i+1),&quot;anta &quot;+cmv(aw)+sv,aw+2*W,2,&quot;a&quot;);R(aCod,&quot;Anta &quot;+(i+1),&quot;anta &quot;+cmv(ah)+sv,ah+2*W,2,&quot;a&quot;);
+      RA(aCod,&quot;anta &quot;+(i+1),&quot;anta − &quot;+(2*AN.w),aw-2*AN.w,2);RA(aCod,&quot;anta &quot;+(i+1),&quot;anta − &quot;+(2*AN.w),ah-2*AN.w,2);
+      const gw=aw-2*AN.g,gh=ah-2*AN.g;
+      vetri.push([&quot;Vetro anta &quot;+(i+1),gw,gh,1]);
+      R(fv,&quot;Fermavetro anta &quot;+(i+1),&quot;vetro + 10&quot;,gw+2*PVC_FV,2,&quot;a&quot;);R(fv,&quot;Fermavetro anta &quot;+(i+1),&quot;vetro + 10&quot;,gh+2*PVC_FV,2,&quot;a&quot;);
+    } else {
+      const gw=w-_pvcDF(c.sx)-_pvcDF(c.dx),gh=Hb-PVC_GT-(sl?PVC_GM:PVC_GT);
+      const top=(!sl&amp;&amp;arco);
+      vetri.push([&quot;Vetro fisso &quot;+(i+1),gw,gh,1,top?{x0:c.x0+_pvcDF(c.sx),x1:c.x1-_pvcDF(c.dx)}:null]);
+      if(top){const C=L,xa=c.x0+_pvcDF(c.sx),xb=c.x1-_pvcDF(c.dx),rap=arcoSegLen(p,C,xa,xb)/Math.max(1e-6,xb-xa);
+        R(fv,&quot;Fermavetro in testa (calandrato)&quot;,&quot;sviluppo&quot;,(gw+2*PVC_FV)*rap,1,&quot;c&quot;,{arco:true,dritto:gw+2*PVC_FV});R(fv,&quot;Fermavetro fisso &quot;+(i+1),&quot;vetro + 10&quot;,gw+2*PVC_FV,1,&quot;a&quot;);}
+      else R(fv,&quot;Fermavetro fisso &quot;+(i+1),&quot;vetro + 10&quot;,gw+2*PVC_FV,2,&quot;a&quot;);
+      R(fv,&quot;Fermavetro fisso &quot;+(i+1),&quot;vetro + 10&quot;,gh+2*PVC_FV,2,&quot;a&quot;);
+    }
+  });
+  // riporto 140x66 sull'anta: lungo quanto l'anta, chiuso dai tappi 640066
+  const nRip=campi.filter((c,i)=>i>0&amp;&amp;c.sx===&quot;r&quot;).length;
+  if(nRip){const ah=Hb-PVC_SA-(sl?PVC_SM:PVC_SA);R(&quot;140x66&quot;,&quot;Riporto (con tappi 640066)&quot;,&quot;H anta&quot;,ah,nRip,&quot;r&quot;);RA(&quot;140x66&quot;,&quot;riporto&quot;,&quot;H anta&quot;,ah,nRip);}
+  // ── sopraluce: traverso 140x41 + fisso o vasistas ──
+  if(sl){
+    R(&quot;140x41&quot;,&quot;Traverso sopraluce (teste fresate)&quot;,&quot;L − 100&quot;,L-2*PVC_BAT,1,&quot;r&quot;);RA(&quot;140x41&quot;,&quot;traverso&quot;,&quot;L − 140&quot;,L-2*PVC_T,1);
+    if(slV){
+      const aw=L-2*PVC_SA,ah=HS-PVC_SA-PVC_SM;
+      R(aCod,&quot;Anta sopraluce vasistas&quot;,&quot;L − 84&quot;+sv,aw+2*W,2,&quot;a&quot;);R(aCod,&quot;Anta sopraluce vasistas&quot;,&quot;HS − 56&quot;+sv,ah+2*W,2,&quot;a&quot;);
+      RA(aCod,&quot;anta sopraluce&quot;,&quot;anta − &quot;+(2*AN.w),aw-2*AN.w,2);RA(aCod,&quot;anta sopraluce&quot;,&quot;anta − &quot;+(2*AN.w),ah-2*AN.w,2);
+      const gw=aw-2*AN.g,gh=ah-2*AN.g;vetri.push([&quot;Vetro sopraluce vasistas&quot;,gw,gh,1]);
+      R(fv,&quot;Fermavetro sopraluce&quot;,&quot;vetro + 10&quot;,gw+2*PVC_FV,2,&quot;a&quot;);R(fv,&quot;Fermavetro sopraluce&quot;,&quot;vetro + 10&quot;,gh+2*PVC_FV,2,&quot;a&quot;);
+    } else {
+      const gw=L-2*PVC_GT,gh=HS-PVC_GT-PVC_GM;vetri.push([&quot;Vetro sopraluce fisso&quot;,gw,gh,1,arco?{x0:PVC_GT,x1:L-PVC_GT}:null]);
+      if(arco){const rap=arcoSegLen(p,L,PVC_GT,L-PVC_GT)/Math.max(1e-6,L-2*PVC_GT);
+        R(fv,&quot;Fermavetro sopraluce in testa (calandrato)&quot;,&quot;sviluppo&quot;,(gw+2*PVC_FV)*rap,1,&quot;c&quot;,{arco:true,dritto:gw+2*PVC_FV});R(fv,&quot;Fermavetro sopraluce&quot;,&quot;vetro + 10&quot;,gw+2*PVC_FV,1,&quot;a&quot;);}
+      else R(fv,&quot;Fermavetro sopraluce&quot;,&quot;vetro + 10&quot;,gw+2*PVC_FV,2,&quot;a&quot;);
+      R(fv,&quot;Fermavetro sopraluce&quot;,&quot;vetro + 10&quot;,gh+2*PVC_FV,2,&quot;a&quot;);
+    }
+  }
+  out._vetri=vetri;out._nMont=nMont+(sl?1:0);out._nRip=nRip;out._nAnte=nAnte+(slV?1:0);
+  return out;
+}
+function pvcVetri(p){
+  const r=pvcRighe(p),arco=infArcoOn(p),f=arco?frecciaCima(p,numOk(p.infL,0)):0;
+  return r._vetri.map(x=>{const w=Math.round(x[1]*10)/10,h=Math.round(x[2]*10)/10,sag=!!x[4];
+    return {tipo:'vetro',nome:x[0],w,h,hMax:sag?Math.round((h+f)*10)/10:h,q:x[3],sagoma:sag};});
+}
+const PVC_ACC_VOCI=[
+  [&quot;640900&quot;,&quot;Connettore montante / traverso&quot;,&quot;pz&quot;],[&quot;640941&quot;,&quot;Pezzo ausiliario connettore&quot;,&quot;pz&quot;],
+  [&quot;640066&quot;,&quot;Tappo di chiusura riporto&quot;,&quot;pz&quot;],[&quot;640031&quot;,&quot;Connettore angolare (con 640938)&quot;,&quot;pz&quot;],
+  [&quot;640311&quot;,&quot;Spessore vetro t=5 mm&quot;,&quot;pz&quot;],[&quot;640320&quot;,&quot;Spessore vetro t=5 mm (largo)&quot;,&quot;pz&quot;],[&quot;640301&quot;,&quot;Spessore vetro t=0 mm&quot;,&quot;pz&quot;],
+  [&quot;FD21&quot;,&quot;Vite autoforante FD21 3,9×19 per rinforzi&quot;,&quot;pz&quot;],[&quot;446071&quot;,&quot;Set guarnizioni soglia&quot;,&quot;pz&quot;]
+];
+// quantità che si ricavano dalla costruzione: 2 connettori per montante/traverso, 2 tappi per riporto
+function pvcAccSugg(p,cod){
+  if(!(numOk(p.infL,0)>0&amp;&amp;numOk(p.infH,0)>0))return null;
+  const r=pvcRighe(p);
+  if(cod===&quot;640900&quot;)return r._nMont?2*r._nMont:null;
+  if(cod===&quot;640066&quot;)return r._nRip?2*r._nRip:null;
+  return null;
+}
+function pvcPrezzi(){try{return JSON.parse(localStorage.getItem(&quot;fc_pvc_prezzi&quot;)||&quot;{}&quot;)||{};}catch(e){return {};}}
+function pvcSetPrezzo(cod,v){const P=pvcPrezzi();P[cod]=Math.max(0,parseFloat(v)||0);try{localStorage.setItem(&quot;fc_pvc_prezzi&quot;,JSON.stringify(P));}catch(e){}renderTutto();}
+function renderPvcListino(){
+  const el=document.getElementById(&quot;pvc-listino&quot;);if(!el)return;
+  const P=pvcPrezzi();
+  const riga=(cod,nome,kgm)=>`<div style=&quot;display:flex;align-items:center;gap:8px;margin-bottom:5px&quot;>
+    <span style=&quot;font-size:11px;color:#91a2bb;min-width:56px&quot;>${esc(cod)}</span><span style=&quot;flex:1;min-width:0;font-size:12px&quot;>${esc(nome)}${kgm>0?` <span style=&quot;font-size:10px;color:#91a2bb&quot;>${kgm.toFixed(3)} kg/m</span>`:''}</span>
+    <input class=&quot;fi&quot; type=&quot;number&quot; step=&quot;0.01&quot; min=&quot;0&quot; value=&quot;${P[cod]||''}&quot; placeholder=&quot;0&quot; style=&quot;width:90px;text-align:right&quot; onchange=&quot;pvcSetPrezzo('${esc(cod)}',this.value)&quot;>
+    <span style=&quot;font-size:11px;color:#91a2bb&quot;>€/m</span></div>`;
+  el.innerHTML=Object.keys(PVC_PROF).map(k=>riga(k,PVC_PROF[k][0],PVC_PROF[k][1])).join(&quot;&quot;)
+    +`<div style=&quot;font-size:11px;color:#8a96b0;margin:8px 0 5px&quot;>Rinforzi in acciaio</div>`
+    +PVC_ACC.map(r=>riga(r[0],&quot;rinforzo per &quot;+r[1]+&quot; (&quot;+(r[2]===&quot;box&quot;?&quot;tubolare &quot;:&quot;a U &quot;)+r[3]+&quot;×&quot;+r[4]+&quot; sp.&quot;+r[5]+&quot;)&quot;,pvcAccKgm(r))).join(&quot;&quot;);
+}
+
+function pvcCtrlHtml(p,opt){
+  const t=infTipo(p),a=pvcAnta(p),W=pvcSald();
+  const sel=(prof,lbl)=>{const r=pvcRinf(p,prof);return `<div><label class=&quot;fl&quot;>${lbl}</label><select class=&quot;fi&quot; onchange=&quot;setInfPvcRinf(${p.id},'${prof}',this.value)&quot;>
+    ${PVC_ACC.filter(x=>x[1]===prof).map(x=>opt(x[0],x[0]+' — '+(x[2]==='box'?'tubolare ':'a U ')+x[3]+'×'+x[4]+' sp.'+x[5],r&amp;&amp;r[0]===x[0])).join(&quot;&quot;)}</select></div>`;};
+  const r=(numOk(p.infL,0)>0&amp;&amp;numOk(p.infH,0)>0)?pvcRighe(p):null;
+  return `<div class=&quot;g2 mb8&quot;>
+      <div><label class=&quot;fl&quot;>Anta</label><select class=&quot;fi&quot; onchange=&quot;setProp(${p.id},'infPvcAnta',this.value)&quot;>
+        ${Object.keys(PVC_ANTE).map(k=>opt(k,k+' — '+PVC_ANTE[k].n,k===a)).join(&quot;&quot;)}</select></div>
+      ${sel('140x07','Rinforzo telaio')}${sel(a,'Rinforzo anta')}
+      ${(r&amp;&amp;r._nMont)?sel('140x41','Rinforzo montante / traverso'):''}${(r&amp;&amp;r._nRip)?sel('140x66','Rinforzo riporto'):''}
+    </div>
+    ${W>0?'':'<div style=&quot;font-size:11px;color:#f06b6b;margin-bottom:8px&quot;>⚠️ Sovrametallo di saldatura non inserito (🔧 Listino → Infissi PVC): i tagli dei pezzi saldati sono alla misura finita.</div>'}`;
+}
+function setInfPvcRinf(id,prof,cod){const p=pezzi.find(x=>x.id===id);if(!p)return;p.infPvcRinf=Object.assign({},p.infPvcRinf||{});p.infPvcRinf[prof]=cod;renderTutto();}
+function pvcPrezziHtml(p){
+  const P=pvcPrezzi(),cod=[...new Set(pvcRighe(p).map(r=>r.cod))],manca=cod.filter(c=>!(numOk(P[c],0)>0));
+  return `<div class=&quot;st&quot; style=&quot;color:#55d39b&quot;>💶 Prezzi PVC</div>
+    <div class=&quot;nota-info&quot; style=&quot;margin:0&quot;>Profili e rinforzi a €/m dal tuo listino (🔧 Listino → Infissi PVC). Costo = barre da comprare × lunghezza barra × €/m.</div>
+    ${manca.length?'<div style=&quot;font-size:11px;color:#f06b6b;margin-top:6px&quot;>⚠️ Senza prezzo: '+manca.map(esc).join(', ')+'</div>':''}`;
+}
 // ═══════ UPGRADE: FERRAMENTA E ACCESSORI (catalogo personale con prezzi manuali) ═══════
 const FERR_DEFAULT=[
   {id:&quot;f_cern&quot;,nome:&quot;Cerniera&quot;,prezzo:0},
