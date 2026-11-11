@@ -298,7 +298,7 @@ html,body{background:var(--ndx-bg);}
 </div>
 
 <aside class="ndx-side">
-  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.29.2</span></div></div>
+  <div class="ndx-brand"><div class="ndx-logo">I</div><div><b>IronDesk</b><small>Officina</small><span class="ndx-ver">v1.30.0</span></div></div>
   <nav class="ndx-nav">
     <button class="ndx-nav-btn active" data-view="dashboard">⌂ Dashboard</button>
     <button class="ndx-nav-btn" data-view="ferrocalc">🔧 FerroCalc</button>
@@ -310,7 +310,7 @@ html,body{background:var(--ndx-bg);}
   </nav>
   <div class="ndx-foot">Dati salvati su questo dispositivo</div>
 </aside>
-<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.29.2</span></header>
+<header class="ndx-top"><div><h1 id="ndx-title">Dashboard</h1><p id="ndx-sub">Il tuo lavoro, in un colpo d'occhio.</p></div><span class="ndx-ver ndx-ver-m">v1.30.0</span></header>
 <section id="ndx-dashboard">
   <div class="ndx-ask">
     <div class="ndx-ask-q">👋 Cosa vuoi fare?</div>
@@ -9274,6 +9274,13 @@ var SYNC = (function(){
   // Quali chiavi localStorage sincronizzare in ciascun file (impostata da ogni pagina)
   var CHIAVI = [];
   var TABELLA = 'ferrocalc_sync';
+  // Regole dal 12/11/2026 (IronDesk 1.30): stesso preventivo/lavoro su due dispositivi -> vince la modifica PIU' RECENTE
+  // (campo &quot;mod&quot;), le cancellazioni viaggiano (segnaposto in idu_cancellati) e prima di mandare su si unisce col cloud.
+  // Prima vinceva sempre il dispositivo: una modifica fatta sul PC non arrivava mai al telefono (e viceversa).
+  var IMPRONTE = 'sync_impronte';        // per chiave: { record: impronta } dell'ultima volta che si e' sincronizzato
+  var CANC = 'sync_cancellati';          // per chiave: { record: quando e' stato cancellato }
+  var CHIAVE_CANC = 'idu_cancellati';    // le cancellazioni sul cloud (comuni a FerroCalc, Preventivi e Resoconto)
+  var GIORNI_CANC = 180;
 
   function getUrl(){ return (localStorage.getItem(CFG_URL_KEY)||'').trim().replace(/\/rest\/v1\/?$/i,'').replace(/\/+$/,''); }
   function getKey(){ return (localStorage.getItem(CFG_KEY_KEY)||'').trim(); }
@@ -9300,12 +9307,69 @@ var SYNC = (function(){
     return h;
   }
 
-  // Carica UNA chiave sul cloud (upsert)
-  function pushChiave(chiave){
-    if(!configurato()) return Promise.resolve({ok:false, reason:'non configurato'});
-    var dati = localStorage.getItem(chiave);
-    if(dati===null) return Promise.resolve({ok:true, skipped:true});
-    var body = [{ chiave: chiave, dati: JSON.parse(dati||'null'), aggiornato_il: new Date().toISOString() }];
+  // ---------- impronte, modifiche e cancellazioni ----------
+  function leggi(k, def){ try{ var v=JSON.parse(localStorage.getItem(k)||'null'); return v==null?def:v; }catch(e){ return def; } }
+  function scrivi(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+  // testo stabile: stesse cose -> stesso testo, qualunque sia l'ordine dei campi (il cloud li restituisce riordinati)
+  function stabile(v){
+    if(v===null||typeof v!=='object') return JSON.stringify(v);
+    if(Array.isArray(v)) return '['+v.map(stabile).join(',')+']';
+    return '{'+Object.keys(v).sort().filter(function(k){ return v[k]!==undefined; }).map(function(k){ return JSON.stringify(k)+':'+stabile(v[k]); }).join(',')+'}';
+  }
+  function senzaMod(x){ var o={}, k; for(k in x){ if(k!=='mod') o[k]=x[k]; } return o; }
+  function impronta(s){ var h1=0xdeadbeef, h2=0x41c6ce57, i, c; for(i=0;i<s.length;i++){ c=s.charCodeAt(i); h1=Math.imul(h1^c,2654435761); h2=Math.imul(h2^c,1597334677); }
+    h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909); h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+    return (h2>>>0).toString(36)+(h1>>>0).toString(36); }
+  // un record ha un'identita' (id o numero) oppure e' identificato dal suo contenuto (rubrica, modelli)
+  function chiaveRec(x){ return x.id!=null ? 'id:'+x.id : (x.numero ? 'n:'+x.numero : 'v:'+stabile(senzaMod(x))); }
+  function improntaRec(x){ return impronta(stabile(senzaMod(x))); }
+  function calcolaImpronte(arr){ var o={}; (arr||[]).forEach(function(x){ if(x&amp;&amp;typeof x==='object') o[chiaveRec(x)]=improntaRec(x); }); return o; }
+
+  // Cosa e' cambiato QUI dall'ultima sincronizzazione: i record cambiati prendono l'ora (&quot;mod&quot;), quelli spariti
+  // diventano cancellazioni. La prima volta (nessuna impronta) si prende solo la fotografia, senza toccare niente.
+  function segnaModifiche(chiave){
+    var arr=leggi(chiave,null); if(!Array.isArray(arr)) return;
+    var imp=leggi(IMPRONTE,{}), canc=leggi(CANC,{}), ora=Date.now(), prima=imp[chiave];
+    var adesso=calcolaImpronte(arr);
+    if(prima){
+      var cambiati=false;
+      arr.forEach(function(x){ if(!x||typeof x!=='object') return; var k=chiaveRec(x); if(k.indexOf('v:')!==0 &amp;&amp; prima[k]!==adesso[k]){ x.mod=ora; cambiati=true; } });
+      Object.keys(prima).forEach(function(k){ if(!(k in adesso)){ canc[chiave]=canc[chiave]||{}; canc[chiave][k]=ora; } });
+      if(cambiati) scrivi(chiave, arr);
+      scrivi(CANC, canc);
+    }
+    imp[chiave]=adesso; scrivi(IMPRONTE, imp);
+  }
+  function fotografa(chiave, arr){ var imp=leggi(IMPRONTE,{}); imp[chiave]=calcolaImpronte(arr); scrivi(IMPRONTE, imp); }
+
+  // Unisce i dati del cloud con quelli del dispositivo: stesso record -> vince quello modificato per ultimo
+  // (a parita', o senza ora, quello del dispositivo); i record cancellati altrove spariscono, a meno che
+  // qualcuno li abbia modificati DOPO la cancellazione.
+  function unisciDati(locale, remoto, chiave){
+    if(!Array.isArray(remoto)) return remoto;          // configurazioni e contatori: resta il comportamento di prima
+    if(!Array.isArray(locale)) locale=[];
+    var m={}, ordine=[], canc=(leggi(CANC,{})[chiave])||{};
+    function raccogli(arr, delCloud){
+      for(var i=0;i<arr.length;i++){
+        var x=arr[i]; if(!x||typeof x!=='object') continue;
+        var k=chiaveRec(x);
+        if(!m[k]){ m[k]=x; ordine.push(k); }
+        else if(delCloud &amp;&amp; (x.mod||0) > (m[k].mod||0)) m[k]=x;
+      }
+    }
+    raccogli(locale,false); raccogli(remoto,true);
+    return ordine.filter(function(k){ return !(canc[k] &amp;&amp; canc[k] >= (m[k].mod||0)); }).map(function(k){ return m[k]; });
+  }
+
+  function leggiCloud(chiave){
+    var u = getUrl()+'/rest/v1/'+TABELLA+'?chiave=eq.'+encodeURIComponent(chiave)+'&amp;select=dati,aggiornato_il';
+    return fetch(u, { headers:headers() }).then(function(r){
+      if(!r.ok) return {ok:false, status:r.status};
+      return r.json().then(function(rows){ return rows &amp;&amp; rows.length ? {ok:true, trovato:true, dati:rows[0].dati, aggiornato_il:rows[0].aggiornato_il} : {ok:true, trovato:false}; });
+    });
+  }
+  function spedisci(chiave, valore){
+    var body = [{ chiave: chiave, dati: valore, aggiornato_il: new Date().toISOString() }];
     var testo = JSON.stringify(body);
     // ATTENZIONE: keepalive regge al massimo 64 KB. Con i preventivi (disegni compresi)
     // si supera subito e la richiesta fallisce sempre: i dati non salivano mai sul cloud.
@@ -9322,46 +9386,63 @@ var SYNC = (function(){
     }).catch(function(e){ return {ok:false, error:String(e)}; });
   }
 
-  // Unisce i dati del cloud con quelli già sul dispositivo, per id: quello che hai
-  // salvato qui non viene MAI cancellato da una copia vecchia del telefono (e viceversa).
-  function unisciDati(locale, remoto){
-    if(!Array.isArray(remoto)) return remoto;          // configurazioni e contatori: resta il comportamento di prima
-    if(!Array.isArray(locale)) return remoto;
-    var m={}, ordine=[], i, x, k;
-    function raccogli(arr){
-      for(i=0;i<arr.length;i++){
-        x=arr[i]; if(!x||typeof x!=='object') continue;
-        k=String(x.id!=null?x.id:(x.numero||JSON.stringify(x)));
-        if(!m[k]){ m[k]=x; ordine.push(k); }
-      }
-    }
-    raccogli(locale); raccogli(remoto);               // a parità di id vince quello del dispositivo
-    return ordine.map(function(kk){ return m[kk]; });
+  // Le cancellazioni: si uniscono (per ogni record vale la piu' recente) e si tengono 180 giorni
+  function sincronizzaCancellati(){
+    if(!configurato()) return Promise.resolve({ok:false, reason:'non configurato'});
+    return leggiCloud(CHIAVE_CANC).then(function(r){
+      if(!r.ok) return r;
+      var loc=leggi(CANC,{}), rem=(r.trovato&amp;&amp;r.dati&amp;&amp;typeof r.dati==='object'&amp;&amp;!Array.isArray(r.dati))?r.dati:{}, limite=Date.now()-GIORNI_CANC*864e5, out={};
+      [loc,rem].forEach(function(src){ Object.keys(src).forEach(function(ch){ Object.keys(src[ch]||{}).forEach(function(k){
+        var t=src[ch][k]; if(!(t>limite)) return; out[ch]=out[ch]||{}; if(!(out[ch][k]>=t)) out[ch][k]=t; }); }); });
+      scrivi(CANC, out);
+      if(stabile(out)===stabile(rem)) return {ok:true};
+      return spedisci(CHIAVE_CANC, out);
+    }).catch(function(e){ return {ok:false, error:String(e)}; });
   }
+
   // Scarica UNA chiave dal cloud e la unisce a quella locale
   function pullChiave(chiave){
     if(!configurato()) return Promise.resolve({ok:false, reason:'non configurato'});
-    var u = getUrl()+'/rest/v1/'+TABELLA+'?chiave=eq.'+encodeURIComponent(chiave)+'&amp;select=dati,aggiornato_il';
-    return fetch(u, { headers:headers() })
-      .then(function(r){ if(!r.ok) return {ok:false,status:r.status}; return r.json().then(function(rows){
-        if(rows &amp;&amp; rows.length){
-          var loc=null; try{ loc=JSON.parse(localStorage.getItem(chiave)||'null'); }catch(e){}
-          var fusi=unisciDati(loc, rows[0].dati);
-          if(fusi!==null&amp;&amp;fusi!==undefined) localStorage.setItem(chiave, JSON.stringify(fusi));
-          return {ok:true, trovato:true, aggiornato_il:rows[0].aggiornato_il};
-        }
-        return {ok:true, trovato:false};
-      });})
-      .catch(function(e){ return {ok:false, error:String(e)}; });
+    segnaModifiche(chiave);
+    return leggiCloud(chiave).then(function(r){
+      if(!r.ok||!r.trovato) return r.ok?{ok:true, trovato:false}:r;
+      var loc=leggi(chiave,null);
+      var fusi=unisciDati(loc, r.dati, chiave);
+      if(fusi!==null&amp;&amp;fusi!==undefined){
+        var cambiato = Array.isArray(fusi) ? stabile(calcolaImpronte(loc))!==stabile(calcolaImpronte(fusi)) : stabile(loc)!==stabile(fusi);
+        localStorage.setItem(chiave, JSON.stringify(fusi)); if(Array.isArray(fusi)) fotografa(chiave, fusi);
+        // chi tiene i dati in memoria (es. il Resoconto) li deve ricaricare, altrimenti al prossimo salvataggio
+        // riscriverebbe la copia vecchia e farebbe sparire quello arrivato dagli altri dispositivi
+        if(cambiato){ try{ window.dispatchEvent(new CustomEvent('sync-dati',{detail:{chiave:chiave}})); }catch(e){} }
+      }
+      return {ok:true, trovato:true, aggiornato_il:r.aggiornato_il, unito:Array.isArray(fusi)};
+    }).catch(function(e){ return {ok:false, error:String(e)}; });
+  }
+
+  // Carica UNA chiave sul cloud (upsert). Gli elenchi prima si uniscono con quello che c'e' sul cloud,
+  // cosi' non si cancella il lavoro salvato nel frattempo dall'altro dispositivo.
+  function pushChiave(chiave){
+    if(!configurato()) return Promise.resolve({ok:false, reason:'non configurato'});
+    var dati = localStorage.getItem(chiave);
+    if(dati===null) return Promise.resolve({ok:true, skipped:true});
+    var valore=null; try{ valore=JSON.parse(dati||'null'); }catch(e){}
+    var prima = Array.isArray(valore) ? pullChiave(chiave) : Promise.resolve({ok:true});
+    return prima.then(function(){
+      var ora=localStorage.getItem(chiave);
+      return spedisci(chiave, JSON.parse(ora||'null'));
+    });
   }
 
   // Push di tutte le chiavi
+  // prima si registrano le modifiche e le cancellazioni fatte qui, poi si scambiano le cancellazioni col cloud
   function pushTutto(){
-    return Promise.all(CHIAVI.map(pushChiave));
+    CHIAVI.forEach(segnaModifiche);
+    return sincronizzaCancellati().then(function(){ return Promise.all(CHIAVI.map(pushChiave)); });
   }
   // Pull di tutte le chiavi
   function pullTutto(){
-    return Promise.all(CHIAVI.map(pullChiave));
+    CHIAVI.forEach(segnaModifiche);
+    return sincronizzaCancellati().then(function(){ return Promise.all(CHIAVI.map(pullChiave)); });
   }
 
   // Test connessione
@@ -9383,6 +9464,7 @@ var SYNC = (function(){
     setConfig:setConfig, getUrl:getUrl, getKey:getKey, configurato:configurato,
     pushChiave:pushChiave, pullChiave:pullChiave,
     pushTutto:pushTutto, pullTutto:pullTutto,
+    sincronizzaCancellati:sincronizzaCancellati, segnaModifiche:segnaModifiche, unisciDati:unisciDati,
     testConnessione:testConnessione
   };
 })();
@@ -13114,6 +13196,13 @@ var SYNC = (function(){
   // Quali chiavi localStorage sincronizzare in ciascun file (impostata da ogni pagina)
   var CHIAVI = [];
   var TABELLA = 'ferrocalc_sync';
+  // Regole dal 12/11/2026 (IronDesk 1.30): stesso preventivo/lavoro su due dispositivi -> vince la modifica PIU' RECENTE
+  // (campo &quot;mod&quot;), le cancellazioni viaggiano (segnaposto in idu_cancellati) e prima di mandare su si unisce col cloud.
+  // Prima vinceva sempre il dispositivo: una modifica fatta sul PC non arrivava mai al telefono (e viceversa).
+  var IMPRONTE = 'sync_impronte';        // per chiave: { record: impronta } dell'ultima volta che si e' sincronizzato
+  var CANC = 'sync_cancellati';          // per chiave: { record: quando e' stato cancellato }
+  var CHIAVE_CANC = 'idu_cancellati';    // le cancellazioni sul cloud (comuni a FerroCalc, Preventivi e Resoconto)
+  var GIORNI_CANC = 180;
 
   function getUrl(){ return (localStorage.getItem(CFG_URL_KEY)||'').trim().replace(/\/rest\/v1\/?$/i,'').replace(/\/+$/,''); }
   function getKey(){ return (localStorage.getItem(CFG_KEY_KEY)||'').trim(); }
@@ -13140,12 +13229,69 @@ var SYNC = (function(){
     return h;
   }
 
-  // Carica UNA chiave sul cloud (upsert)
-  function pushChiave(chiave){
-    if(!configurato()) return Promise.resolve({ok:false, reason:'non configurato'});
-    var dati = localStorage.getItem(chiave);
-    if(dati===null) return Promise.resolve({ok:true, skipped:true});
-    var body = [{ chiave: chiave, dati: JSON.parse(dati||'null'), aggiornato_il: new Date().toISOString() }];
+  // ---------- impronte, modifiche e cancellazioni ----------
+  function leggi(k, def){ try{ var v=JSON.parse(localStorage.getItem(k)||'null'); return v==null?def:v; }catch(e){ return def; } }
+  function scrivi(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+  // testo stabile: stesse cose -> stesso testo, qualunque sia l'ordine dei campi (il cloud li restituisce riordinati)
+  function stabile(v){
+    if(v===null||typeof v!=='object') return JSON.stringify(v);
+    if(Array.isArray(v)) return '['+v.map(stabile).join(',')+']';
+    return '{'+Object.keys(v).sort().filter(function(k){ return v[k]!==undefined; }).map(function(k){ return JSON.stringify(k)+':'+stabile(v[k]); }).join(',')+'}';
+  }
+  function senzaMod(x){ var o={}, k; for(k in x){ if(k!=='mod') o[k]=x[k]; } return o; }
+  function impronta(s){ var h1=0xdeadbeef, h2=0x41c6ce57, i, c; for(i=0;i<s.length;i++){ c=s.charCodeAt(i); h1=Math.imul(h1^c,2654435761); h2=Math.imul(h2^c,1597334677); }
+    h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909); h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+    return (h2>>>0).toString(36)+(h1>>>0).toString(36); }
+  // un record ha un'identita' (id o numero) oppure e' identificato dal suo contenuto (rubrica, modelli)
+  function chiaveRec(x){ return x.id!=null ? 'id:'+x.id : (x.numero ? 'n:'+x.numero : 'v:'+stabile(senzaMod(x))); }
+  function improntaRec(x){ return impronta(stabile(senzaMod(x))); }
+  function calcolaImpronte(arr){ var o={}; (arr||[]).forEach(function(x){ if(x&amp;&amp;typeof x==='object') o[chiaveRec(x)]=improntaRec(x); }); return o; }
+
+  // Cosa e' cambiato QUI dall'ultima sincronizzazione: i record cambiati prendono l'ora (&quot;mod&quot;), quelli spariti
+  // diventano cancellazioni. La prima volta (nessuna impronta) si prende solo la fotografia, senza toccare niente.
+  function segnaModifiche(chiave){
+    var arr=leggi(chiave,null); if(!Array.isArray(arr)) return;
+    var imp=leggi(IMPRONTE,{}), canc=leggi(CANC,{}), ora=Date.now(), prima=imp[chiave];
+    var adesso=calcolaImpronte(arr);
+    if(prima){
+      var cambiati=false;
+      arr.forEach(function(x){ if(!x||typeof x!=='object') return; var k=chiaveRec(x); if(k.indexOf('v:')!==0 &amp;&amp; prima[k]!==adesso[k]){ x.mod=ora; cambiati=true; } });
+      Object.keys(prima).forEach(function(k){ if(!(k in adesso)){ canc[chiave]=canc[chiave]||{}; canc[chiave][k]=ora; } });
+      if(cambiati) scrivi(chiave, arr);
+      scrivi(CANC, canc);
+    }
+    imp[chiave]=adesso; scrivi(IMPRONTE, imp);
+  }
+  function fotografa(chiave, arr){ var imp=leggi(IMPRONTE,{}); imp[chiave]=calcolaImpronte(arr); scrivi(IMPRONTE, imp); }
+
+  // Unisce i dati del cloud con quelli del dispositivo: stesso record -> vince quello modificato per ultimo
+  // (a parita', o senza ora, quello del dispositivo); i record cancellati altrove spariscono, a meno che
+  // qualcuno li abbia modificati DOPO la cancellazione.
+  function unisciDati(locale, remoto, chiave){
+    if(!Array.isArray(remoto)) return remoto;          // configurazioni e contatori: resta il comportamento di prima
+    if(!Array.isArray(locale)) locale=[];
+    var m={}, ordine=[], canc=(leggi(CANC,{})[chiave])||{};
+    function raccogli(arr, delCloud){
+      for(var i=0;i<arr.length;i++){
+        var x=arr[i]; if(!x||typeof x!=='object') continue;
+        var k=chiaveRec(x);
+        if(!m[k]){ m[k]=x; ordine.push(k); }
+        else if(delCloud &amp;&amp; (x.mod||0) > (m[k].mod||0)) m[k]=x;
+      }
+    }
+    raccogli(locale,false); raccogli(remoto,true);
+    return ordine.filter(function(k){ return !(canc[k] &amp;&amp; canc[k] >= (m[k].mod||0)); }).map(function(k){ return m[k]; });
+  }
+
+  function leggiCloud(chiave){
+    var u = getUrl()+'/rest/v1/'+TABELLA+'?chiave=eq.'+encodeURIComponent(chiave)+'&amp;select=dati,aggiornato_il';
+    return fetch(u, { headers:headers() }).then(function(r){
+      if(!r.ok) return {ok:false, status:r.status};
+      return r.json().then(function(rows){ return rows &amp;&amp; rows.length ? {ok:true, trovato:true, dati:rows[0].dati, aggiornato_il:rows[0].aggiornato_il} : {ok:true, trovato:false}; });
+    });
+  }
+  function spedisci(chiave, valore){
+    var body = [{ chiave: chiave, dati: valore, aggiornato_il: new Date().toISOString() }];
     var testo = JSON.stringify(body);
     // ATTENZIONE: keepalive regge al massimo 64 KB. Con i preventivi (disegni compresi)
     // si supera subito e la richiesta fallisce sempre: i dati non salivano mai sul cloud.
@@ -13162,46 +13308,63 @@ var SYNC = (function(){
     }).catch(function(e){ return {ok:false, error:String(e)}; });
   }
 
-  // Unisce i dati del cloud con quelli già sul dispositivo, per id: quello che hai
-  // salvato qui non viene MAI cancellato da una copia vecchia del telefono (e viceversa).
-  function unisciDati(locale, remoto){
-    if(!Array.isArray(remoto)) return remoto;          // configurazioni e contatori: resta il comportamento di prima
-    if(!Array.isArray(locale)) return remoto;
-    var m={}, ordine=[], i, x, k;
-    function raccogli(arr){
-      for(i=0;i<arr.length;i++){
-        x=arr[i]; if(!x||typeof x!=='object') continue;
-        k=String(x.id!=null?x.id:(x.numero||JSON.stringify(x)));
-        if(!m[k]){ m[k]=x; ordine.push(k); }
-      }
-    }
-    raccogli(locale); raccogli(remoto);               // a parità di id vince quello del dispositivo
-    return ordine.map(function(kk){ return m[kk]; });
+  // Le cancellazioni: si uniscono (per ogni record vale la piu' recente) e si tengono 180 giorni
+  function sincronizzaCancellati(){
+    if(!configurato()) return Promise.resolve({ok:false, reason:'non configurato'});
+    return leggiCloud(CHIAVE_CANC).then(function(r){
+      if(!r.ok) return r;
+      var loc=leggi(CANC,{}), rem=(r.trovato&amp;&amp;r.dati&amp;&amp;typeof r.dati==='object'&amp;&amp;!Array.isArray(r.dati))?r.dati:{}, limite=Date.now()-GIORNI_CANC*864e5, out={};
+      [loc,rem].forEach(function(src){ Object.keys(src).forEach(function(ch){ Object.keys(src[ch]||{}).forEach(function(k){
+        var t=src[ch][k]; if(!(t>limite)) return; out[ch]=out[ch]||{}; if(!(out[ch][k]>=t)) out[ch][k]=t; }); }); });
+      scrivi(CANC, out);
+      if(stabile(out)===stabile(rem)) return {ok:true};
+      return spedisci(CHIAVE_CANC, out);
+    }).catch(function(e){ return {ok:false, error:String(e)}; });
   }
+
   // Scarica UNA chiave dal cloud e la unisce a quella locale
   function pullChiave(chiave){
     if(!configurato()) return Promise.resolve({ok:false, reason:'non configurato'});
-    var u = getUrl()+'/rest/v1/'+TABELLA+'?chiave=eq.'+encodeURIComponent(chiave)+'&amp;select=dati,aggiornato_il';
-    return fetch(u, { headers:headers() })
-      .then(function(r){ if(!r.ok) return {ok:false,status:r.status}; return r.json().then(function(rows){
-        if(rows &amp;&amp; rows.length){
-          var loc=null; try{ loc=JSON.parse(localStorage.getItem(chiave)||'null'); }catch(e){}
-          var fusi=unisciDati(loc, rows[0].dati);
-          if(fusi!==null&amp;&amp;fusi!==undefined) localStorage.setItem(chiave, JSON.stringify(fusi));
-          return {ok:true, trovato:true, aggiornato_il:rows[0].aggiornato_il};
-        }
-        return {ok:true, trovato:false};
-      });})
-      .catch(function(e){ return {ok:false, error:String(e)}; });
+    segnaModifiche(chiave);
+    return leggiCloud(chiave).then(function(r){
+      if(!r.ok||!r.trovato) return r.ok?{ok:true, trovato:false}:r;
+      var loc=leggi(chiave,null);
+      var fusi=unisciDati(loc, r.dati, chiave);
+      if(fusi!==null&amp;&amp;fusi!==undefined){
+        var cambiato = Array.isArray(fusi) ? stabile(calcolaImpronte(loc))!==stabile(calcolaImpronte(fusi)) : stabile(loc)!==stabile(fusi);
+        localStorage.setItem(chiave, JSON.stringify(fusi)); if(Array.isArray(fusi)) fotografa(chiave, fusi);
+        // chi tiene i dati in memoria (es. il Resoconto) li deve ricaricare, altrimenti al prossimo salvataggio
+        // riscriverebbe la copia vecchia e farebbe sparire quello arrivato dagli altri dispositivi
+        if(cambiato){ try{ window.dispatchEvent(new CustomEvent('sync-dati',{detail:{chiave:chiave}})); }catch(e){} }
+      }
+      return {ok:true, trovato:true, aggiornato_il:r.aggiornato_il, unito:Array.isArray(fusi)};
+    }).catch(function(e){ return {ok:false, error:String(e)}; });
+  }
+
+  // Carica UNA chiave sul cloud (upsert). Gli elenchi prima si uniscono con quello che c'e' sul cloud,
+  // cosi' non si cancella il lavoro salvato nel frattempo dall'altro dispositivo.
+  function pushChiave(chiave){
+    if(!configurato()) return Promise.resolve({ok:false, reason:'non configurato'});
+    var dati = localStorage.getItem(chiave);
+    if(dati===null) return Promise.resolve({ok:true, skipped:true});
+    var valore=null; try{ valore=JSON.parse(dati||'null'); }catch(e){}
+    var prima = Array.isArray(valore) ? pullChiave(chiave) : Promise.resolve({ok:true});
+    return prima.then(function(){
+      var ora=localStorage.getItem(chiave);
+      return spedisci(chiave, JSON.parse(ora||'null'));
+    });
   }
 
   // Push di tutte le chiavi
+  // prima si registrano le modifiche e le cancellazioni fatte qui, poi si scambiano le cancellazioni col cloud
   function pushTutto(){
-    return Promise.all(CHIAVI.map(pushChiave));
+    CHIAVI.forEach(segnaModifiche);
+    return sincronizzaCancellati().then(function(){ return Promise.all(CHIAVI.map(pushChiave)); });
   }
   // Pull di tutte le chiavi
   function pullTutto(){
-    return Promise.all(CHIAVI.map(pullChiave));
+    CHIAVI.forEach(segnaModifiche);
+    return sincronizzaCancellati().then(function(){ return Promise.all(CHIAVI.map(pullChiave)); });
   }
 
   // Test connessione
@@ -13223,6 +13386,7 @@ var SYNC = (function(){
     setConfig:setConfig, getUrl:getUrl, getKey:getKey, configurato:configurato,
     pushChiave:pushChiave, pullChiave:pullChiave,
     pushTutto:pushTutto, pullTutto:pullTutto,
+    sincronizzaCancellati:sincronizzaCancellati, segnaModifiche:segnaModifiche, unisciDati:unisciDati,
     testConnessione:testConnessione
   };
 })();
@@ -14409,6 +14573,13 @@ var SYNC = (function(){
   // Quali chiavi localStorage sincronizzare in ciascun file (impostata da ogni pagina)
   var CHIAVI = [];
   var TABELLA = 'ferrocalc_sync';
+  // Regole dal 12/11/2026 (IronDesk 1.30): stesso preventivo/lavoro su due dispositivi -> vince la modifica PIU' RECENTE
+  // (campo &quot;mod&quot;), le cancellazioni viaggiano (segnaposto in idu_cancellati) e prima di mandare su si unisce col cloud.
+  // Prima vinceva sempre il dispositivo: una modifica fatta sul PC non arrivava mai al telefono (e viceversa).
+  var IMPRONTE = 'sync_impronte';        // per chiave: { record: impronta } dell'ultima volta che si e' sincronizzato
+  var CANC = 'sync_cancellati';          // per chiave: { record: quando e' stato cancellato }
+  var CHIAVE_CANC = 'idu_cancellati';    // le cancellazioni sul cloud (comuni a FerroCalc, Preventivi e Resoconto)
+  var GIORNI_CANC = 180;
 
   function getUrl(){ return (localStorage.getItem(CFG_URL_KEY)||'').trim().replace(/\/rest\/v1\/?$/i,'').replace(/\/+$/,''); }
   function getKey(){ return (localStorage.getItem(CFG_KEY_KEY)||'').trim(); }
@@ -14435,12 +14606,69 @@ var SYNC = (function(){
     return h;
   }
 
-  // Carica UNA chiave sul cloud (upsert)
-  function pushChiave(chiave){
-    if(!configurato()) return Promise.resolve({ok:false, reason:'non configurato'});
-    var dati = localStorage.getItem(chiave);
-    if(dati===null) return Promise.resolve({ok:true, skipped:true});
-    var body = [{ chiave: chiave, dati: JSON.parse(dati||'null'), aggiornato_il: new Date().toISOString() }];
+  // ---------- impronte, modifiche e cancellazioni ----------
+  function leggi(k, def){ try{ var v=JSON.parse(localStorage.getItem(k)||'null'); return v==null?def:v; }catch(e){ return def; } }
+  function scrivi(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+  // testo stabile: stesse cose -> stesso testo, qualunque sia l'ordine dei campi (il cloud li restituisce riordinati)
+  function stabile(v){
+    if(v===null||typeof v!=='object') return JSON.stringify(v);
+    if(Array.isArray(v)) return '['+v.map(stabile).join(',')+']';
+    return '{'+Object.keys(v).sort().filter(function(k){ return v[k]!==undefined; }).map(function(k){ return JSON.stringify(k)+':'+stabile(v[k]); }).join(',')+'}';
+  }
+  function senzaMod(x){ var o={}, k; for(k in x){ if(k!=='mod') o[k]=x[k]; } return o; }
+  function impronta(s){ var h1=0xdeadbeef, h2=0x41c6ce57, i, c; for(i=0;i<s.length;i++){ c=s.charCodeAt(i); h1=Math.imul(h1^c,2654435761); h2=Math.imul(h2^c,1597334677); }
+    h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909); h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+    return (h2>>>0).toString(36)+(h1>>>0).toString(36); }
+  // un record ha un'identita' (id o numero) oppure e' identificato dal suo contenuto (rubrica, modelli)
+  function chiaveRec(x){ return x.id!=null ? 'id:'+x.id : (x.numero ? 'n:'+x.numero : 'v:'+stabile(senzaMod(x))); }
+  function improntaRec(x){ return impronta(stabile(senzaMod(x))); }
+  function calcolaImpronte(arr){ var o={}; (arr||[]).forEach(function(x){ if(x&amp;&amp;typeof x==='object') o[chiaveRec(x)]=improntaRec(x); }); return o; }
+
+  // Cosa e' cambiato QUI dall'ultima sincronizzazione: i record cambiati prendono l'ora (&quot;mod&quot;), quelli spariti
+  // diventano cancellazioni. La prima volta (nessuna impronta) si prende solo la fotografia, senza toccare niente.
+  function segnaModifiche(chiave){
+    var arr=leggi(chiave,null); if(!Array.isArray(arr)) return;
+    var imp=leggi(IMPRONTE,{}), canc=leggi(CANC,{}), ora=Date.now(), prima=imp[chiave];
+    var adesso=calcolaImpronte(arr);
+    if(prima){
+      var cambiati=false;
+      arr.forEach(function(x){ if(!x||typeof x!=='object') return; var k=chiaveRec(x); if(k.indexOf('v:')!==0 &amp;&amp; prima[k]!==adesso[k]){ x.mod=ora; cambiati=true; } });
+      Object.keys(prima).forEach(function(k){ if(!(k in adesso)){ canc[chiave]=canc[chiave]||{}; canc[chiave][k]=ora; } });
+      if(cambiati) scrivi(chiave, arr);
+      scrivi(CANC, canc);
+    }
+    imp[chiave]=adesso; scrivi(IMPRONTE, imp);
+  }
+  function fotografa(chiave, arr){ var imp=leggi(IMPRONTE,{}); imp[chiave]=calcolaImpronte(arr); scrivi(IMPRONTE, imp); }
+
+  // Unisce i dati del cloud con quelli del dispositivo: stesso record -> vince quello modificato per ultimo
+  // (a parita', o senza ora, quello del dispositivo); i record cancellati altrove spariscono, a meno che
+  // qualcuno li abbia modificati DOPO la cancellazione.
+  function unisciDati(locale, remoto, chiave){
+    if(!Array.isArray(remoto)) return remoto;          // configurazioni e contatori: resta il comportamento di prima
+    if(!Array.isArray(locale)) locale=[];
+    var m={}, ordine=[], canc=(leggi(CANC,{})[chiave])||{};
+    function raccogli(arr, delCloud){
+      for(var i=0;i<arr.length;i++){
+        var x=arr[i]; if(!x||typeof x!=='object') continue;
+        var k=chiaveRec(x);
+        if(!m[k]){ m[k]=x; ordine.push(k); }
+        else if(delCloud &amp;&amp; (x.mod||0) > (m[k].mod||0)) m[k]=x;
+      }
+    }
+    raccogli(locale,false); raccogli(remoto,true);
+    return ordine.filter(function(k){ return !(canc[k] &amp;&amp; canc[k] >= (m[k].mod||0)); }).map(function(k){ return m[k]; });
+  }
+
+  function leggiCloud(chiave){
+    var u = getUrl()+'/rest/v1/'+TABELLA+'?chiave=eq.'+encodeURIComponent(chiave)+'&amp;select=dati,aggiornato_il';
+    return fetch(u, { headers:headers() }).then(function(r){
+      if(!r.ok) return {ok:false, status:r.status};
+      return r.json().then(function(rows){ return rows &amp;&amp; rows.length ? {ok:true, trovato:true, dati:rows[0].dati, aggiornato_il:rows[0].aggiornato_il} : {ok:true, trovato:false}; });
+    });
+  }
+  function spedisci(chiave, valore){
+    var body = [{ chiave: chiave, dati: valore, aggiornato_il: new Date().toISOString() }];
     var testo = JSON.stringify(body);
     // ATTENZIONE: keepalive regge al massimo 64 KB. Con i preventivi (disegni compresi)
     // si supera subito e la richiesta fallisce sempre: i dati non salivano mai sul cloud.
@@ -14457,28 +14685,63 @@ var SYNC = (function(){
     }).catch(function(e){ return {ok:false, error:String(e)}; });
   }
 
-  // Scarica UNA chiave dal cloud e la scrive in localStorage
+  // Le cancellazioni: si uniscono (per ogni record vale la piu' recente) e si tengono 180 giorni
+  function sincronizzaCancellati(){
+    if(!configurato()) return Promise.resolve({ok:false, reason:'non configurato'});
+    return leggiCloud(CHIAVE_CANC).then(function(r){
+      if(!r.ok) return r;
+      var loc=leggi(CANC,{}), rem=(r.trovato&amp;&amp;r.dati&amp;&amp;typeof r.dati==='object'&amp;&amp;!Array.isArray(r.dati))?r.dati:{}, limite=Date.now()-GIORNI_CANC*864e5, out={};
+      [loc,rem].forEach(function(src){ Object.keys(src).forEach(function(ch){ Object.keys(src[ch]||{}).forEach(function(k){
+        var t=src[ch][k]; if(!(t>limite)) return; out[ch]=out[ch]||{}; if(!(out[ch][k]>=t)) out[ch][k]=t; }); }); });
+      scrivi(CANC, out);
+      if(stabile(out)===stabile(rem)) return {ok:true};
+      return spedisci(CHIAVE_CANC, out);
+    }).catch(function(e){ return {ok:false, error:String(e)}; });
+  }
+
+  // Scarica UNA chiave dal cloud e la unisce a quella locale
   function pullChiave(chiave){
     if(!configurato()) return Promise.resolve({ok:false, reason:'non configurato'});
-    var u = getUrl()+'/rest/v1/'+TABELLA+'?chiave=eq.'+encodeURIComponent(chiave)+'&amp;select=dati,aggiornato_il';
-    return fetch(u, { headers:headers() })
-      .then(function(r){ if(!r.ok) return {ok:false,status:r.status}; return r.json().then(function(rows){
-        if(rows &amp;&amp; rows.length){
-          localStorage.setItem(chiave, JSON.stringify(rows[0].dati));
-          return {ok:true, trovato:true, aggiornato_il:rows[0].aggiornato_il};
-        }
-        return {ok:true, trovato:false};
-      });})
-      .catch(function(e){ return {ok:false, error:String(e)}; });
+    segnaModifiche(chiave);
+    return leggiCloud(chiave).then(function(r){
+      if(!r.ok||!r.trovato) return r.ok?{ok:true, trovato:false}:r;
+      var loc=leggi(chiave,null);
+      var fusi=unisciDati(loc, r.dati, chiave);
+      if(fusi!==null&amp;&amp;fusi!==undefined){
+        var cambiato = Array.isArray(fusi) ? stabile(calcolaImpronte(loc))!==stabile(calcolaImpronte(fusi)) : stabile(loc)!==stabile(fusi);
+        localStorage.setItem(chiave, JSON.stringify(fusi)); if(Array.isArray(fusi)) fotografa(chiave, fusi);
+        // chi tiene i dati in memoria (es. il Resoconto) li deve ricaricare, altrimenti al prossimo salvataggio
+        // riscriverebbe la copia vecchia e farebbe sparire quello arrivato dagli altri dispositivi
+        if(cambiato){ try{ window.dispatchEvent(new CustomEvent('sync-dati',{detail:{chiave:chiave}})); }catch(e){} }
+      }
+      return {ok:true, trovato:true, aggiornato_il:r.aggiornato_il, unito:Array.isArray(fusi)};
+    }).catch(function(e){ return {ok:false, error:String(e)}; });
+  }
+
+  // Carica UNA chiave sul cloud (upsert). Gli elenchi prima si uniscono con quello che c'e' sul cloud,
+  // cosi' non si cancella il lavoro salvato nel frattempo dall'altro dispositivo.
+  function pushChiave(chiave){
+    if(!configurato()) return Promise.resolve({ok:false, reason:'non configurato'});
+    var dati = localStorage.getItem(chiave);
+    if(dati===null) return Promise.resolve({ok:true, skipped:true});
+    var valore=null; try{ valore=JSON.parse(dati||'null'); }catch(e){}
+    var prima = Array.isArray(valore) ? pullChiave(chiave) : Promise.resolve({ok:true});
+    return prima.then(function(){
+      var ora=localStorage.getItem(chiave);
+      return spedisci(chiave, JSON.parse(ora||'null'));
+    });
   }
 
   // Push di tutte le chiavi
+  // prima si registrano le modifiche e le cancellazioni fatte qui, poi si scambiano le cancellazioni col cloud
   function pushTutto(){
-    return Promise.all(CHIAVI.map(pushChiave));
+    CHIAVI.forEach(segnaModifiche);
+    return sincronizzaCancellati().then(function(){ return Promise.all(CHIAVI.map(pushChiave)); });
   }
   // Pull di tutte le chiavi
   function pullTutto(){
-    return Promise.all(CHIAVI.map(pullChiave));
+    CHIAVI.forEach(segnaModifiche);
+    return sincronizzaCancellati().then(function(){ return Promise.all(CHIAVI.map(pullChiave)); });
   }
 
   // Test connessione
@@ -14500,6 +14763,7 @@ var SYNC = (function(){
     setConfig:setConfig, getUrl:getUrl, getKey:getKey, configurato:configurato,
     pushChiave:pushChiave, pullChiave:pullChiave,
     pushTutto:pushTutto, pullTutto:pullTutto,
+    sincronizzaCancellati:sincronizzaCancellati, segnaModifiche:segnaModifiche, unisciDati:unisciDati,
     testConnessione:testConnessione
   };
 })();
@@ -14532,6 +14796,13 @@ function controllaImportPrev(){
     document.getElementById('popup-title').textContent='Nuovo lavoro — da preventivo accettato';
   }catch(e){console.error(&quot;RES import error:&quot;,e);}
 }
+// Sincronizzazione: arrivati lavori o anni da un altro dispositivo -> si ricaricano quelli in memoria
+// (senza, il prossimo salvataggio riscriverebbe la copia vecchia e li farebbe sparire)
+window.addEventListener(&quot;sync-dati&quot;,e=>{
+  var ch=e&amp;&amp;e.detail&amp;&amp;e.detail.chiave;
+  if(ch!==&quot;rl_lavori&quot;&amp;&amp;ch!==&quot;rl_anni&quot;)return;
+  try{load();aggiornaFiltriAnno();renderLavori();}catch(err){}
+});
 window.addEventListener(&quot;storage&quot;,e=>{
   if(e.key===&quot;RES_IMPORT&quot;)controllaImportPrev();
   if(e.key===&quot;idu_clienti&quot;)renderDatalistClientiRL();
