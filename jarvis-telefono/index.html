@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050d14">
+<meta name="jarvis-versione" content="202611112005">
+<title>J.A.R.V.I.S.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* Grafica di Jarvis Zero (jarvis-zero/public/index.html), adattata al telefono */
+:root{
+  --bg:#040b11; --bg2:#071520; --pan:rgba(8,24,36,.72); --lin:rgba(80,200,255,.22); --lin2:rgba(80,200,255,.5);
+  --az:#4fd6ff; --az2:#9be9ff; --tx:#cfefff; --gr:#6f8c9c; --or:#ffb347; --ro:#ff4a5a; --ve:#3dff9a;
+  --f:'Rajdhani',system-ui,sans-serif; --m:'Share Tech Mono',ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:var(--f);overflow:hidden}
+body{background:radial-gradient(ellipse at 50% 30%,#0a2233 0%,var(--bg) 70%);padding-top:env(safe-area-inset-top)}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(79,214,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(79,214,255,.035) 1px,transparent 1px);background-size:32px 32px}
+.app{position:relative;height:100%;display:grid;grid-template-columns:240px 1fr 240px;grid-template-rows:40px minmax(0,1fr) minmax(0,auto);gap:10px 14px;padding:10px 14px 14px}
+header{grid-column:1/4;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--lin);padding-bottom:6px}
+.logo{font-weight:700;letter-spacing:.32em;font-size:18px;color:var(--az);text-shadow:0 0 12px rgba(79,214,255,.6)}
+.sub{font-family:var(--m);font-size:11px;letter-spacing:.2em;color:var(--gr)}
+.segs{flex:1;display:flex;justify-content:center;gap:5px}
+.segs i{width:22px;height:4px;background:rgba(79,214,255,.15);transform:skewX(-30deg)}
+.segs i.on{background:var(--az);box-shadow:0 0 8px var(--az)}
+body.ascolto .segs i.on{background:var(--ro);box-shadow:0 0 8px var(--ro)}
+.online{font-family:var(--m);font-size:11px;letter-spacing:.15em;display:flex;align-items:center;gap:6px}
+.statoWake{font-family:var(--m);font-size:11px;letter-spacing:.15em;color:var(--gr)}
+.statoWake.on{color:var(--ve)} .statoWake.on:before{content:"● ";animation:lamp 1.6s steps(2) infinite}
+.statoWake.carica{color:var(--or)}
+.online b{width:8px;height:8px;border-radius:50%;background:var(--ve);box-shadow:0 0 8px var(--ve)}
+.online.off b{background:var(--ro);box-shadow:0 0 8px var(--ro)}
+.ing{background:none;border:1px solid var(--lin);color:var(--az);width:28px;height:28px;cursor:pointer;font-size:15px;clip-path:polygon(25% 0,100% 0,100% 75%,75% 100%,0 100%,0 25%)}
+.col{display:flex;flex-direction:column;gap:10px;min-height:0;grid-row:2/4}
+.pan{position:relative;background:var(--pan);border:1px solid var(--lin);padding:9px 11px 11px}
+.pan:before,.pan:after{content:"";position:absolute;width:12px;height:12px;border:2px solid var(--az);pointer-events:none}
+.pan:before{top:-2px;left:-2px;border-right:0;border-bottom:0}
+.pan:after{bottom:-2px;right:-2px;border-left:0;border-top:0}
+.pt{display:flex;justify-content:space-between;font-family:var(--m);font-size:10.5px;letter-spacing:.16em;color:var(--az);text-transform:uppercase;margin-bottom:7px}
+.pt span:last-child{color:var(--gr)}
+.ora{font-family:var(--m);font-size:44px;line-height:1;color:var(--az2);text-shadow:0 0 18px rgba(79,214,255,.55)}
+.ora small{font-size:18px;color:var(--az);margin-left:4px}
+.data{font-family:var(--m);font-size:10.5px;letter-spacing:.14em;color:var(--gr);margin-top:6px;text-transform:uppercase}
+.bar{margin:7px 0}
+.bar div{display:flex;justify-content:space-between;font-family:var(--m);font-size:11px;letter-spacing:.08em;color:var(--tx)}
+.bar p{margin:3px 0 0;height:4px;background:rgba(79,214,255,.12)}
+.bar p i{display:block;height:100%;background:linear-gradient(90deg,#1d8fbf,var(--az));box-shadow:0 0 6px var(--az);transition:width .8s}
+.bar.alto p i{background:linear-gradient(90deg,#c97a1e,var(--or));box-shadow:0 0 6px var(--or)}
+.mem{flex:1;min-height:0;display:flex;flex-direction:column}
+.mem ul{list-style:none;margin:0;padding:0;overflow:auto;flex:1;font-size:13.5px}
+.mem li{display:flex;gap:7px;padding:4px 0;border-bottom:1px dashed rgba(79,214,255,.1);line-height:1.25}
+.mem li:before{content:"";flex:none;width:7px;height:7px;margin-top:5px;border-radius:50%;background:var(--or);box-shadow:0 0 6px var(--or)}
+.mem li.vuoto:before{display:none}
+.mem li button{margin-left:auto;background:none;border:0;color:var(--gr);cursor:pointer;font-size:13px;padding:0 2px}
+.vuoto{color:var(--gr);font-size:13px;font-style:italic}
+.centro{grid-column:2;grid-row:2;position:relative;min-height:0}
+#reattore{position:absolute;inset:0;width:100%;height:100%}
+.chat{grid-column:2;grid-row:3;display:flex;flex-direction:column;height:min(34vh,330px)}
+.msgs{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px;min-height:0}
+.m{max-width:86%;padding:6px 10px 7px;font-size:14.5px;line-height:1.35;white-space:pre-wrap;background:rgba(79,214,255,.05);border:1px solid var(--lin)}
+.m b{display:block;font-family:var(--m);font-weight:400;font-size:10px;letter-spacing:.18em;color:var(--az);margin-bottom:2px}
+.m.io{align-self:flex-end;text-align:right;border:0;border-right:2px solid var(--or);background:rgba(255,179,71,.06)}
+.m.io b{color:var(--or)}
+.m.pensa{color:var(--gr);font-style:italic}
+.m.pensa:after{content:"▍";animation:lamp 1s steps(2) infinite;color:var(--az)}
+.m.sys{align-self:center;max-width:94%;border:0;background:none;color:var(--gr);font-family:var(--m);font-size:11px;padding:0}
+@keyframes lamp{50%{opacity:0}}
+.riga{display:flex;gap:8px;margin-top:9px;align-items:center}
+.riga input{flex:1;min-width:0;background:rgba(3,12,18,.8);border:1px solid var(--lin2);color:var(--tx);font:15px var(--f);padding:9px 11px;outline:none}
+.riga input:focus{border-color:var(--az);box-shadow:0 0 10px rgba(79,214,255,.25)}
+.btn{background:rgba(79,214,255,.08);border:1px solid var(--lin2);color:var(--az);font:600 13px var(--f);letter-spacing:.2em;padding:9px 14px;cursor:pointer}
+.btn:active{background:rgba(79,214,255,.18)}
+.tondo{flex:none;width:38px;height:38px;border-radius:50%;border:1px solid var(--lin2);background:rgba(79,214,255,.06);color:var(--az);cursor:pointer;display:grid;place-items:center;padding:0}
+.tondo svg{width:18px;height:18px}
+.tondo.rec{border-color:var(--ro);color:var(--ro);box-shadow:0 0 14px rgba(255,74,90,.6);animation:pul 1.2s infinite}
+.tondo.muto{color:var(--gr);border-color:var(--lin)}
+@keyframes pul{50%{box-shadow:0 0 2px rgba(255,74,90,.3)}}
+#onda{width:100%;height:46px;display:block}
+.kv{display:flex;justify-content:space-between;gap:8px;font-family:var(--m);font-size:11px;letter-spacing:.06em;padding:3px 0;border-bottom:1px dashed rgba(79,214,255,.08)}
+.kv span:first-child{color:var(--gr);text-transform:uppercase;letter-spacing:.12em}
+.kv span:last-child{text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:62%}
+.ok{color:var(--ve)} .no{color:var(--ro)}
+.cmd{font-family:var(--m);font-size:11px;line-height:1.75}
+.cmd b{color:var(--az2);font-weight:400}
+.cmd span{color:var(--gr)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;place-items:center;z-index:9;padding:16px}
+.modal.on{display:grid}
+.modal .pan{width:min(440px,100%);padding:16px 18px}
+.modal label{display:block;font-family:var(--m);font-size:11px;letter-spacing:.14em;color:var(--az);margin:12px 0 4px;text-transform:uppercase}
+.modal textarea{width:100%;background:rgba(3,12,18,.9);border:1px solid var(--lin2);color:var(--tx);font:14px var(--f);padding:8px 10px;outline:none;resize:vertical}
+.modal input,.modal select{width:100%;background:rgba(3,12,18,.9);border:1px solid var(--lin2);color:var(--tx);font:14px var(--f);padding:8px 10px;outline:none}
+.modal p{font-size:13px;color:var(--gr);margin:4px 0}
+.modal p b{color:var(--az2);font-weight:600}
+.modal .pan{max-height:calc(100vh - 32px);overflow:auto}
+.modal h4{font-family:var(--m);font-weight:400;font-size:11px;letter-spacing:.2em;color:var(--az2);margin:20px 0 2px;border-bottom:1px solid var(--lin);padding-bottom:4px}
+.spunta{display:flex !important;gap:8px;align-items:center;text-transform:none !important;font-family:var(--f) !important;font-size:14px !important;letter-spacing:0 !important;color:var(--tx) !important}
+.spunta input{width:auto !important}
+.btn.mini{padding:3px 8px;font-size:11px;margin-left:6px}
+.doppia{display:flex;gap:6px;align-items:center}
+.doppia>select,.doppia>input{flex:1;min-width:0}
+.doppia .btn.mini{margin-left:0;flex:none;padding:8px 8px}
+.catLista{display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow:auto;margin-top:6px}
+.vc{display:flex;gap:6px;align-items:center;border:1px solid var(--lin);padding:6px 8px;background:rgba(3,12,18,.6);flex-wrap:wrap}
+.vc.scelta{border-color:var(--ve);box-shadow:inset 0 0 12px rgba(61,255,154,.12)}
+.vc div{flex:1 1 150px;min-width:0}
+.vc b{display:block;font-size:14px;color:var(--az2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vc small{display:block;color:var(--gr);font-family:var(--m);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vc .btn.mini{margin-left:0;flex:none}
+#modCat{background:rgba(0,0,0,.85);z-index:10}
+#modCat .pan{background:rgba(2,10,16,.98)}
+.sv{min-height:0;display:flex;flex-direction:column}
+.sv ul{list-style:none;margin:0;padding:0;overflow:auto;max-height:120px;font-size:13px}
+.sv li{display:flex;gap:6px;align-items:baseline;padding:3px 0;border-bottom:1px dashed rgba(79,214,255,.1)}
+.sv li b{font-family:var(--m);font-weight:400;color:var(--az2)}
+.sv li span{color:var(--gr);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.sv li button{background:none;border:0;color:var(--gr);cursor:pointer}
+.allarme{text-align:center;width:min(420px,100%) !important;overflow:hidden !important}
+.alOra{font-family:var(--m);font-size:72px;color:var(--az2);line-height:1.1;animation:pul2 1s infinite}
+@keyframes pul2{50%{opacity:.55}}
+.allarme p{font-size:16px !important;color:var(--tx) !important;white-space:pre-wrap}
+.allarme .riga{justify-content:center !important}
+.btn.stop{border-color:var(--or);color:var(--or);font-size:16px;padding:12px 26px}
+.tondo.wake{color:var(--ve);border-color:var(--ve);box-shadow:0 0 10px rgba(61,255,154,.35)}
+.modal a{color:var(--az)}
+.modal .riga{justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.perm{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed rgba(79,214,255,.1);font-size:14px}
+.perm i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ro);box-shadow:0 0 6px var(--ro);margin-right:8px}
+.perm i.ok{background:var(--ve);box-shadow:0 0 6px var(--ve)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;z-index:20;background:rgba(4,24,40,.96);border:1px solid var(--az);padding:9px 14px;font-size:15px;opacity:0;transition:.25s;pointer-events:none;max-width:90%;text-align:center}
+#toast.on{opacity:1}
+@media (max-width:900px){
+  html,body{overflow:auto}
+  .app{display:flex;flex-direction:column;height:auto;min-height:100%;padding:8px 12px calc(14px + env(safe-area-inset-bottom))}
+  header{flex-wrap:nowrap;gap:10px}.segs{display:none}.sub{display:none}
+  .logo{flex:1;font-size:17px}
+  .centro{height:min(84vw,420px);order:1}
+  .chat{order:2;height:auto}.msgs{max-height:46vh;min-height:150px}
+  .col{order:3;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .col.dx{order:4}
+  .mem{grid-column:1/3;max-height:220px}
+  .ora{font-size:34px}
+  .riga .btn{padding:9px 10px;letter-spacing:.12em}
+}
+@media (max-width:520px){.col{grid-template-columns:1fr}.mem{grid-column:auto}.tondo{width:36px;height:36px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">J.A.R.V.I.S.</div>
+    <div class="sub">SISTEMA ZERO · TELEFONO</div>
+    <div class="segs" id="segs"></div>
+    <div class="statoWake" id="statoWake"></div>
+    <div class="online" id="online"><b></b><span>ONLINE</span></div>
+    <button class="ing" id="apriImp" title="Impostazioni">⚙</button>
+  </header>
+
+  <aside class="col sx">
+    <section class="pan">
+      <div class="pt"><span>Ora locale</span><span id="fuso">CET</span></div>
+      <div class="ora" id="ora">--:--<small>--</small></div>
+      <div class="data" id="data"></div>
+    </section>
+    <section class="pan">
+      <div class="pt"><span>Carico sistema</span><span id="ncpu">—</span></div>
+      <div class="bar" id="b1"><div><span>BATTERIA</span><span>—</span></div><p><i style="width:0"></i></p></div>
+      <div class="bar" id="b5"><div><span>RAM</span><span>—</span></div><p><i style="width:0"></i></p></div>
+      <div class="bar" id="b15"><div><span>CERVELLO</span><span>—</span></div><p><i style="width:0"></i></p></div>
+      <div class="bar" id="bd"><div><span>DISCO</span><span>—</span></div><p><i style="width:0"></i></p></div>
+    </section>
+    <section class="pan mem">
+      <div class="pt"><span>Memoria a lungo termine</span><span id="nmem">0</span></div>
+      <ul id="memoria"></ul>
+    </section>
+  </aside>
+
+  <main class="centro"><canvas id="reattore"></canvas></main>
+
+  <section class="pan chat">
+    <div class="pt"><span>Canale di comunicazione</span><span id="nmsg">0/0</span></div>
+    <div class="msgs" id="msgs"></div>
+    <form class="riga" id="form" autocomplete="off">
+      <button type="button" class="tondo" id="orecchio" title="Ascolto continuo: dica &quot;Jarvis&quot;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9a6 6 0 1 1 12 0c0 3-2 4-3 5.5S14 18 12 19.5 8 20 8 18"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-1.5 2-1.5 3"/></svg></button>
+      <button type="button" class="tondo" id="mic" title="Parla"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+      <input id="testo" placeholder="Scrivi o parla, signore…">
+      <button class="btn" type="submit">INVIA</button>
+      <button type="button" class="tondo" id="vol" title="Voce di Jarvis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9v6h4l5 4V5L8 9z"/><path id="volOnde" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></button>
+    </form>
+  </section>
+
+  <aside class="col dx">
+    <section class="pan">
+      <div class="pt"><span>Attività neurale</span><span id="apm">0 / MIN</span></div>
+      <canvas id="onda"></canvas>
+    </section>
+    <section class="pan">
+      <div class="pt"><span>Cervello</span><span>GROQ</span></div>
+      <div class="kv"><span>Modello</span><span id="cMod">—</span></div>
+      <div class="kv"><span>Riserve</span><span id="cRis">—</span></div>
+      <div class="kv"><span>Accesso</span><span id="cAcc">—</span></div>
+      <div class="kv"><span>Voce</span><span id="cVoce">—</span></div>
+    </section>
+    <section class="pan">
+      <div class="pt"><span>Rete</span><span>TAVILY</span></div>
+      <div class="kv"><span>Ricerca</span><span id="rAtt">—</span></div>
+      <div class="kv"><span>Ricerche</span><span id="rNum">0</span></div>
+      <div class="kv"><span>Ultima</span><span id="rUlt">—</span></div>
+      <div class="kv"><span>Telegram</span><span id="rTg">—</span></div>
+    </section>
+    <section class="pan sv">
+      <div class="pt"><span>Sveglie e promemoria</span><span id="nsv">0</span></div>
+      <ul id="sveglie"></ul>
+    </section>
+    <section class="pan sv">
+      <div class="pt"><span>Liste</span><span id="nli">0</span></div>
+      <ul id="liste"></ul>
+    </section>
+    <section class="pan">
+      <div class="pt"><span>Comandi</span><span>10</span></div>
+      <div class="cmd">
+        <div><b>"Jarvis" …</b> <span>lo chiami a voce</span></div>
+        <div><b>cerca …</b> <span>ricerca online</span></div>
+        <div><b>ricorda che …</b> <span>salva un ricordo</span></div>
+        <div><b>cosa ricordi</b> <span>elenca i ricordi</span></div>
+        <div><b>dimentica …</b> <span>cancella un ricordo</span></div>
+        <div><b>apri / chiudi …</b> <span>app del telefono</span></div>
+        <div><b>scrivi a … / chiama …</b> <span>WhatsApp e telefono</span></div>
+        <div><b>svegliami alle …</b> <span>sveglie e promemoria</span></div>
+        <div><b>aggiungi … alla spesa</b> <span>liste</span></div>
+        <div><b>buonanotte / buongiorno</b> <span>routine</span></div>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<div class="modal" id="allarme">
+  <div class="pan allarme">
+    <div class="pt"><span id="alTipo">Sveglia</span><span id="alOra">--:--</span></div>
+    <div class="alOra" id="alGrande">--:--</div>
+    <p id="alTesto"></p>
+    <div class="riga"><button type="button" class="btn" id="alPosponi">TRA 10 MINUTI</button><button type="button" class="btn stop" id="alStop">STOP</button></div>
+  </div>
+</div>
+
+<div class="modal" id="imp">
+  <form class="pan" id="formImp">
+    <div class="pt"><span>Impostazioni</span><span>SISTEMA ZERO</span></div>
+    <label>Come si chiama, signore?</label>
+    <input id="pNome" placeholder="es. Graziano" autocomplete="off">
+    <label>Città (per meteo e buongiorno)</label>
+    <input id="pCitta" placeholder="es. Ostuni" autocomplete="off">
+    <label>Carattere di Jarvis</label>
+    <select id="pCarattere"></select>
+    <label>Come la chiama</label>
+    <input id="pAppellativo" placeholder="signore" autocomplete="off">
+    <label>Istruzioni personali per Jarvis</label>
+    <textarea id="pIstr" rows="4" placeholder="es. Sono un fabbro di Ostuni. Quando parlo di prezzi del ferro cerca sempre il prezzo aggiornato."></textarea>
+    <p>Jarvis le segue sempre, prima di tutto il resto.</p>
+    <label>Chiave Groq (cervello)</label>
+    <input id="kGroq" placeholder="gsk_… (lascia vuoto per non cambiarla)" autocomplete="off">
+    <p>Gratis su <b>console.groq.com/keys</b> → Create API Key. <span id="kGroqOk"></span></p>
+    <label>Chiave Tavily (ricerche online)</label>
+    <input id="kTav" placeholder="tvly-… (lascia vuoto per non cambiarla)" autocomplete="off">
+    <p>Gratis su <b>app.tavily.com</b>, senza carta di credito. <span id="kTavOk"></span></p>
+    <label>Modello Groq</label>
+    <input id="kMod" placeholder="openai/gpt-oss-120b (lascia vuoto per non cambiarlo)">
+    <label>Chiave Gemini (voce veloce)</label>
+    <input id="kGem" placeholder="AIza… / AQ.… (lascia vuoto per non cambiarla)" autocomplete="off">
+    <p>Gratis su <b>aistudio.google.com/apikey</b>. Le voci Gemini partono subito; se finisce la quota Jarvis usa la voce del telefono. <span id="kGemOk"></span></p>
+    <label>Chiave Fish Audio (voce del video, gratis)</label>
+    <input id="kFish" placeholder="lascia vuoto per non cambiarla" autocomplete="off">
+    <p>Su <b>fish.audio</b> → Developer (API) → Create API Key. Fish recita anche risate ed emozioni. <span id="kFishOk"></span></p>
+    <label>Voce di Jarvis</label>
+    <div class="doppia"><select id="voce"></select><button type="button" class="btn mini" id="apriCatalogo">CATALOGO FISH</button></div>
+    <label>Velocità della voce Fish</label>
+    <input id="fishVel" type="range" min="0.8" max="1.3" step="0.05" value="1">
+    <p>Vale solo per Fish: Gemini parla col suo ritmo. <span id="fishVelN"></span></p>
+    <label class="spunta"><input type="checkbox" id="wakeAuto"> Ascolta sempre la parola "Jarvis"</label>
+    <p>Dica "Jarvis", aspetti il bip e parli (anche tutto d'un fiato: "Jarvis, che tempo fa domani?"). Funziona anche a schermo spento.</p>
+    <label>Secondi di ascolto dopo una risposta</label>
+    <input id="pFollow" type="number" min="4" max="30" placeholder="7">
+    <label>Jarvis Claude sul PC</label>
+    <p>Il lavoro vero (ricerche, documenti, siti, file del PC, preventivi) lo fa il PC con Claude Code. Sul PC: ⚙ → TELEFONO, lì trova indirizzo e PIN.</p>
+    <input id="pcInd" placeholder="indirizzo del PC, es. 192.168.1.20 (Wi-Fi) o 100.x.x.x (Tailscale)" autocomplete="off" inputmode="url">
+    <input id="pcPin" placeholder="PIN del PC (6 cifre)" autocomplete="off" inputmode="numeric" style="margin-top:6px">
+    <p><button type="button" class="btn mini" id="pcAbbina">ABBINA</button> <button type="button" class="btn mini" id="pcScollega">SCOLLEGA</button> Stato: <span id="pcStato">—</span></p>
+    <label>Chi decide (cervelli)</label>
+    <select id="pcModo">
+      <option value="misto">Misto (consigliato): cose semplici qui con Groq/Gemini, lavoro vero al PC con Haiku/Opus</option>
+      <option value="pc">Sempre il PC: decide Haiku sul PC (se il PC è spento decide il telefono)</option>
+      <option value="telefono">Solo telefono: il PC non si usa</option>
+    </select>
+    <label>Telegram — token del bot</label>
+    <input id="kTg" placeholder="123456:ABC… (lascia vuoto per non cambiarlo)" autocomplete="off">
+    <p>Su Telegram scriva a <b>@BotFather</b> → /newbot → copi il token qui e salvi (un bot NUOVO, non quello del PC). Poi scriva al suo bot: <b id="tgPin">/start ----</b></p>
+    <p>Stato: <span id="tgStato">—</span> <button type="button" class="btn mini" id="tgProva">PROVA</button></p>
+
+    <h4>STILE ALEXA</h4>
+    <div id="alexaOpts"></div>
+    <label>Indirizzo del lavoro ("Jarvis, vado al lavoro")</label>
+    <input id="pLavoro" placeholder="Via …, numero, città" autocomplete="off">
+    <label>Indirizzo di casa ("Jarvis, portami a casa")</label>
+    <input id="pCasa" placeholder="Via …, numero, città" autocomplete="off">
+    <p>Gli annunci tacciono in silenzio, con il Non disturbare, con la suoneria muta e durante le chiamate.</p>
+
+    <h4>PERMESSI DEL TELEFONO</h4>
+    <div id="permList"></div>
+
+    <div class="riga"><button type="button" class="btn" id="provaVoce">PROVA</button><button type="button" class="btn" id="chiudiImp">CHIUDI</button><button class="btn">SALVA</button></div>
+  </form>
+</div>
+<div class="modal" id="modCat">
+  <div class="pan" style="width:min(560px,100%)">
+    <div class="pt"><span>Voci italiane di Fish Audio</span><span id="catTot"></span></div>
+    <div class="doppia" style="margin:8px 0">
+      <input id="catCerca" placeholder="cerca per nome (calma, narratrice…)" autocomplete="off">
+      <button type="button" class="btn mini" id="catVai">CERCA</button>
+    </div>
+    <div class="doppia" style="margin-bottom:6px">
+      <select id="catGenere"><option value="male">Uomini</option><option value="female">Donne</option><option value="">Tutte</option></select>
+      <select id="catEta"><option value="">Ogni età</option><option value="young">Giovane</option><option value="middle-aged">Adulta</option><option value="old">Anziana</option></select>
+    </div>
+    <div class="doppia" style="margin-bottom:6px">
+      <select id="catStile"><option value="">Ogni stile</option><option value="calm">Calma</option><option value="warm">Calda</option><option value="soft">Morbida</option><option value="gentle">Gentile</option><option value="professional">Professionale</option><option value="confident">Sicura</option><option value="authoritative">Autorevole</option><option value="narration">Narratrice</option><option value="conversational">Da conversazione</option><option value="friendly">Amichevole</option><option value="cheerful">Allegra</option><option value="energetic">Energica</option><option value="expressive">Espressiva</option><option value="deep">Profonda</option><option value="clear">Chiara</option><option value="smooth">Vellutata</option></select>
+      <select id="catOrdine"><option value="usate">Più usate</option><option value="migliori">Migliori</option><option value="recenti">Più recenti</option></select>
+    </div>
+    <p>▶ = esempio del sito · PROVA = la senti dire una frase di Jarvis · USA = diventa la voce di Jarvis</p>
+    <div id="catLista" class="catLista"></div>
+    <div class="riga"><button type="button" class="btn" id="catPiu">ALTRE 100</button><button type="button" class="btn" id="catChiudi">CHIUDI</button></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const NATIVE = !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform() && Capacitor.Plugins && Capacitor.Plugins.Jarvis);
+// fuori dal telefono (anteprima nel browser) un finto motore, solo per vedere la grafica
+const J = NATIVE ? Capacitor.Plugins.Jarvis : (() => { const ok = async () => ({}); return new Proxy({}, { get: (_, k) => k === 'addListener' ? () => {} : k === 'zero' ? async () => ({ cervello:{ modello:'openai/gpt-oss-120b', riserve:998, limite:1000, groq:true, tavily:true, gemini:true, voceGemini:{ motore:'gemini' }, ricerche:3, ultimaRicerca:'prezzo ferro', attivita:[] }, memoria:[{ id:'a', text:'Il signore è un fabbro di Ostuni', ts:Date.now() }], sveglie:[{ id:1, at:Date.now()+3600e3, text:'Sveglia', kind:'sveglia' }], liste:{ spesa:['latte','pane'] }, telegram:{ pin:'1234' }, caratteri:[{ id:'classico', nome:'Maggiordomo britannico' }], voci:[['Charon','uomo','calma']], sistema:{ batteria:76, ram:58, disco:41, core:8 }, storia:[] }) : k === 'getConfig' ? async () => ({ config:{} }) : ok }); })();
+const GIORNI = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
+const MESI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+const pad = n => String(n).padStart(2,'0');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('on'),3200); }
+let cfg = {};
+const chi = () => cfg.appellativo || 'signore';
+
+// ---------- stato visivo ----------
+let modo = 'pronto';          // pronto | ascolto | elabora | parla
+let memoria = [];
+let attivita = [];            // [t, peso]
+let energia = 0;              // impulso dei neuroni (0..1)
+function impulso(x=1){ energia = Math.min(1.6, energia + x); }
+function setModo(m){ modo = m; document.body.classList.toggle('ascolto', m==='ascolto'); }
+
+// ---------- barra segmenti in alto ----------
+const segs = $('segs'); for (let i=0;i<14;i++) segs.appendChild(document.createElement('i'));
+setInterval(()=>{ const n = modo==='pronto' ? 3 : modo==='elabora' ? 8 + (Date.now()/120|0)%6 : 6 + Math.round(Math.random()*7); [...segs.children].forEach((s,i)=>s.classList.toggle("on", i<n)); }, 300);
+
+// ---------- orologio ----------
+function tick(){
+  const d = new Date();
+  $('ora').innerHTML = `${pad(d.getHours())}:${pad(d.getMinutes())}<small>${pad(d.getSeconds())}</small>`;
+  $('data').textContent = `${GIORNI[d.getDay()]} ${d.getDate()} ${MESI[d.getMonth()]} ${d.getFullYear()}`;
+  const tz = new Intl.DateTimeFormat('it-IT',{timeZoneName:'short'}).formatToParts(d).find(p=>p.type==='timeZoneName');
+  $('fuso').textContent = tz ? tz.value.replace('GMT+1','CET').replace('GMT+2','CEST') : '';
+}
+setInterval(tick, 1000); tick();
+
+// ---------- reattore con neuroni (versione leggera: 30 fotogrammi/s, sinapsi calcolate una volta in 3D, niente shadowBlur) ----------
+const cv = $('reattore'), cx = cv.getContext('2d');
+let W=0,H=0,DPR=1,alone=null,aloneModo='';
+function dimensiona(){ DPR = Math.min(1.25, devicePixelRatio||1); const r = cv.getBoundingClientRect(); W=r.width; H=r.height; cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR); alone=null; }
+addEventListener('resize', dimensiona);
+const NEU = []; let SIN = [];   // SIN = sinapsi [i, j, forza, memoria] calcolate in 3D: la rotazione non le cambia
+function semina(n){ for(let i=0;i<n;i++){ const u=Math.random()*2-1, a=Math.random()*Math.PI*2, s=Math.sqrt(1-u*u); const rr = Math.random()<.8 ? 1 : 1.15+Math.random()*.8; NEU.push({x:s*Math.cos(a)*rr,y:u*rr*.92,z:s*Math.sin(a)*rr,ph:Math.random()*6.28,v:.3+Math.random()*.7,mem:null}); } }
+function collega(){
+  SIN = []; const L = .58*.58;
+  for (let i=0;i<NEU.length;i++) for (let j=i+1;j<NEU.length;j++){ const a=NEU[i], b=NEU[j]; const d=(a.x-b.x)**2+(a.y-b.y)**2+(a.z-b.z)**2; const lim = (a.mem||b.mem) ? L*1.6 : L; if (d<lim) SIN.push([i,j,1-d/lim,(a.mem||b.mem)?1:0]); }
+}
+semina(140); collega();
+function sincronizzaNeuroniMemoria(){
+  const ids = new Set(memoria.map(m=>m.id)); let cambiato = false;
+  for (let i=NEU.length-1;i>=0;i--) if (NEU[i].mem && !ids.has(NEU[i].mem)) { NEU.splice(i,1); cambiato = true; }
+  const presenti = new Set(NEU.filter(n=>n.mem).map(n=>n.mem));
+  memoria.forEach(m=>{ if(!presenti.has(m.id)){ const u=Math.random()*1.4-.7,a=Math.random()*6.28,s=Math.sqrt(1-u*u); NEU.push({x:s*Math.cos(a)*.62,y:u*.62,z:s*Math.sin(a)*.62,ph:0,v:1,mem:m.id,nuovo:1}); impulso(.8); cambiato = true; } });
+  if (cambiato) collega();
+}
+let rot = 0, t0 = performance.now(), ultimoFrame = 0;
+const rosso = () => modo==='ascolto';
+function colore(a){ return rosso() ? `rgba(255,74,90,${a})` : `rgba(79,214,255,${a})`; }
+function anello(r, w, a, da, aa, dash){ cx.beginPath(); if (dash) cx.setLineDash(dash); cx.lineWidth=w; cx.strokeStyle=colore(a); cx.arc(0,0,r,da,aa); cx.stroke(); if (dash) cx.setLineDash([]); }
+const PX = new Float32Array(600), PY = new Float32Array(600), PZ = new Float32Array(600);
+function disegna(now){
+  requestAnimationFrame(disegna);
+  if (document.hidden || now - ultimoFrame < 32) return;   // massimo ~30 fotogrammi al secondo
+  ultimoFrame = now;
+  const dt = Math.min(80, now - t0); t0 = now;
+  const vel = modo==='elabora' ? 2.6 : modo==='parla' ? 1.6 : modo==='ascolto' ? 1.3 : 1;
+  rot += dt*0.00018*vel; energia *= Math.pow(.985, dt/16);
+  if (modo==='parla') energia = Math.max(energia, .35 + .3*Math.abs(Math.sin(now/140)), livelloVoce*1.5);
+  if (modo==='elabora') energia = Math.max(energia, .5);
+  cx.setTransform(DPR,0,0,DPR,0,0); cx.clearRect(0,0,W,H);
+  const R = Math.min(W, H) * .41;
+  cx.translate(W/2, H/2);
+  if (!alone || aloneModo !== (rosso()?'r':'a')){ aloneModo = rosso()?'r':'a'; alone = cx.createRadialGradient(0,0,R*.1,0,0,R*1.25); alone.addColorStop(0, colore(.2)); alone.addColorStop(1, colore(0)); }
+  cx.globalAlpha = .75 + Math.min(.25, energia*.2); cx.fillStyle = alone; cx.fillRect(-R*1.25,-R*1.25,R*2.5,R*2.5); cx.globalAlpha = 1;
+  const cs = Math.cos(rot), sn = Math.sin(rot), ct = Math.cos(.35), st = Math.sin(.35), n = Math.min(NEU.length, 600);
+  for (let i=0;i<n;i++){ const q=NEU[i], fl = 1 + Math.sin(now*.0006*q.v + q.ph)*.035; const x=q.x*fl, y=q.y*fl, z=q.z*fl;
+    const x1 = x*cs - z*sn, z1 = x*sn + z*cs, y1 = y*ct - z1*st, z2 = y*st + z1*ct, k = 1.9/(2.6 - z2*.6);
+    PX[i]=x1*R*k; PY[i]=y1*R*k; PZ[i]=z2; }
+  cx.lineWidth = .7; const boost = 1 + energia*1.4;
+  for (let liv=0; liv<3; liv++){
+    cx.beginPath();
+    for (const [i,j,f,m] of SIN){ if (m) continue; const v = f*(PZ[i]+PZ[j]+2)/4, l = v > .5 ? 2 : v > .22 ? 1 : 0; if (l!==liv) continue; cx.moveTo(PX[i],PY[i]); cx.lineTo(PX[j],PY[j]); }
+    cx.strokeStyle = colore(Math.min(.9, [.12,.26,.45][liv]*boost)); cx.stroke();
+  }
+  cx.beginPath(); for (const [i,j,f,m] of SIN){ if (!m) continue; cx.moveTo(PX[i],PY[i]); cx.lineTo(PX[j],PY[j]); }
+  cx.strokeStyle = rosso() ? 'rgba(255,120,130,.35)' : `rgba(255,179,71,${Math.min(.7,.28*boost)})`; cx.stroke();
+  for (let liv=0; liv<3; liv++){
+    cx.fillStyle = colore(Math.min(1, [.45,.7,.95][liv] + energia*.15)); const s = [1.4,2.2,3][liv];
+    for (let i=0;i<n;i++){ if (NEU[i].mem) continue; const l = PZ[i] > .35 ? 2 : PZ[i] > -.35 ? 1 : 0; if (l!==liv) continue;
+      const bl = Math.sin(now*.002*NEU[i].v + NEU[i].ph) > .93 ? 1.8 : 1; cx.fillRect(PX[i]-s*bl/2, PY[i]-s*bl/2, s*bl, s*bl); }
+  }
+  for (let i=0;i<n;i++){ const q = NEU[i]; if (!q.mem) continue;
+    if (q.nuovo) q.nuovo = Math.max(0, q.nuovo - dt/2500);
+    const rr = 2.8 + (PZ[i]+1)*.8 + (q.nuovo||0)*8, lamp = .6 + .4*Math.abs(Math.sin(now*.002 + i));
+    cx.fillStyle = rosso() ? 'rgba(255,74,90,.18)' : 'rgba(255,179,71,.16)'; cx.beginPath(); cx.arc(PX[i],PY[i],rr*2.6,0,7); cx.fill();
+    cx.fillStyle = rosso() ? 'rgba(255,140,150,.95)' : `rgba(255,195,100,${lamp})`; cx.beginPath(); cx.arc(PX[i],PY[i],rr,0,7); cx.fill(); }
+  const A = rot*3;
+  anello(R*.56, 1, .5, 0, 7);
+  anello(R*.62, 6, .22+energia*.15, A, A+1.6); anello(R*.62, 6, .22+energia*.15, A+3.14, A+4.4);
+  anello(R*.70, 1.2, .45, -A*.7, -A*.7+5.2, [2,5]);
+  cx.beginPath(); for (const o of [0,2.1,4.3]){ cx.moveTo(Math.cos(A*.5+o)*R*.8, Math.sin(A*.5+o)*R*.8); cx.arc(0,0,R*.8,A*.5+o,A*.5+o+1.2); } cx.lineWidth=2; cx.strokeStyle=colore(.55); cx.stroke();
+  anello(R*.98, 1, .3, 0, 7, [1,3]);
+  cx.beginPath(); for (const o of [0,3.3]){ cx.moveTo(Math.cos(-A*.4+o)*R*1.06, Math.sin(-A*.4+o)*R*1.06); cx.arc(0,0,R*1.06,-A*.4+o,-A*.4+o+.5); } cx.lineWidth=3; cx.strokeStyle=colore(.4+energia*.2); cx.stroke();
+  cx.beginPath();
+  for (let i=0;i<72;i++){ const an = i/72*6.283 + rot*.5, l = i%6===0 ? 9 : 4, c = Math.cos(an), s = Math.sin(an); cx.moveTo(c*R*.885, s*R*.885); cx.lineTo(c*(R*.885+l), s*(R*.885+l)); }
+  cx.strokeStyle = colore(.5); cx.lineWidth = 1; cx.stroke();
+  cx.font = `${Math.max(8,R*.045)}px 'Share Tech Mono',monospace`; cx.fillStyle = colore(.55); cx.textAlign='center'; cx.textBaseline='middle';
+  cx.fillText('NEURO', 0, -R*.75); cx.fillText('MEM '+memoria.length, R*.75, 0); cx.fillText('CORE', 0, R*.75); cx.fillText('NET', -R*.75, 0);
+  const d = new Date(), ora = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  cx.font = `${R*.2}px 'Share Tech Mono',monospace`;
+  cx.lineWidth = 6; cx.strokeStyle = colore(.18); cx.strokeText(ora, 0, -R*.02);
+  cx.fillStyle = rosso() ? '#ffd0d4' : '#dff7ff'; cx.fillText(ora, 0, -R*.02);
+  cx.font = `600 ${Math.max(9,R*.055)}px 'Rajdhani',sans-serif`; cx.fillStyle = colore(.85);
+  cx.fillText({pronto:'P R O N T O', ascolto:'I N   A S C O L T O', elabora:'E L A B O R A Z I O N E', parla:'R I S P O S T A'}[modo], 0, R*.15);
+}
+dimensiona(); requestAnimationFrame(disegna);
+$('reattore').addEventListener('click', ()=>$('mic').click());
+
+// ---------- attività neurale (grafico) ----------
+const ov = $('onda'), ox = ov.getContext('2d');
+function disegnaOnda(){
+  if (document.hidden) return;
+  const r = ov.getBoundingClientRect(), d = Math.min(1.25,devicePixelRatio||1); if (ov.width !== Math.round(r.width*d) || ov.height !== Math.round(r.height*d)) { ov.width = Math.round(r.width*d); ov.height = Math.round(r.height*d); } ox.setTransform(d,0,0,d,0,0);
+  const w = r.width, h = r.height, N = 60, now = Date.now(), b = new Array(N).fill(0);
+  for (const [t,p] of attivita){ const k = N-1 - Math.floor((now-t)/10000); if (k>=0 && k<N) b[k]+=p; }
+  const max = Math.max(4, ...b);
+  ox.clearRect(0,0,w,h); ox.strokeStyle='rgba(79,214,255,.12)'; ox.lineWidth=1; for(let y=.25;y<1;y+=.25){ ox.beginPath(); ox.moveTo(0,h*y); ox.lineTo(w,h*y); ox.stroke(); }
+  ox.beginPath(); for (let i=0;i<N;i++){ const x=i/(N-1)*w, rumore = Math.sin(now/300+i*.9)*1.4 + Math.sin(now/170+i*2.3)*.8, y = h-4 - (b[i]/max)*(h-12) + rumore*(.6+energia); i?ox.lineTo(x,y):ox.moveTo(x,y); }
+  ox.strokeStyle='#4fd6ff'; ox.lineWidth=1.5; ox.stroke();
+  ox.lineTo(w,h); ox.lineTo(0,h); ox.closePath(); const gr = ox.createLinearGradient(0,0,0,h); gr.addColorStop(0,'rgba(79,214,255,.25)'); gr.addColorStop(1,'rgba(79,214,255,0)'); ox.fillStyle=gr; ox.fill();
+  const unMin = attivita.filter(a=>now-a[0]<60000).reduce((s,a)=>s+a[1],0); $('apm').textContent = `${unMin} / MIN`;
+}
+setInterval(disegnaOnda, 200);
+
+// ---------- pannelli (dal motore del telefono) ----------
+function barra(id, v, testo){ const el=$(id); el.querySelector('div span:last-child').textContent = v==null||v<0?'—':(testo||v+'%'); el.querySelector('i').style.width = (v>0?v:0)+'%'; el.classList.toggle('alto', v>=85); }
+function mostraMemoria(f){
+  memoria = (f || []).map((m,i)=>({ ...m, id: m.id || 'n'+(m.ts||i) })); $('nmem').textContent = memoria.length;
+  $('memoria').innerHTML = memoria.length ? memoria.map((m,i)=>`<li><span>${esc(m.text)}</span><button title="Dimentica" data-n="${i+1}">✕</button></li>`).join('') : '<li class="vuoto" style="border:0">Nessun ricordo. Mi dica "ricorda che…"</li>';
+  sincronizzaNeuroniMemoria();
+}
+$('memoria').addEventListener('click', async e=>{ const n = e.target.dataset?.n; if(!n) return; await J.forget({ what:n }); aggiorna(); });
+function quando(t){ const d = new Date(t); const oggi = new Date().toDateString()===d.toDateString(); return (oggi ? '' : d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric'})+' ') + pad(d.getHours())+':'+pad(d.getMinutes()); }
+function mostraSveglie(l){
+  l = (l || []).slice().sort((a,b)=>a.at-b.at); $('nsv').textContent = l.length;
+  $('sveglie').innerHTML = l.length ? l.slice(0,12).map(s=>`<li><b>${s.kind==='sveglia'?'⏰':'🔔'} ${esc(quando(s.at))}</b><span>${esc(s.kind==='sveglia' ? (s.repeat?'ripetuta':'') : s.text)}</span><button data-id="${esc(s.id)}" title="Cancella">✕</button></li>`).join('')
+    : '<li class="vuoto" style="border:0">Nessuna. Dica "svegliami alle 7".</li>';
+}
+$('sveglie').addEventListener('click', async e=>{ const id=e.target.dataset?.id; if(!id) return; await J.alarm({ action:'cancel', id:String(id) }); aggiorna(); });
+function mostraListe(ls){
+  const nomi = Object.keys(ls||{}).filter(n=>(ls[n]||[]).length); let tot = 0;
+  $('liste').innerHTML = nomi.length ? nomi.map(n=>{ tot += ls[n].length; return `<li><b>${esc(n)}</b></li>` + ls[n].map(it=>`<li><span style="color:var(--tx)">• ${esc(it)}</span><button data-l="${esc(n)}" data-i="${esc(it)}">✕</button></li>`).join(''); }).join('') : '<li class="vuoto" style="border:0">Vuote. Dica "aggiungi il latte alla spesa".</li>';
+  $('nli').textContent = tot;
+}
+$('liste').addEventListener('click', async e=>{ const d=e.target.dataset; if(!d?.i) return; await J.tool({ name:'lista_togli', args:{ lista:d.l, cose:d.i } }); aggiorna(); });
+let ultimo = null, allarmeAttivo = null;
+async function aggiorna(){
+  let s; try { s = await J.zero(); } catch { return; }
+  ultimo = s;
+  const on = navigator.onLine; $('online').classList.toggle('off', !on); $('online').querySelector('span').textContent = on ? 'ONLINE' : 'OFFLINE';
+  const si = s.sistema || {};
+  $('ncpu').textContent = (si.core||'—') + ' CORE';
+  barra('b1', si.batteria, si.batteria>=0 ? si.batteria+'%'+(si.carica?' ⚡':'') : null); barra('b5', si.ram); barra('bd', si.disco);
+  const b = s.cervello || {}; attivita = b.attivita || [];
+  barra('b15', b.limite>0 ? Math.round(b.riserve/b.limite*100) : null, b.limite>0 ? `${b.riserve}/${b.limite}` : null);
+  $('cMod').textContent = (b.modelloRiserva || b.modello || '—'); $('cMod').title = b.modello || '';
+  $('cRis').textContent = b.riserve==null || b.riserve<0 ? '—' : (b.limite>0 ? `${b.riserve} / ${b.limite}` : b.riserve);
+  $('cAcc').innerHTML = b.groq ? '<span class="ok">AUTORIZZATO</span>' : '<span class="no">MANCA CHIAVE</span>';
+  const v = b.voceGemini || {};
+  $('cVoce').innerHTML = cfg.voiceEngine==='fish' && cfg.fishKey ? (v.fishPausa ? '<span class="no">FISH IN PAUSA · GEMINI</span>' : v.erroreFish ? '<span class="no" title="' + esc(v.erroreFish) + '">FISH: ERRORE</span>' : '<span class="ok">FISH ' + esc((nomeFish(cfg.fishVoice)||'').split(' (')[0].toUpperCase()) + '</span>')
+    : cfg.voiceEngine==='sistema' || !b.gemini ? '<span class="no">TELEFONO</span>' : v.quota ? '<span class="no">QUOTA · TELEFONO</span>' : '<span class="ok">GEMINI ' + esc((cfg.voice||'Charon').toUpperCase()) + '</span>';
+  $('rAtt').innerHTML = b.tavily ? '<span class="ok">ATTIVA</span>' : '<span class="no">MANCA CHIAVE</span>';
+  $('rNum').textContent = b.ricerche||0; $('rUlt').textContent = b.ultimaRicerca || '—';
+  mostraPc(s.pc);
+  const t = s.telegram || {};
+  $('rTg').innerHTML = !t.configurato ? '—' : t.stato==='errore' ? '<span class="no">ERRORE</span>' : t.collegato ? '<span class="ok">COLLEGATO</span>' : 'IN ATTESA';
+  $('tgPin').textContent = '/start ' + (t.pin || '----');
+  $('tgStato').innerHTML = !t.configurato ? '<span class="no">non configurato</span>' : t.stato==='errore' ? '<span class="no">errore: '+esc(t.errore)+'</span>' : t.collegato ? '<span class="ok">collegato '+esc(t.bot||'')+'</span>' : 'in attesa di /start ' + esc(t.bot||'');
+  if (t.errore && t.stato!=='errore') $('tgStato').innerHTML += ' <span class="no">('+esc(t.errore)+')</span>';
+  if (JSON.stringify((s.memoria||[]).map(m=>m.text)) !== JSON.stringify(memoria.map(m=>m.text))) mostraMemoria(s.memoria);
+  mostraSveglie(s.sveglie); mostraListe(s.liste);
+  if (s.allarme && (!allarmeAttivo || allarmeAttivo.id !== s.allarme.id)) mostraAllarme(s.allarme);
+  if (!s.allarme && allarmeAttivo) chiudiAllarme();
+  if (!b.groq && !aggiorna.avvisato){ aggiorna.avvisato = 1; aggiungi('jarvis', `${cap(chi())}, per accendere il cervello mi serve la chiave gratuita di Groq: tocchi l'ingranaggio in alto a destra.`); }
+  return s;
+}
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+setInterval(aggiorna, 4000);
+
+// ---------- chat ----------
+const msgs = $('msgs'); let nTot = 0;
+function aggiungi(chi_, testo, cls=''){
+  const d = document.createElement('div'); d.className = 'm ' + (chi_==='io'?'io ':'') + cls;
+  if (cls !== 'sys') d.innerHTML = `<b>${chi_==='io'?chi().toUpperCase():'JARVIS'}</b>`;
+  d.appendChild(document.createTextNode(testo)); msgs.appendChild(d);
+  while (msgs.children.length > 60) msgs.firstChild.remove();
+  msgs.scrollTop = msgs.scrollHeight; if(!cls) nTot++; $('nmsg').textContent = `${Math.min(nTot,60)}/${nTot}`; return d;
+}
+let pensaEl = null;
+function aggiornaPensa(t){ if (pensaEl){ pensaEl.lastChild.textContent = t; msgs.scrollTop = msgs.scrollHeight; } }
+let occupato = false, voceAttiva = true;
+async function invia(testo){
+  testo = testo.trim(); if (!testo || occupato) return;
+  occupato = true; J.stopSay(); aggiungi('io', testo);
+  if (voceAttiva) J.prepareVoice();   // mentre il cervello pensa preparo già la voce Gemini
+  setModo('elabora'); impulso(1);
+  pensaEl = aggiungi('jarvis', `Elaboro, ${chi()}`, 'pensa');
+  let risp;
+  try { risp = (await J.ask({ text: testo })).text || '…'; } catch (e) { risp = `Mi scusi, ${chi()}: ` + (e.message||e); }
+  pensaEl?.remove(); pensaEl = null;
+  aggiungi('jarvis', risp); impulso(1.2);
+  occupato = false; aggiorna();
+  if (voceAttiva) { setModo('parla'); try { await J.say({ text: risp }); } catch {} if (modo==='parla') setModo('pronto'); } else setModo('pronto');
+}
+$('form').addEventListener('submit', e=>{ e.preventDefault(); const t=$('testo').value; $('testo').value=''; invia(t); });
+
+// la voce che parla fa pulsare i neuroni
+let livelloVoce = 0;
+setInterval(async ()=>{ if (modo!=='parla' || !NATIVE) { livelloVoce = 0; return; } try { const l = await J.level(); livelloVoce = l.level||0; } catch {} }, 120);
+
+function aggiornaVol(){ $('vol').classList.toggle('muto', !voceAttiva); $('volOnde').style.display = voceAttiva ? '' : 'none'; }
+$('vol').onclick = async ()=>{ voceAttiva = !voceAttiva; aggiornaVol(); if(!voceAttiva) J.stopSay(); try { await J.patchConfig({ values:{ voceChat: voceAttiva ? 'true' : 'false' } }); } catch {} };
+
+// ---------- voce: conversazione (motore del telefono) ----------
+let wakeOn = false, statoMotore = 'off';
+const MODO = { off:'pronto', wake:'pronto', connecting:'ascolto', listening:'ascolto', thinking:'elabora', speaking:'parla', error:'pronto' };
+function statoVoce(s, detail){
+  statoMotore = s; setModo(MODO[s] || 'pronto');
+  const parla = ['connecting','listening','thinking','speaking'].includes(s);
+  $('mic').classList.toggle('rec', parla);
+  if (s==='wake') wakeOn = true;
+  if (s==='off') wakeOn = false;
+  $('orecchio').classList.toggle('wake', wakeOn);
+  $('statoWake').textContent = wakeOn ? (detail && /silenzio/i.test(detail) ? 'SILENZIO' : 'DICA "JARVIS"') : '';
+  $('statoWake').className = 'statoWake' + (wakeOn ? ' on' : '');
+  if (s==='error' && detail) aggiungi('jarvis', detail, 'sys');
+  if (parla) impulso(.4);
+}
+$('mic').onclick = async ()=>{
+  try {
+    if (['connecting','listening','thinking','speaking'].includes(statoMotore)) { await J.stopTalk(); return; }
+    J.stopSay(); await ensurePerm(['mic','notifications']); await J.talk();
+  } catch (e) { toast(e.message||String(e)); }
+};
+$('orecchio').onclick = async ()=>{
+  try {
+    if (!wakeOn){ await ensurePerm(['mic','notifications']); await J.startListening(); wakeOn = true; aggiungi('jarvis', `In ascolto, ${chi()}. Mi chiami pure: "Jarvis".`); }
+    else { await J.stopListening(); wakeOn = false; }
+  } catch (e) { toast('Ascolto: '+(e.message||e)); }
+  statoVoce(wakeOn ? 'wake' : 'off');
+};
+
+// ---------- sveglie e promemoria: avviso con STOP / tra 10 minuti ----------
+function mostraAllarme(s){
+  allarmeAttivo = s;
+  $('alTipo').textContent = s.kind==='sveglia' ? 'Sveglia' : 'Promemoria'; $('alOra').textContent = s.ora || ''; $('alGrande').textContent = s.ora || quando(Date.now());
+  $('alTesto').textContent = s.kind==='sveglia' ? `Buongiorno, ${chi()}.` : s.text;
+  $('allarme').classList.add('on'); impulso(.8);
+}
+function chiudiAllarme(){ allarmeAttivo = null; $('allarme').classList.remove('on'); }
+$('alStop').onclick = async ()=>{ const s = allarmeAttivo; chiudiAllarme(); if (s) await J.alarm({ action:'stop', id:String(s.id) }); };
+$('alPosponi').onclick = async ()=>{ const s = allarmeAttivo; chiudiAllarme(); if (!s) return; await J.alarm({ action:'snooze', id:String(s.id) }); aggiungi('jarvis', `Come desidera, ${chi()}: tra dieci minuti.`); };
+
+// ---------- eventi dal motore ----------
+J.addListener('state', e => statoVoce(e.state, e.detail));
+J.addListener('transcript', e => {
+  if (e.role === 'user') { aggiungi('io', e.text); impulso(.6); }
+  else if (e.role === 'assistant') { if (!occupato) aggiungi('jarvis', String(e.text).replace(/^🔈 /,'')); impulso(1); }
+  else if (/^⚙/.test(e.text)) { impulso(.9); if (pensaEl) aggiornaPensa(`Eseguo, ${chi()}: ` + e.text.replace(/^⚙\s*/,'')); else aggiungi('jarvis', e.text, 'sys'); }
+  else if (/^⚠/.test(e.text)) aggiungi('jarvis', e.text, 'sys');
+});
+function mostraPc(p){
+  p = p || {};
+  const el = $('pcStato'); if (!el) return;
+  el.innerHTML = !p.abbinato ? '<span class="no">non abbinato</span>' : p.modo === 'telefono' ? 'spento (solo telefono)'
+    : p.collegato ? '<span class="ok">' + esc(p.stato || 'collegato') + '</span>' : '<span class="no">' + esc(p.stato || 'non raggiungibile') + '</span>';
+  if (document.activeElement !== $('pcInd') && p.indirizzo) $('pcInd').value = p.indirizzo;
+  if (p.modo) $('pcModo').value = p.modo;
+}
+$('pcAbbina').onclick = async () => {
+  const r = await J.pc({ action: 'abbina', indirizzo: $('pcInd').value.trim(), pin: $('pcPin').value.trim() });
+  $('pcPin').value = ''; mostraPc(r.pc); aggiungi('jarvis', r.result || r.errore || '—', 'sys');
+};
+$('pcScollega').onclick = async () => { const r = await J.pc({ action: 'scollega' }); mostraPc(r.pc); };
+$('pcModo').onchange = async () => { const r = await J.pc({ action: 'modo', modo: $('pcModo').value }); mostraPc(r.pc); };
+J.addListener('zero', e => {
+  const t = e.type;
+  if (t==='pc') { if (e.data==='profilo') caricaCfg(); aggiorna(); return; }
+  if (t==='pc_risposta') { aggiungi('jarvis', '💻 ' + e.data); impulso(1); return; }
+  if (t==='pc_fine') { try { const d = JSON.parse(e.data); aggiungi('jarvis', (d.stato==='done' ? '✅ ' : '❌ ') + d.progetto + '\n' + d.testo + ((d.file||[]).length ? '\n📎 ' + d.file.map(x=>x.nome).join(', ') + ' (nelle notifiche)' : '')); impulso(1.2); } catch {} return; }
+  if (t==='pensa') { if (e.data==='true') { if (modo!=='parla') setModo('elabora'); impulso(.6); } else if (modo==='elabora' && !occupato) setModo(MODO[statoMotore] || 'pronto'); }
+  else if (t==='ricerca') { impulso(1); aggiornaPensa(`Un momento, ${chi()}. Consulto la rete: ` + e.data); }
+  else if (t==='azione') { impulso(.9); if (!/cerca_web/.test(e.data)) aggiornaPensa(`Eseguo, ${chi()}: ` + String(e.data).replace(/_/g,' ')); }
+  else if (t==='battito') { attivita.push([Date.now(), +e.data||1]); }
+  else if (t==='memoria' || t==='sveglie' || t==='liste') aggiorna();
+  else if (t==='allarme') { if (e.data && e.data !== 'null') mostraAllarme(JSON.parse(e.data)); else chiudiAllarme(); }
+});
+
+// ---------- impostazioni ----------
+const ALEXA_OPTS = [['announceMsgs','Annuncia i messaggi in arrivo ("Ti ha scritto Papà, te lo leggo?")',true],['announceGroups','Annuncia anche i gruppi',false],
+  ['announceRead','Leggi subito il messaggio senza chiedere',false],['morningBrief','Buongiorno quando spengo la sveglia (ora, meteo, agenda, notizia)',true],
+  ['homeMode','Modalità casa: schermo sempre acceso e Jarvis sopra il blocco (telefono fisso in carica)',false]];
+const optOn = (k, def) => cfg[k] === undefined || cfg[k] === '' ? def : String(cfg[k]) !== 'false';
+async function caricaCfg(){ try { cfg = (await J.getConfig()).config || {}; } catch { cfg = {}; } voceAttiva = cfg.voceChat !== 'false'; aggiornaVol(); }
+const segnoChiave = (k) => cfg[k] ? '<span class="ok">✓ chiave presente</span>' : '<span class="no">manca</span>';
+async function apriImp(){
+  await caricaCfg(); const s = ultimo || await aggiorna() || {};
+  $('pCarattere').innerHTML = (s.caratteri||[]).map(c=>`<option value="${esc(c.id)}">${esc(c.nome)}</option>`).join('');
+  $('pNome').value = cfg.userName||''; $('pCitta').value = cfg.city||''; $('pCarattere').value = cfg.carattere||'classico';
+  $('pAppellativo').value = cfg.appellativo||'signore'; $('pIstr').value = cfg.istruzioni || cfg.personality || '';
+  for (const id of ['kGroq','kTav','kGem','kTg','kMod']) $(id).value = '';
+  $('kGroqOk').innerHTML = segnoChiave('groqKey'); $('kTavOk').innerHTML = segnoChiave('tavilyKey'); $('kGemOk').innerHTML = segnoChiave('geminiKey');
+  vociFish = s.vociFish || [];
+  $('voce').innerHTML = `<optgroup label="Fish Audio (come Jarvis Claude, recita emozioni)">${vociFish.map(([id,n])=>`<option value="fish:${esc(id)}">${esc(n)}</option>`).join('')}</optgroup><optgroup label="Gemini (veloce, online)">${(s.voci||[]).map(([n,g,t])=>`<option value="gemini:${n}">${n} — ${g}, ${t}${g==='uomo'?' ♂':''}</option>`).join('')}</optgroup><optgroup label="Telefono"><option value="sistema">Voce del telefono (senza internet)</option></optgroup>`;
+  $('voce').value = cfg.voiceEngine === 'sistema' ? 'sistema' : cfg.voiceEngine === 'fish' ? 'fish:' + (cfg.fishVoice || (vociFish[0]||[])[0]) : 'gemini:' + (cfg.voice || 'Charon');
+  $('fishVel').value = cfg.fishSpeed || '1'; $('fishVelN').textContent = '×' + (+$('fishVel').value).toFixed(2);
+  $('kFish').value = ''; $('kFishOk').innerHTML = segnoChiave('fishKey');
+  $('wakeAuto').checked = wakeOn; $('pFollow').value = cfg.followSec || '';
+  $('pLavoro').value = cfg.workAddress || ''; $('pCasa').value = cfg.homeAddress || '';
+  $('alexaOpts').innerHTML = ALEXA_OPTS.map(([k,n,d])=>`<label class="spunta"><input type="checkbox" id="x_${k}" ${optOn(k,d)?'checked':''}> ${esc(n)}</label>`).join('');
+  refreshPerms();
+  $('imp').classList.add('on');
+}
+$('apriImp').onclick = apriImp;
+$('chiudiImp').onclick = ()=>$('imp').classList.remove('on');
+$('imp').addEventListener('click', e=>{ if (e.target===$('imp')) $('imp').classList.remove('on'); });
+const fraseProva = v => v.startsWith('fish:') ? `[confident] Eccomi, ${$('pAppellativo').value || 'signore'}. Tutti i sistemi sono operativi, e io sono in gran forma.` : `Buongiorno, ${$('pAppellativo').value || 'signore'}. Tutti i sistemi sono operativi.`;
+async function salvaChiaveFish(){ const k = $('kFish').value.replace(/\s+/g,''); if (k) { await J.patchConfig({ values:{ fishKey: k } }); cfg.fishKey = k; $('kFish').value = ''; $('kFishOk').innerHTML = segnoChiave('fishKey'); } }
+$('provaVoce').onclick = async ()=>{ await salvaChiaveFish(); const v = $('voce').value; await J.patchConfig({ values:{ fishSpeed: $('fishVel').value } }); await J.say({ text: fraseProva(v), voice: v }); };
+$('fishVel').oninput = ()=>{ $('fishVelN').textContent = '×' + (+$('fishVel').value).toFixed(2); };
+
+// ---------- catalogo voci Fish (come Jarvis Claude) ----------
+let vociFish = [], catPagina = 1, catAudio = null;
+const nomeFish = id => ((vociFish.find(v=>v[0]===id)||[])[1]) || cfg.fishVoiceName || '';
+async function caricaCatalogo(aggiungiAltre = false){
+  if (!aggiungiAltre) { catPagina = 1; $('catLista').innerHTML = '<div class="vuoto">Cerco le voci… (con i filtri Fish può metterci anche mezzo minuto)</div>'; }
+  $('catPiu').disabled = true;
+  let r; try { r = await J.fishVoci({ q: $('catCerca').value.trim(), genere: $('catGenere').value, eta: $('catEta').value, stile: $('catStile').value, ordine: $('catOrdine').value, pagina: catPagina }); } catch (e) { r = { errore: e.message || String(e) }; }
+  if (r.errore) { $('catLista').innerHTML = '<div class="vuoto">Fish non risponde: ' + esc(r.errore) + '</div>'; return; }
+  $('catPiu').disabled = !!r.finite; $('catPiu').textContent = r.finite ? 'FINITE' : 'ALTRE 100';
+  const scelta = cfg.voiceEngine === 'fish' ? cfg.fishVoice : '';
+  const html = (r.voci||[]).map(v => `<div class="vc ${v.id === scelta ? 'scelta' : ''}" data-id="${esc(v.id)}" data-titolo="${esc(v.titolo)}">
+    <div><b>${esc(v.titolo)}</b><small>${esc((v.tag||[]).join(' · ') || v.descrizione || '—')} · ${(v.usi || 0).toLocaleString('it-IT')} usi</small></div>
+    ${v.campione ? `<button type="button" class="btn mini" data-az="esempio" data-url="${esc(v.campione)}">▶</button>` : ''}
+    <button type="button" class="btn mini" data-az="prova">PROVA</button>
+    <button type="button" class="btn mini" data-az="usa">USA</button></div>`).join('');
+  if (aggiungiAltre) $('catLista').insertAdjacentHTML('beforeend', html);
+  else $('catLista').innerHTML = html || '<div class="vuoto">Nessuna voce trovata: provi un altro nome o "Tutte".</div>';
+  $('catTot').textContent = $('catLista').querySelectorAll('.vc').length + ' voci' + (r.totale ? ' su circa ' + r.totale : '');
+}
+$('apriCatalogo').onclick = async () => { await salvaChiaveFish(); $('modCat').classList.add('on'); caricaCatalogo(); };
+$('catVai').onclick = () => caricaCatalogo();
+['catGenere', 'catEta', 'catStile', 'catOrdine'].forEach(id => $(id).onchange = () => caricaCatalogo());
+$('catCerca').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); caricaCatalogo(); } });
+$('catPiu').onclick = () => { catPagina++; caricaCatalogo(true); };
+$('catChiudi').onclick = () => { try { catAudio?.pause(); } catch {} J.stopSay(); $('modCat').classList.remove('on'); };
+$('modCat').addEventListener('click', e => { if (e.target === $('modCat')) $('catChiudi').onclick(); });
+$('catLista').addEventListener('click', async e => {
+  const b = e.target.closest('[data-az]'); if (!b) return;
+  const riga = b.closest('.vc'), id = riga.dataset.id;
+  if (b.dataset.az === 'esempio') { try { catAudio?.pause(); } catch {} J.stopSay(); catAudio = new Audio(b.dataset.url); catAudio.play().catch(()=>toast('Esempio non disponibile')); }
+  if (b.dataset.az === 'prova') {
+    if (!cfg.fishKey) { toast('Prima inserisca la chiave Fish Audio'); return; }
+    try { catAudio?.pause(); } catch {} J.stopSay(); b.textContent = '…';
+    const r = await J.say({ text: fraseProva('fish:'), voice: 'fish:' + id });
+    b.textContent = 'PROVA'; if (r.engine !== 'fish') toast('Fish non ha risposto: ' + (((await J.zero()).cervello||{}).voceGemini||{}).erroreFish);
+  }
+  if (b.dataset.az === 'usa') {
+    await J.patchConfig({ values:{ voiceEngine:'fish', fishVoice:id, fishVoiceName: riga.dataset.titolo.slice(0,60) } });
+    await caricaCfg();
+    $('catLista').querySelectorAll('.vc').forEach(x => x.classList.toggle('scelta', x === riga));
+    b.textContent = 'SCELTA ✓';
+    try { const st = await J.zero(); vociFish = st.vociFish || vociFish; } catch {}
+    const sel = $('voce');
+    if (![...sel.options].some(o => o.value === 'fish:' + id)) sel.querySelector('optgroup').insertAdjacentHTML('afterbegin', `<option value="fish:${esc(id)}">${esc(riga.dataset.titolo)} (dal catalogo)</option>`);
+    sel.value = 'fish:' + id;
+    aggiorna();
+  }
+});
+$('tgProva').onclick = async ()=>{ const r = await J.telegram({ action:'test' }); aggiungi('jarvis', r.result || '—'); aggiorna(); };
+$('formImp').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const clean = s => s.replace(/\s+/g,'').replace(/[.,;:]+$/,'');
+  const v = { userName:$('pNome').value.trim(), city:$('pCitta').value.trim(), carattere:$('pCarattere').value, appellativo:$('pAppellativo').value.trim()||'signore',
+    istruzioni:$('pIstr').value.trim().slice(0,2000), workAddress:$('pLavoro').value.trim(), homeAddress:$('pCasa').value.trim() };
+  const vs = $('voce').value; if (vs === 'sistema') v.voiceEngine = 'sistema'; else if (vs.startsWith('fish:')) { v.voiceEngine = 'fish'; v.fishVoice = vs.slice(5); v.fishVoiceName = nomeFish(vs.slice(5)).slice(0,60); } else { v.voiceEngine = 'gemini'; v.voice = vs.slice(7); }
+  v.fishSpeed = $('fishVel').value;
+  if ($('kFish').value.trim()) v.fishKey = $('kFish').value.replace(/\s+/g,'');
+  if ($('pFollow').value) v.followSec = String(Math.min(30, Math.max(4, +$('pFollow').value || 7)));
+  if ($('kGroq').value.trim()) v.groqKey = clean($('kGroq').value);
+  if ($('kTav').value.trim()) v.tavilyKey = clean($('kTav').value);
+  if ($('kGem').value.trim()) v.geminiKey = clean($('kGem').value);
+  if ($('kMod').value.trim()) v.groqModel = $('kMod').value.trim();
+  const tg = $('kTg').value.trim(); if (tg) v.telegramToken = clean(tg);
+  for (const [k] of ALEXA_OPTS){ const el=$('x_'+k); if (el) v[k] = el.checked ? 'true' : 'false'; }
+  try { await J.patchConfig({ values: v }); } catch (er) { toast('Errore: '+(er.message||er)); return; }
+  if (tg) J.telegram({ action:'restart' });
+  try { await J.applyHome(); } catch {}
+  const w = $('wakeAuto').checked; if (w !== wakeOn) await $('orecchio').onclick();
+  await caricaCfg(); $('imp').classList.remove('on'); aggiorna(); aggiungi('jarvis', `Impostazioni salvate, ${chi()}.`);
+});
+
+// ---------- permessi del telefono ----------
+const PERMS = [['mic','Microfono'],['notifications','Notifiche'],['contacts','Contatti'],['phone','Telefono'],['sms','SMS'],['calendar','Calendario'],['location','Posizione']];
+async function ensurePerm(list){ if (!NATIVE) return; const st = await J.checkPermissions(); const need = list.filter(a=>st[a] && st[a]!=='granted'); if (need.length) await J.requestPermissions({ permissions:need }); }
+async function refreshPerms(){
+  if (!NATIVE) { $('permList').innerHTML = '<p>Solo sul telefono.</p>'; return; }
+  let st={}, sp={}; try{ st=await J.checkPermissions(); sp=await J.specialStatus(); }catch(e){}
+  let h = PERMS.map(([a,n])=>`<div class="perm"><span><i class="${st[a]==='granted'?'ok':''}"></i>${n}</span>${st[a]==='granted'?'':`<button type="button" class="btn mini" data-p="${a}">CONSENTI</button>`}</div>`).join('');
+  const spec = [['notifAccess','Annunciare i messaggi (Accesso alle notifiche)',sp.notifAccess],['exactAlarm','Sveglie e promemoria all\'ora esatta',sp.exactAlarm],['overlay','Mostra sopra altre app (sveglie)',sp.overlay],['battery','Batteria senza limiti',sp.battery],['accessibility','Usa le app a voce (Accessibilità)',sp.accessibility],['assistant','Assistente predefinito',sp.assistant]];
+  h += spec.map(([k,n,ok])=>`<div class="perm"><span><i class="${ok?'ok':''}"></i>${n}</span><button type="button" class="btn mini" data-sp="${k}">APRI</button></div>`).join('');
+  if (sp.xiaomi) h += `<p style="margin-top:8px">Xiaomi (${esc(sp.model||'')}): una volta sola</p>` + [['miui_autostart','1. Avvio automatico → Jarvis acceso'],['miui_perm','2. Pop-up in background + schermata di blocco: Consenti'],['miui_battery','3. Risparmio batteria → Nessuna restrizione']].map(([k,n])=>`<div class="perm"><span>${n}</span><button type="button" class="btn mini" data-sp="${k}">APRI</button></div>`).join('');
+  $('permList').innerHTML = h;
+  $('permList').querySelectorAll('[data-p]').forEach(b=>b.onclick=async()=>{ try{ await J.requestPermissions({ permissions:[b.dataset.p] }); }catch(e){} refreshPerms(); });
+  $('permList').querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>J.openSpecial({ which:b.dataset.sp }));
+}
+
+// ---------- avvio ----------
+(async function avvio(){
+  await caricaCfg();
+  try { const st = await J.status(); wakeOn = !!st.wake; statoVoce(st.state || (wakeOn?'wake':'off')); } catch {}
+  const s = await aggiorna();
+  const storia = (s && s.storia) || [];
+  storia.slice(-8).forEach(h => aggiungi(h.r==='u' ? 'io' : 'jarvis', h.t));
+  aggiungi('jarvis', `Sistemi online, ${chi()}. Come posso aiutarla?`);
+  requestAnimationFrame(dimensiona);
+  try { const v = await J.paginaPronta(); console.log('pagina ' + v.versione); } catch {}   // la pagina scaricata è partita bene
+})();
+</script>
+</body>
+</html>
