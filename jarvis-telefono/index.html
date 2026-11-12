@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#050d14">
-<meta name="jarvis-versione" content="202611112009">
+<meta name="jarvis-versione" content="202611120100">
 <title>J.A.R.V.I.S.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -180,7 +180,7 @@ body.ascolto .segs i.on{background:var(--ro);box-shadow:0 0 8px var(--ro)}
   <main class="centro"><canvas id="reattore"></canvas></main>
 
   <section class="pan chat">
-    <div class="pt"><span>Canale di comunicazione</span><span id="nmsg">0/0</span></div>
+    <div class="pt"><span>Canale di comunicazione</span><span><span id="nmsg">0/0</span> <button type="button" class="btn mini" id="svuotaChat" title="Svuota i messaggi qui e sul PC">SVUOTA</button></span></div>
     <div class="msgs" id="msgs"></div>
     <form class="riga" id="form" autocomplete="off">
       <button type="button" class="tondo" id="orecchio" title="Ascolto continuo: dica &quot;Jarvis&quot;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9a6 6 0 1 1 12 0c0 3-2 4-3 5.5S14 18 12 19.5 8 20 8 18"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-1.5 2-1.5 3"/></svg></button>
@@ -619,8 +619,11 @@ $('pcAbbina').onclick = async () => {
 };
 $('pcScollega').onclick = async () => { const r = await J.pc({ action: 'scollega' }); mostraPc(r.pc); };
 $('pcModo').onchange = async () => { const r = await J.pc({ action: 'modo', modo: $('pcModo').value }); mostraPc(r.pc); };
+function svuotaChatSchermo(){ msgs.innerHTML = ''; nTot = 0; $('nmsg').textContent = '0/0'; }
+$('svuotaChat').onclick = async () => { svuotaChatSchermo(); try { await J.pulisciChat(); } catch {} };
 J.addListener('zero', e => {
   const t = e.type;
+  if (t==='pulisci') { svuotaChatSchermo(); return; }
   if (t==='pc') { if (e.data==='profilo') caricaCfg(); aggiorna(); return; }
   if (t==='pc_risposta') { aggiungi('jarvis', '💻 ' + e.data); impulso(1); return; }
   if (t==='pc_fine') { try { const d = JSON.parse(e.data); aggiungi('jarvis', (d.stato==='done' ? '✅ ' : '❌ ') + d.progetto + '\n' + d.testo + ((d.file||[]).length ? '\n📎 ' + d.file.map(x=>x.nome).join(', ') + ' (nelle notifiche)' : '')); impulso(1.2); } catch {} return; }
