@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#050d14">
-<meta name="jarvis-versione" content="202611120100">
+<meta name="jarvis-versione" content="202611121826">
 <title>J.A.R.V.I.S.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -626,6 +626,7 @@ J.addListener('zero', e => {
   if (t==='pulisci') { svuotaChatSchermo(); return; }
   if (t==='pc') { if (e.data==='profilo') caricaCfg(); aggiorna(); return; }
   if (t==='pc_risposta') { aggiungi('jarvis', '💻 ' + e.data); impulso(1); return; }
+  if (t==='pc_eco') { try { const d = JSON.parse(e.data); aggiungi(d.chi==='io' ? 'io' : 'jarvis', d.testo); impulso(.6); } catch {} return; }
   if (t==='pc_fine') { try { const d = JSON.parse(e.data); aggiungi('jarvis', (d.stato==='done' ? '✅ ' : '❌ ') + d.progetto + '\n' + d.testo + ((d.file||[]).length ? '\n📎 ' + d.file.map(x=>x.nome).join(', ') + ' (nelle notifiche)' : '')); impulso(1.2); } catch {} return; }
   if (t==='pensa') { if (e.data==='true') { if (modo!=='parla') setModo('elabora'); impulso(.6); } else if (modo==='elabora' && !occupato) setModo(MODO[statoMotore] || 'pronto'); }
   else if (t==='ricerca') { impulso(1); aggiornaPensa(`Un momento, ${chi()}. Consulto la rete: ` + e.data); }
