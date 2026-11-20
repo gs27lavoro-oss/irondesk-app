@@ -548,7 +548,7 @@ textarea:focus{border-color:var(--acc)}
       <h2>🍽️ Consiglio alimentare della settimana</h2>
       <p class="muted">Pasti pronti giorno per giorno, su misura dei tuoi macro e dei cibi che hai scelto. Dosi orientative; i cereali (riso, pasta, avena…) si pesano a crudo. Domenica libera.</p>
       <div id="advice"></div>
-      <button class="btn sec" style="margin-top:10px" onclick="exportAdvice()">📄 Salva / Stampa il consiglio alimentare</button>
+      <button class="btn sec" style="margin-top:10px" onclick="exportAdvice()">📄 Stampa / Salva PDF della dieta</button>
     </div>
     <button class="btn sec" onclick="exportProgram()">📤 Esporta / Stampa / Salva PDF</button>
   </div>
@@ -3534,19 +3534,7 @@ function buildAdviceHTML(){
 }
 async function exportAdvice(){
  if(!state.profile){alert('Genera prima un programma dal Profilo.');return;}
- const html=buildAdviceHTML();
- try{
-   const C=window.Capacitor;
-   if(C&&C.Plugins&&C.Plugins.Filesystem&&C.Plugins.Share){
-     const {Filesystem,Share}=C.Plugins;
-     const r=await Filesystem.writeFile({path:'IronCoach-consiglio-alimentare.html',data:html,directory:'CACHE',encoding:'utf8'});
-     await Share.share({title:'IronCoach — Consiglio alimentare',text:'Il mio consiglio alimentare',url:r.uri,dialogTitle:'Salva / Stampa / Condividi'});
-     return;
-   }
- }catch(e){}
- try{ const w=window.open('','_blank'); if(w){w.document.open();w.document.write(html);w.document.close();w.focus();setTimeout(()=>{try{w.print()}catch(e){}},500);return;} }catch(e){}
- try{ const blob=new Blob([html],{type:'text/html'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='IronCoach-consiglio-alimentare.html'; document.body.appendChild(a); a.click(); a.remove(); }
- catch(e){ alert('Export non disponibile su questo dispositivo.'); }
+ printDoc(buildAdviceHTML(),'IronCoach-consiglio-alimentare.html');
 }
 /* ---------- Stampa / PDF della scheda del mese, con la spiegazione di ogni esercizio ---------- */
 const PRINTCSS=`body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:900px;margin:0 auto;padding:18px;line-height:1.4;--musc-on:#e0452b;--musc-off:#d9d9d9;--musc-base:#efefef;--musc-txt:#555}
@@ -3613,20 +3601,7 @@ function printMonth(){
 }
 async function exportProgram(){
  if(!state.profile){alert('Genera prima un programma dal Profilo.');return;}
- const html=buildReportHTML();
- if(window.AndroidPrint&&window.AndroidPrint.stampaHtml){ printDoc(html,'IronCoach-programma.html'); return; }
- try{
-   const C=window.Capacitor;
-   if(C&&C.Plugins&&C.Plugins.Filesystem&&C.Plugins.Share){
-     const {Filesystem,Share}=C.Plugins;
-     const r=await Filesystem.writeFile({path:'IronCoach-programma.html',data:html,directory:'CACHE',encoding:'utf8'});
-     await Share.share({title:'IronCoach — Programma',text:'Il mio programma IronCoach',url:r.uri,dialogTitle:'Esporta / Stampa / Salva'});
-     return;
-   }
- }catch(e){}
- try{ const w=window.open('','_blank'); if(w){w.document.open();w.document.write(html);w.document.close();w.focus();setTimeout(()=>{try{w.print()}catch(e){}},500);return;} }catch(e){}
- try{ const blob=new Blob([html],{type:'text/html'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='IronCoach-programma.html'; document.body.appendChild(a); a.click(); a.remove(); }
- catch(e){ alert('Export non disponibile su questo dispositivo.'); }
+ printDoc(buildReportHTML(),'IronCoach-programma.html');
 }
 
 /* ---------- Coach: chat + voce ---------- */
