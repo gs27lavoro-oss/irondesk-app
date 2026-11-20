@@ -3542,7 +3542,7 @@ h1{color:#c47f00;margin:0 0 4px;font-size:24px}.sub{color:#555;margin:0 0 12px;f
 h2{border-bottom:2px solid #c47f00;padding-bottom:4px;margin:22px 0 10px;color:#333;font-size:19px}
 table.sk{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:12px}table.sk th,table.sk td{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}table.sk th{background:#f3f3f3}
 .ex{display:flex;gap:12px;border:1px solid #ccc;border-radius:8px;padding:10px 12px;margin:0 0 10px;break-inside:avoid;page-break-inside:avoid}
-.fig{flex:0 0 92px;text-align:center;color:#c47f00}.fig svg.pose{width:78px;height:78px}.fig svg.bodymini{width:62px;height:88px;display:block;margin:4px auto 0}
+
 .txt{flex:1;font-size:12.5px}.txt h3{margin:0 0 2px;font-size:15px}.tag{display:inline-block;background:#fff3dc;color:#8a5a00;border-radius:10px;padding:1px 8px;font-size:11px;margin-left:6px;font-weight:normal}
 .par{font-weight:bold;color:#c47f00;margin:2px 0 4px}.txt ol{margin:4px 0 4px 18px;padding:0}.txt p{margin:3px 0}.foc{color:#1d5e2b}.err{color:#a1260f}.mus{color:#555;font-size:11.5px}
 .note{background:#f7f7f7;border:1px solid #ddd;padding:8px 10px;font-size:12px;margin:8px 0 14px}
@@ -3552,7 +3552,7 @@ function exPrintBlock(e,i){
  const inf=exInfo(src,e.pat,e.note), g=PATGUIDE[e.pat]||{};
  const tag=(EXDESC[src]||{}).tag||MUSCLE[e.pat]||'';
  const mus=inf.m.map(k=>MUSC_LABEL[k]).filter(Boolean);
- return `<div class="ex"><div class="fig">${poseSVG(e.pat)}${bodyMini(inf.m,e.pat)}</div><div class="txt">
+ return `<div class="ex"><div class="txt">
   <h3>${i+1}. ${esc(e.name)}${tag?`<span class="tag">${esc(tag)}</span>`:''}</h3>
   <div class="par">${e.sets} serie × ${esc(e.reps)} rip · recupero ${e.rest}"${e.rpe?' · RPE '+esc(e.rpe):''}${e.tech?' · '+esc(e.tech):''}</div>
   ${e.note?`<p><i>${esc(e.note)}</i></p>`:''}
