@@ -350,7 +350,9 @@ textarea:focus{border-color:var(--acc)}
 
   <div class="card">
     <h2>🏋️ Attrezzatura della tua palestra</h2>
-    <p class="muted">Seleziona tutto ciò che hai davvero (macchine incluse). Gli esercizi verranno scelti solo tra questi. Niente selezionato = corpo libero.</p>
+    <p class="muted">Scegli la palestra: ognuna ha la sua attrezzatura. Seleziona tutto ciò che c'è davvero (macchine incluse): gli esercizi verranno scelti solo tra questi. Niente selezionato = corpo libero.</p>
+    <div class="chips" id="gymSel" data-single></div>
+    <div class="small" id="gymHint" style="margin:6px 0 8px"></div>
     <div class="chips" id="attrezzi" data-multi></div>
     <label>Aggiungi un tuo macchinario</label>
     <div class="addrow">
@@ -441,6 +443,10 @@ textarea:focus{border-color:var(--acc)}
         </div>
         <button id="mNext">›</button>
       </div>
+      <div class="mrow" style="margin-bottom:6px">
+        <label style="margin:0 8px 0 0">🏋️ Palestra</label>
+        <select id="gymSwitch"></select>
+      </div>
       <div class="mrow">
         <label style="margin:0 8px 0 0">Giorni questo mese</label>
         <select id="monthDays">
@@ -491,7 +497,8 @@ textarea:focus{border-color:var(--acc)}
       <h2>🏃 Cardio & recupero</h2>
       <div class="muted" id="cardioNote">—</div>
     </div>
-    <button class="btn sec" onclick="exportProgram()">📤 Esporta / Stampa / Salva PDF</button>
+    <button class="btn" onclick="printMonth()">🖨️ Stampa / PDF scheda del mese (con spiegazioni)</button>
+    <button class="btn sec" style="margin-top:8px" onclick="exportProgram()">📤 Programma completo 12 mesi + dieta (Stampa / PDF)</button>
   </div>
 </section>
 
@@ -685,7 +692,19 @@ const EQUIP=[
  {k:'gluteslev',n:'Standing glutes (slanci)'},
  {k:'glutedr',n:'Glute trainer / hip thrust'},
  {k:'palla',n:'Palla medica'},
+ // macchine della palestra Simply the best
+ {k:'abductor',n:'Abductor (abduttori macch.)'},
+ {k:'adductor',n:'Adductor (adduttori macch.)'},
+ {k:'tricepsm',n:'Tricep press (dip macch.)'},
+ {k:'beltsquat',n:'Belt squat'},
 ];
+
+/* ---------- Palestre: ogni palestra ha la sua attrezzatura, la scheda segue quella scelta ---------- */
+const GYMS={
+ npl:{n:'New Perfect Line'},
+ stb:{n:'Simply the best',def:['hack','smith','legpress','legext','legcurl','abductor','adductor','glutedr','beltsquat',
+   'manubri','panca','shoulderm','lateralm','tricepsm','pecdeck','cavi','crossover','lowpulley','abm','sbarra','dip','cardio']},
+};
 
 /* ---------- Database esercizi ----------
    c:true = fondamentale (multiarticolare). req = gruppi OR da soddisfare TUTTI.
@@ -903,13 +922,37 @@ EX.core.push(
  {n:'Crunch su panca declinata',c:0,req:[['panca']],note:'Piedi bloccati, sali arrotolando la schiena: addome alto.'},
  {n:'Addome laterale con palla medica',c:0,req:[['palla']],note:'Busto inclinato indietro, porta la palla da un fianco all\'altro.'});
 
+/* ---------- Esercizi della palestra Simply the best (dalle schede del suo istruttore) ---------- */
+EX.quad.push(
+ {n:'Goblet squat al cavo basso (triangolo)',c:1,req:[['lowpulley','crossover','cavi']],note:'Triangolo al petto, tensione continua, negativa controllata.'},
+ {n:'Belt squat',c:1,req:[['beltsquat']],note:'Cintura in vita: squat pesante con la schiena scarica.'},
+ {n:'Affondi camminati con manubri',c:1,req:[['manubri']],avoid:['ginocchia'],note:'Passi lunghi, ginocchio dietro sfiora terra, busto eretto.'});
+EX.hinge.push(
+ {n:'Stacco semiteso al cavo basso',c:1,req:[['lowpulley','crossover']],avoid:['schiena'],note:'Cavo basso davanti, gambe quasi tese: anche indietro, schiena piatta.'},
+ {n:'Stacco semiteso al belt squat',c:1,req:[['beltsquat']],note:'Carico in vita: cerniera d\'anca senza peso sulla schiena.'});
+EX.hamstring.push(
+ {n:'Abductor machine (abduttori)',c:0,req:[['abductor']],note:'Apri le gambe contro i cuscinetti, pausa fuori, chiudi lentamente.'},
+ {n:'Adductor machine (adduttori)',c:0,req:[['adductor']],note:'Chiudi le gambe stringendo l\'interno coscia, ritorno controllato.'});
+EX['v-push'].push(
+ {n:'Shoulder press alla macchina presa neutra',c:1,req:[['shoulderm']],note:'Impugnature neutre: negativa molto lenta, spinta esplosiva.'});
+EX.triceps.push(
+ {n:'Tricep press alla macchina',c:0,req:[['tricepsm']],note:'Seduto, spingi in basso le maniglie: tensione continua sui tricipiti.'},
+ {n:'Pushdown con la corda',c:0,req:[['cavi','crossover']],note:'Gomiti ai fianchi, apri la corda a fine corsa.'});
+EX['v-pull'].push(
+ {n:'Lat machine con triangolo',c:1,req:[['cavi','latcirc']],note:'Presa stretta neutra, tira al petto alto, gomiti lungo i fianchi.'},
+ {n:'Pull down con la corda (braccia tese)',c:0,req:[['cavi','crossover']],note:'Busto inclinato, braccia quasi tese: porta la corda alle cosce.'});
+EX.biceps.push(
+ {n:'Hammer curl seduto con manubri',c:0,req:[['manubri'],['panca']],note:'Seduto, presa neutra, tensione continua sul bicipite.'});
+EX.core.push(
+ {n:'Leg raise alla stazione (parallele)',c:0,req:[['dip']],note:'Avambracci in appoggio, solleva le gambe senza dondolare.'});
+
 /* Famiglie: stesso movimento con attrezzo diverso. Nello stesso giorno se ne usa uno
    solo per famiglia (niente panca al multipower + panca con manubri, due crunch uguali...). */
 const FAM={};
 [
  ['piana',['Panca piana con bilanciere','Panca al multipower','Distensioni su panca con manubri','Chest press alla macchina','Chest press monolaterale','Chest press verticale','Chest press con elastico','Piegamenti (push-up)']],
  ['inclinata',['Panca inclinata con bilanciere (30-45°)','Panca inclinata con manubri (30°)','Panca inclinata al multipower (30°)','Spinte con manubri su panca inclinata a 45°','Piegamenti con piedi rialzati']],
- ['lento',['Military press con bilanciere','Shoulder press alla macchina','Shoulder press monolaterale','Lento al multipower','Lento con manubri','Arnold press','Shoulder press con elastico','Pike push-up','Lento con manubri su panca a 80°','Spinte con manubri su panca a 70°']],
+ ['lento',['Military press con bilanciere','Shoulder press alla macchina','Shoulder press alla macchina presa neutra','Shoulder press monolaterale','Lento al multipower','Lento con manubri','Arnold press','Shoulder press con elastico','Pike push-up','Lento con manubri su panca a 80°','Spinte con manubri su panca a 70°']],
  ['croci-piane',['Pectoral machine (pec deck)','Croci su panca piana con manubri','Croci al cavo singolo']],
  ['croci-basse',['Croci ai cavi dal basso','Aperture ai cavi bassi su panca inclinata (60-70°)','Croci su panca inclinata (30°) con manubri']],
  ['dip',['Dip alle parallele','Dip tra due appoggi']],
@@ -920,9 +963,14 @@ const FAM={};
  ['reverse-fly',['Reverse pec deck (upper back)','Alzate posteriori con manubri','Reverse fly a corpo libero']],
  ['face-pull',['Face pull ai cavi','Face pull ai cavi crossover','Face pull con elastico']],
  ['curl-bil',['Curl con bilanciere','Curl con bilanciere schiena in appoggio']],
- ['pushdown',['Pushdown ai cavi','Pushdown ai cavi crossover','Pushdown con barra angolata su panca inclinata (60°)']],
+ ['pushdown',['Pushdown ai cavi','Pushdown ai cavi crossover','Pushdown con la corda','Pushdown con barra angolata su panca inclinata (60°)']],
  ['tricipiti-testa',['Estensioni sopra la testa con manubrio','Estensioni sopra la testa ai cavi']],
- ['squat',['Squat con bilanciere','Squat al multipower','Goblet squat','Squat con elastico','Squat a corpo libero']],
+ ['squat',['Squat con bilanciere','Squat al multipower','Goblet squat','Goblet squat al cavo basso (triangolo)','Belt squat','Squat con elastico','Squat a corpo libero']],
+ ['affondi',['Affondi con manubri','Affondi camminati con manubri']],
+ ['stacco-semiteso',['Stacco semiteso al cavo basso','Stacco semiteso al belt squat','Pull-through ai cavi']],
+ ['lat-stretta',['Lat machine con triangolo','Lat pulldown circular presa neutra']],
+ ['pull-tese',['Pull down con la corda (braccia tese)','Pullover ai cavi']],
+ ['hammer',['Hammer curl seduto con manubri','Curl a martello su panca inclinata (60°)']],
  ['leg-press',['Leg press','Incline leg press (45°)']],
  ['stacco-rumeno',['Stacco rumeno con bilanciere','Stacco rumeno con manubri','Stacco rumeno al multipower']],
  ['hip-thrust',['Hip thrust','Hip thrust alla macchina','Ponte glutei a corpo libero']],
@@ -930,7 +978,7 @@ const FAM={};
  ['calf-piedi',['Calf alla macchina','Calf alla pressa','Calf in piedi con bilanciere','Calf con manubri','Calf a corpo libero su gradino']],
  ['calf-seduto',['Calf seduto','Calf seduto con manubri']],
  ['addome-alto',['Crunch alla macchina','Crunch ai cavi','Crunch in ginocchio ai cavi','Crunch su panca declinata']],
- ['addome-basso',['Leg raise alla sbarra','Addome basso alle parallele']],
+ ['addome-basso',['Leg raise alla sbarra','Addome basso alle parallele','Leg raise alla stazione (parallele)']],
  ['obliqui',['Russian twist','Addome laterale con palla medica']],
  ['core-statico',['Plank','Ab wheel']],
 ].forEach(x=>x[1].forEach(n=>{ FAM[n]=x[0]; }));
@@ -1129,6 +1177,20 @@ Object.assign(EXDESC,{
  "Addome laterale con palla medica":{e:["Seduto a terra, ginocchia piegate, busto inclinato indietro, palla medica al petto.","Ruota il busto portando la palla accanto a un fianco.","Torna al centro e ruota dall'altra parte: una ripetizione per lato."],f:"Ruota con il busto, non solo con le braccia: gli obliqui lavorano nella torsione.",x:"Non curvare la schiena né muoverti a strappi.",m:['addome']},
  "Scrollate ai cavi":{e:["In piedi con la barra o le maniglie del cavo basso lungo le cosce, braccia distese.","Alza le spalle verso le orecchie senza piegare i gomiti.","Scendi lentamente fino a sentire allungare il trapezio."],f:"Solo le spalle si muovono: pausa breve in alto, discesa controllata.",x:"Non ruotare le spalle indietro né aiutarti con le braccia.",m:['trapezio']},
  "Crunch in ginocchio ai cavi":{e:["In ginocchio davanti al cavo alto, corda dietro la nuca.","Arrotonda la schiena portando i gomiti verso le cosce, addome contratto.","Risali lentamente senza perdere la tensione."],f:"Il movimento e' della colonna che si arrotola, non dell'anca che si piega.",x:"Non tirare con le braccia né scendere e salire di bacino.",m:['addome']},
+ "Goblet squat al cavo basso (triangolo)":{e:["Triangolo agganciato al cavo basso, tienilo al petto con entrambe le mani, un passo indietro dalla colonna.","Scendi in squat tra i talloni con il busto eretto e i gomiti tra le ginocchia.","Risali spingendo coi talloni senza perdere la tensione del cavo."],f:"Il cavo tira sempre: tensione continua e negativa controllata.",x:"Non lasciarti tirare in avanti dal cavo né staccare i talloni.",m:['quad','glutei','addome']},
+ "Belt squat":{e:["Cintura agganciata in vita, piedi sulla pedana larghezza spalle.","Scendi piegando anche e ginocchia, busto dritto, fino a coscia parallela.","Risali spingendo con tutto il piede."],f:"Il carico sta sul bacino: gambe pesanti con la colonna scarica.",x:"Non far rientrare le ginocchia né rimbalzare in basso.",m:['quad','glutei']},
+ "Affondi camminati con manubri":{e:["In piedi con un manubrio per mano lungo i fianchi.","Fai un passo lungo e scendi finché il ginocchio dietro sfiora il pavimento.","Spingi sul tallone avanti e porta l'altra gamba avanti nel passo successivo."],f:"Busto eretto, passi lunghi: più glutei; passi corti: più quadricipiti.",x:"Non far cadere il ginocchio avanti verso l'interno né sbilanciarti.",m:['quad','glutei','femorali']},
+ "Stacco semiteso al cavo basso":{e:["Di fronte al cavo basso con barra o corda, gambe quasi tese, piedi larghezza anche.","Porta i fianchi indietro scendendo con la schiena piatta finché senti tirare i femorali.","Risali estendendo l'anca e stringendo i glutei in alto."],f:"È una cerniera d'anca: si muovono i fianchi, non la schiena.",x:"Non curvare la schiena né piegare troppo le ginocchia.",m:['femorali','glutei','lombari']},
+ "Stacco semiteso al belt squat":{e:["Cintura in vita, piedi sulla pedana, ginocchia appena piegate.","Porta il bacino indietro lasciando scendere il carico, schiena neutra.","Torna in piedi spingendo il bacino avanti e stringendo i glutei."],f:"Femorali e glutei lavorano senza carico sulle braccia e sulla schiena.",x:"Non trasformarlo in uno squat: le ginocchia restano quasi ferme.",m:['femorali','glutei']},
+ "Abductor machine (abduttori)":{tag:'Glutei (abduttori)',e:["Seduto, schiena appoggiata, cuscinetti all'esterno delle ginocchia.","Apri le gambe spingendo verso l'esterno fino al massimo che controlli.","Pausa di un secondo fuori, poi chiudi lentamente senza far sbattere i pesi."],f:"Lavora il gluteo medio: busto leggermente in avanti per sentirlo di più.",x:"Non aprire a scatti né staccare la schiena per aiutarti.",m:['glutei']},
+ "Adductor machine (adduttori)":{tag:'Interno coscia (adduttori)',e:["Seduto, schiena appoggiata, cuscinetti all'interno delle ginocchia, gambe aperte.","Chiudi le gambe stringendo l'interno coscia fino a far toccare i cuscinetti.","Riapri lentamente fino a sentire allungare, senza perdere il controllo."],f:"Negativa lenta: l'allungamento è la parte più utile.",x:"Non partire troppo aperto se senti tirare all'inguine.",m:['quad']},
+ "Shoulder press alla macchina presa neutra":{e:["Seduto, schiena aderente, impugnature neutre all'altezza delle spalle.","Spingi sopra la testa in modo esplosivo senza bloccare i gomiti.","Scendi molto lentamente (3 secondi) fino all'altezza delle spalle."],f:"La presa neutra è più gentile con le spalle e carica bene il deltoide anteriore.",x:"Non inarcare la schiena né staccare la testa dallo schienale.",m:['deltoidi','tricipiti']},
+ "Tricep press alla macchina":{e:["Seduto, schiena appoggiata, maniglie ai fianchi con i gomiti piegati.","Spingi le maniglie verso il basso fino a braccia distese.","Risali controllando senza far toccare i pesi: tensione continua."],f:"Gomiti vicini al corpo, spalle basse: lavorano solo i tricipiti.",x:"Non sollevare il sedere né spingere col petto in avanti.",m:['tricipiti']},
+ "Pushdown con la corda":{e:["In piedi davanti al cavo alto, corda impugnata, gomiti ai fianchi.","Estendi le braccia verso il basso aprendo la corda a fine corsa.","Risali lentamente fino a gomiti a 90°."],f:"Apri la corda in basso: contrazione completa del tricipite.",x:"Non muovere i gomiti né usare il peso del corpo.",m:['tricipiti']},
+ "Lat machine con triangolo":{e:["Seduto, cosce bloccate, triangolo impugnato con presa stretta neutra.","Tira il triangolo al petto alto portando i gomiti lungo i fianchi, petto in fuori.","Risali lentamente fino a braccia distese sentendo allungare il dorsale."],f:"La presa stretta allunga la corsa: ottimo per lo spessore del dorso.",x:"Non dondolare col busto né tirare con le braccia.",m:['dorsali','bicipiti']},
+ "Pull down con la corda (braccia tese)":{e:["In piedi davanti al cavo alto, corda impugnata, busto leggermente inclinato.","A braccia quasi tese porta la corda verso le cosce descrivendo un arco.","Risali controllando fino a sentire allungare il dorsale."],f:"Le braccia restano tese: lavora solo il dorsale.",x:"Non piegare i gomiti né curvare la schiena.",m:['dorsali']},
+ "Hammer curl seduto con manubri":{e:["Seduto su panca, schiena dritta, manubri ai fianchi con presa neutra.","Fletti i gomiti portando i manubri alle spalle senza muovere i gomiti.","Scendi lentamente senza distendere del tutto: tensione continua."],f:"La presa neutra lavora bicipite, brachiale e avambraccio.",x:"Non dondolare col busto né far cadere i manubri.",m:['bicipiti','avambracci']},
+ "Leg raise alla stazione (parallele)":{e:["Avambracci sugli appoggi, schiena contro lo schienale, gambe giù.","Solleva le gambe (o le ginocchia) fino all'altezza delle anche arrotondando il bacino.","Scendi lentamente senza dondolare."],f:"Ruota il bacino verso il petto: lavora l'addome basso.",x:"Non slanciare le gambe né inarcare la schiena.",m:['addome']},
 });
 function exInfo(name,pat,note){
  const d=EXDESC[name]||{};
@@ -2333,12 +2395,14 @@ function fmReset(){
  const setv=(id,v)=>{const e=$('#'+id); if(e)e.value=v;};
  setv('attivita','1.55');setv('giorni','4');setv('livello','intermedio');setv('dieta','onnivoro');setv('nEx','auto');setv('mode','split');
  ['#sesso','#obiettivo','#attrezzi','#intoll','#limiti','#likes','#dislikes','#legsChip','#absChip'].forEach(s=>{try{setChips(s,[]);}catch(e){}});
+ try{ formGyms=gymDefaults(null); formGym='npl'; setChips('#attrezzi',formGyms.npl); renderGymSel(); }catch(e){}
  try{toggleCustomUI();}catch(e){}
 }
 /* I programmi creati prima del percorso a fasi avevano un obiettivo unico per 12 mesi:
    li convertiamo una volta sola nel percorso periodizzato, senza toccare nient'altro. */
 function migraPercorso(){
  const p=state.profile; if(!p) return;
+ if(!p.gyms){ ensureGyms(p); save(); } else ensureGyms(p);
  if(p.stop==null) p.stop='0';
  const ph=state.goalPhases;
  if(!state.roadmapV && (!Array.isArray(ph)||ph.length<=1)){
@@ -2400,6 +2464,49 @@ function renderCustomChips(){
 }
 applyCustom(); renderCustomChips();
 
+/* ---------- Palestre: attrezzatura separata per ogni palestra ---------- */
+const STB_ONLY=['abductor','adductor','tricepsm','beltsquat'];
+function gymDefaults(p){
+ const old=(p&&p.attrezzi)||[];
+ return {
+   npl: old.length?old.slice():EQUIP.filter(e=>!e.custom&&!STB_ONLY.includes(e.k)).map(e=>e.k),
+   stb: GYMS.stb.def.slice(),
+ };
+}
+function ensureGyms(p){
+ if(!p) return;
+ if(!p.gyms||typeof p.gyms!=='object') p.gyms=gymDefaults(p);
+ const d=gymDefaults(p);
+ Object.keys(GYMS).forEach(k=>{ if(!Array.isArray(p.gyms[k])) p.gyms[k]=d[k]; });
+ if(!GYMS[p.gym]) p.gym='npl';
+ p.attrezzi=p.gyms[p.gym].slice();
+}
+function gymName(p){ return (GYMS[(p&&p.gym)||'npl']||GYMS.npl).n; }
+let formGyms=gymDefaults(null), formGym='npl';
+function renderGymSel(){
+ const box=$('#gymSel');
+ if(!box.children.length) box.innerHTML=Object.keys(GYMS).map(k=>`<div class="chip" data-v="${k}">🏋️ ${GYMS[k].n}</div>`).join('');
+ box.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.v===formGym));
+ $('#gymHint').innerHTML='Stai vedendo l\'attrezzatura di <b>'+esc(GYMS[formGym].n)+'</b>. La scheda viene generata per la palestra selezionata; la cambi anche dalla Scheda.';
+}
+$('#gymSel').addEventListener('click',ev=>{
+ const c=ev.target.closest('.chip'); if(!c||c.dataset.v===formGym) return;
+ formGyms[formGym]=chipVals('#attrezzi');
+ formGym=c.dataset.v;
+ setChips('#attrezzi',formGyms[formGym]);
+ renderGymSel();
+});
+setChips('#attrezzi',formGyms.npl); renderGymSel(); // fillForm poi carica quelle del profilo
+function fillGymSwitch(){
+ const s=$('#gymSwitch'); if(!s.options.length) s.innerHTML=Object.keys(GYMS).map(k=>`<option value="${k}">${GYMS[k].n}</option>`).join('');
+ s.value=(state.profile&&state.profile.gym)||'npl';
+}
+$('#gymSwitch').addEventListener('change',e=>{
+ const p=state.profile; if(!p) return;
+ ensureGyms(p); p.gym=e.target.value; p.attrezzi=p.gyms[p.gym].slice();
+ save(); fillForm(); renderAll();
+});
+
 // pulsante: aggiungi macchinario
 $('#addEquip').addEventListener('click',()=>{
  const name=$('#newEquipName').value.trim(); if(!name){$('#newEquipName').focus();return;}
@@ -2445,7 +2552,8 @@ function fillForm(){
  $('#nEx').value=p.nEx||'auto'; $('#mode').value=p.mode||'split'; $('#stop').value=p.stop||'0';
  setChips('#legsChip',p.legsEveryDay?['1']:[]); setChips('#absChip',p.absEveryDay?['1']:[]); toggleCustomUI();
  setChips('#sesso',[p.sesso]); setChips('#obiettivo',[p.obiettivo]);
- setChips('#attrezzi',p.attrezzi); setChips('#intoll',p.intoll); setChips('#limiti',p.limiti);
+ ensureGyms(p); formGyms=JSON.parse(JSON.stringify(p.gyms)); formGym=p.gym;
+ setChips('#attrezzi',formGyms[formGym]); renderGymSel(); setChips('#intoll',p.intoll); setChips('#limiti',p.limiti);
  setChips('#likes',p.likes); setChips('#dislikes',p.dislikes);
 }
 
@@ -2483,7 +2591,8 @@ $('#genBtn').addEventListener('click',()=>{
    legsEveryDay:chipVals('#legsChip').includes('1'),
    absEveryDay:chipVals('#absChip').includes('1'),
    customDays:($('#mode').value==='custom'?readCustomDays():((state.profile&&state.profile.customDays)||null)),
-   attrezzi:chipVals('#attrezzi'),
+   attrezzi:(formGyms[formGym]=chipVals('#attrezzi')),
+   gyms:JSON.parse(JSON.stringify(formGyms)), gym:formGym,
    dieta:$('#dieta').value, intoll:chipVals('#intoll'), limiti:chipVals('#limiti'),
    likes:chipVals('#likes'), dislikes:chipVals('#dislikes'),
    exDislikes:(state.profile&&state.profile.exDislikes)||[],
@@ -2543,6 +2652,7 @@ function renderScheda(){
  const p=state.profile;
  if(!p){$('#schedaEmpty').classList.remove('hide');$('#schedaBody').classList.add('hide');return;}
  $('#schedaEmpty').classList.add('hide');$('#schedaBody').classList.remove('hide');
+ fillGymSwitch();
  let vm=state.viewMonth??0; vm=Math.max(0,Math.min(11,vm)); state.viewMonth=vm;
  const M=buildMonth(p,vm);
  const cur=currentMonthIdx();
@@ -3352,7 +3462,8 @@ function buildReportHTML(){
  const p=state.profile; const nu=nutrition(p);
  const g=GOALNAME[p.obiettivo]||p.obiettivo;
  let h=`<h1>IronCoach — Programma ${esc(g)}</h1>`;
- h+=`<p><b>Atleta:</b> ${esc(p.sesso)}, ${esc(p.eta)} anni, ${esc(p.peso)} kg, ${esc(p.altezza)} cm — <b>Obiettivo:</b> ${esc(g)}</p>`;
+ h+=`<p><b>Atleta:</b> ${esc(p.sesso)}, ${esc(p.eta)} anni, ${esc(p.peso)} kg, ${esc(p.altezza)} cm — <b>Obiettivo:</b> ${esc(g)} — <b>Palestra:</b> ${esc(gymName(p))}</p>`;
+ const guida=new Map();
  h+=`<p><b>Percorso dei 12 mesi:</b> ${esc(roadmapText(null).replace(/<[^>]+>/g,''))}</p>`;
  h+=`<p style="color:#666">${esc(roadmapWhy(p))}</p>`;
  h+=`<h2>ALLENAMENTO — 12 mesi</h2>`;
@@ -3361,10 +3472,14 @@ function buildReportHTML(){
    h+=`<h3>Mese ${m+1} — ${esc(GOALNAME[M.goal]||M.goal)} · ${esc(M.block.f)} · ${giorniForMonth(p,m)} giorni · ${esc(M.split)}</h3>`;
    M.days.forEach((d,i)=>{
      h+=`<h4>Giorno ${i+1} — ${esc(d.title)}</h4><table><tr><th>Esercizio</th><th>Muscolo</th><th>Serie×Rip</th><th>Rec</th><th>RPE</th><th>Tecnica</th></tr>`;
-     d.exs.forEach(e=>h+=`<tr><td>${esc(e.name)}</td><td>${esc(MUSCLE[e.pat]||'')}</td><td>${e.sets}×${e.reps}</td><td>${e.rest}s</td><td>${esc(e.rpe)}</td><td>${esc(e.tech)}</td></tr>`);
+     d.exs.forEach(e=>{ if(!guida.has(e.name)) guida.set(e.name,e); h+=`<tr><td>${esc(e.name)}</td><td>${esc(MUSCLE[e.pat]||'')}</td><td>${e.sets}×${e.reps}</td><td>${e.rest}s</td><td>${esc(e.rpe)}</td><td>${esc(e.tech)}</td></tr>`; });
      h+=`</table>`;
    });
  }
+ h+=`<h2>GUIDA ESERCIZI — come si eseguono</h2>`;
+ [...guida.values()].sort((a,b)=>a.name.localeCompare(b.name,'it')).forEach((e,i)=>{
+   h+=exPrintBlock({name:e.name,ref:e.ref,pat:e.pat,note:e.note,sets:'',reps:'',rest:'',tech:''},i).replace(/<div class="par">[\s\S]*?<\/div>/,'');
+ });
  h+=`<h2>NUTRIZIONE</h2><p><b>Target:</b> ${nu.target} kcal — Proteine ${nu.prot} g · Carboidrati ${nu.carb} g · Grassi ${nu.fat} g</p>`;
  const GG=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
  for(let d=0;d<7;d++){
@@ -3378,7 +3493,7 @@ function buildReportHTML(){
    });
    h+=`<p style="margin:2px 0 10px;color:#c47f00"><b>Totale giorno:</b> ~${tt.kc} kcal — P ${tt.P} g · C ${tt.C} g · G ${tt.F} g (target ${nu.prot}/${nu.carb}/${nu.fat} g)</p>`;
  }
- return `<!doctype html><html><head><meta charset="utf-8"><title>IronCoach — ${esc(g)}</title><style>body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:900px;margin:0 auto;padding:22px;line-height:1.4}h1{color:#c47f00;margin:0 0 6px}h2{border-bottom:2px solid #c47f00;padding-bottom:4px;margin:26px 0 10px;color:#333}h3{margin:18px 0 6px;color:#000}h4{margin:12px 0 4px;color:#c47f00}table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:12px}th,td{border:1px solid #ccc;padding:5px 7px;text-align:left;vertical-align:top}th{background:#f3f3f3}@media print{h3,h4,table,p{break-inside:avoid}}</style></head><body>${h}<p style="margin-top:28px;color:#888;font-size:11px">Generato da IronCoach · dosi e carichi orientativi, adatta in base alle sensazioni.</p></body></html>`;
+ return `<!doctype html><html><head><meta charset="utf-8"><title>IronCoach — ${esc(g)}</title><style>body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:900px;margin:0 auto;padding:22px;line-height:1.4}h1{color:#c47f00;margin:0 0 6px}h2{border-bottom:2px solid #c47f00;padding-bottom:4px;margin:26px 0 10px;color:#333}h3{margin:18px 0 6px;color:#000}h4{margin:12px 0 4px;color:#c47f00}table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:12px}th,td{border:1px solid #ccc;padding:5px 7px;text-align:left;vertical-align:top}th{background:#f3f3f3}@media print{h3,h4,table,p{break-inside:avoid}}${PRINTCSS.replace(/^body\{[^}]*\}/,'body{--musc-on:#e0452b;--musc-off:#d9d9d9;--musc-base:#efefef;--musc-txt:#555}')}</style></head><body>${h}<p style="margin-top:28px;color:#888;font-size:11px">Generato da IronCoach · dosi e carichi orientativi, adatta in base alle sensazioni.</p></body></html>`;
 }
 /* ---------- Consiglio alimentare settimanale (foglio in prosa, su misura) ---------- */
 function mealProse(m){
@@ -3433,9 +3548,73 @@ async function exportAdvice(){
  try{ const blob=new Blob([html],{type:'text/html'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='IronCoach-consiglio-alimentare.html'; document.body.appendChild(a); a.click(); a.remove(); }
  catch(e){ alert('Export non disponibile su questo dispositivo.'); }
 }
+/* ---------- Stampa / PDF della scheda del mese, con la spiegazione di ogni esercizio ---------- */
+const PRINTCSS=`body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:900px;margin:0 auto;padding:18px;line-height:1.4;--musc-on:#e0452b;--musc-off:#d9d9d9;--musc-base:#efefef;--musc-txt:#555}
+h1{color:#c47f00;margin:0 0 4px;font-size:24px}.sub{color:#555;margin:0 0 12px;font-size:13px}
+h2{border-bottom:2px solid #c47f00;padding-bottom:4px;margin:22px 0 10px;color:#333;font-size:19px}
+table.sk{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:12px}table.sk th,table.sk td{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}table.sk th{background:#f3f3f3}
+.ex{display:flex;gap:12px;border:1px solid #ccc;border-radius:8px;padding:10px 12px;margin:0 0 10px;break-inside:avoid;page-break-inside:avoid}
+.fig{flex:0 0 92px;text-align:center;color:#c47f00}.fig svg.pose{width:78px;height:78px}.fig svg.bodymini{width:62px;height:88px;display:block;margin:4px auto 0}
+.txt{flex:1;font-size:12.5px}.txt h3{margin:0 0 2px;font-size:15px}.tag{display:inline-block;background:#fff3dc;color:#8a5a00;border-radius:10px;padding:1px 8px;font-size:11px;margin-left:6px;font-weight:normal}
+.par{font-weight:bold;color:#c47f00;margin:2px 0 4px}.txt ol{margin:4px 0 4px 18px;padding:0}.txt p{margin:3px 0}.foc{color:#1d5e2b}.err{color:#a1260f}.mus{color:#555;font-size:11.5px}
+.note{background:#f7f7f7;border:1px solid #ddd;padding:8px 10px;font-size:12px;margin:8px 0 14px}
+@media print{body{padding:0}h2{break-after:avoid}}`;
+function exPrintBlock(e,i){
+ const src=(e.ref&&EXDESC[e.ref])?e.ref:e.name;
+ const inf=exInfo(src,e.pat,e.note), g=PATGUIDE[e.pat]||{};
+ const tag=(EXDESC[src]||{}).tag||MUSCLE[e.pat]||'';
+ const mus=inf.m.map(k=>MUSC_LABEL[k]).filter(Boolean);
+ return `<div class="ex"><div class="fig">${poseSVG(e.pat)}${bodyMini(inf.m,e.pat)}</div><div class="txt">
+  <h3>${i+1}. ${esc(e.name)}${tag?`<span class="tag">${esc(tag)}</span>`:''}</h3>
+  <div class="par">${e.sets} serie × ${esc(e.reps)} rip · recupero ${e.rest}"${e.rpe?' · RPE '+esc(e.rpe):''}${e.tech?' · '+esc(e.tech):''}</div>
+  ${e.note?`<p><i>${esc(e.note)}</i></p>`:''}
+  <ol>${inf.e.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
+  ${g.resp?`<p><b>Respirazione:</b> ${esc(g.resp)}</p>`:''}${g.ritmo?`<p><b>Ritmo:</b> ${esc(g.ritmo)}</p>`:''}${g.ampiezza?`<p><b>Ampiezza:</b> ${esc(g.ampiezza)}</p>`:''}
+  ${inf.f?`<p class="foc"><b>Focus:</b> ${esc(inf.f)}</p>`:''}${inf.x?`<p class="err"><b>Errore da evitare:</b> ${esc(inf.x)}</p>`:''}
+  ${mus.length?`<p class="mus"><b>Muscoli:</b> ${esc(mus.join(', '))}</p>`:''}
+ </div></div>`;
+}
+function buildMonthPrintHTML(vm){
+ const p=state.profile, M=buildMonth(p,vm), g=GOALNAME[M.goal]||M.goal;
+ let h=`<h1>IronCoach — Scheda mese ${vm+1}</h1>`;
+ h+=`<div class="sub"><b>${esc(curUserName())}</b> · Palestra: <b>${esc(gymName(p))}</b> · Obiettivo ${esc(g)}${M.coach?' · Scheda del coach':' · '+esc(M.block.f)} · ${M.days.length} giorni · ${esc(M.split||'')}</div>`;
+ h+=`<div class="note">Riscaldamento 5-10' prima di ogni allenamento. Settimane 1-3: aggiungi 1-2 ripetizioni o un po' di carico mantenendo l'RPE. Settimana 4 = scarico: togli ~1 serie e cala i carichi del 10-15%. «12/10» = piramidale: alzi il carico e scendi di ripetizioni a ogni serie. ${esc(PROGTIP)}</div>`;
+ M.days.forEach((d,i)=>{
+   h+=`<h2>Giorno ${i+1} — ${esc(d.title)}</h2><table class="sk"><tr><th>#</th><th>Esercizio</th><th>Serie×Rip</th><th>Recupero</th><th>Tecnica</th></tr>`;
+   d.exs.forEach((e,j)=>h+=`<tr><td>${j+1}</td><td>${esc(e.name)}</td><td>${e.sets}×${esc(e.reps)}</td><td>${e.rest}"</td><td>${esc(e.tech||'')}</td></tr>`);
+   h+=`</table>`+d.exs.map(exPrintBlock).join('');
+ });
+ const ca=CARDIO[M.goal]; if(ca) h+=`<h2>Cardio e recupero</h2><p>${esc(ca)}</p>`;
+ h+=`<p style="margin-top:22px;color:#888;font-size:11px">Generato da IronCoach · carichi orientativi, adatta in base alle sensazioni.</p>`;
+ return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IronCoach — Scheda mese ${vm+1} — ${esc(gymName(p))}</title><style>${PRINTCSS}</style></head><body>${h}</body></html>`;
+}
+/* Stampa un documento: APK = stampa di sistema (Salva come PDF), browser = finestra di stampa */
+function printDoc(html,fname){
+ try{ if(window.AndroidPrint&&window.AndroidPrint.stampaHtml){ window.AndroidPrint.stampaHtml(html); return; } }catch(e){}
+ try{
+   const old=document.getElementById('printFrame'); if(old) old.remove();
+   const f=document.createElement('iframe'); f.id='printFrame';
+   f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+   document.body.appendChild(f);
+   const d=f.contentWindow.document; d.open(); d.write(html); d.close();
+   setTimeout(()=>{ try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){ dlDoc(html,fname); } },400);
+   return;
+ }catch(e){}
+ dlDoc(html,fname);
+}
+function dlDoc(html,fname){
+ try{ const blob=new Blob([html],{type:'text/html'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; document.body.appendChild(a); a.click(); a.remove(); }
+ catch(e){ alert('Stampa non disponibile su questo dispositivo.'); }
+}
+function printMonth(){
+ if(!state.profile){alert('Genera prima un programma dal Profilo.');return;}
+ const vm=Math.max(0,Math.min(11,state.viewMonth??0));
+ printDoc(buildMonthPrintHTML(vm),'IronCoach-scheda-mese-'+(vm+1)+'.html');
+}
 async function exportProgram(){
  if(!state.profile){alert('Genera prima un programma dal Profilo.');return;}
  const html=buildReportHTML();
+ if(window.AndroidPrint&&window.AndroidPrint.stampaHtml){ printDoc(html,'IronCoach-programma.html'); return; }
  try{
    const C=window.Capacitor;
    if(C&&C.Plugins&&C.Plugins.Filesystem&&C.Plugins.Share){
